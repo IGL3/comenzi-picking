@@ -52,6 +52,8 @@ td.nr{font:800 20px/1 "Barlow Condensed",sans-serif;white-space:nowrap}
 .miss{color:var(--red);font-weight:600;white-space:nowrap}
 .multi{display:inline-block;background:var(--yel);color:#17160f;font-size:13px;font-weight:600;border-radius:5px;padding:1px 7px;white-space:nowrap}
 tr.grp td{border-top:2px solid var(--ink)}
+tr.mlt td{background:var(--soft)}
+@media(min-width:601px){#vBody table{min-width:1400px}#vBody .prod{min-width:360px}#vBody td:nth-child(3){white-space:nowrap}}
 .batch{margin-bottom:26px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .bh{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;padding:12px 14px;background:var(--soft);border-bottom:2px solid var(--ink)}
 .bh span{color:var(--mut)}
@@ -170,6 +172,8 @@ function parse(rows){
     const ex=o.lines.find(l=>l.sku===sku);
     if(ex)ex.qty+=qty;else o.lines.push({sku,qty,prod});
   }
+  out.sort((a,b)=>a.canal.localeCompare(b.canal,'ro',{sensitivity:'base'})||a.nr-b.nr);
+  out.forEach((o,i)=>o.nr=i+1);
   return out;
 }
 async function load(file){
@@ -209,10 +213,13 @@ function renderStats(){
   $('stats').classList.remove('hidden');
 }
 const EMPTY='<div class="empty">Încarcă exportul de comenzi ca să apară lista.</div>';
+const VCOLS=['Canal','Cod fiscal','Id comandă','Nr. crt','Nume client','Cod produs','Cantitate','Denumire produs','Telefon livrare','Nume companie','Nume delegat'];
+const verifRows=()=>orders.flatMap(o=>o.lines.map((l,k)=>({o,l,k})));
 function renderVerif(){
   if(!orders.length){$('vBody').innerHTML=EMPTY;$('vInfo').textContent='';return}
-  $('vInfo').textContent=orders.length+' comenzi, numerotate de la 1 la '+orders.length;
-  $('vBody').innerHTML=`<table class="stack"><thead><tr><th class="n">Nr.</th><th>Canal</th><th>Cod fiscal</th><th>Denumire</th><th>Telefon</th><th>Nume companie</th><th>Nume delegat</th><th>Produse</th><th>ID comandă</th></tr></thead><tbody>${orders.map(o=>`<tr><td class="nr">${o.nr}</td><td>${esc(o.canal)}</td><td>${esc(o.cf)}</td><td>${esc(o.client)}</td><td style="white-space:nowrap">${esc(o.tel)}</td><td>${esc(o.firma)}</td><td>${esc(o.deleg)}</td><td>${o.lines.length>1?`<span class="multi">${o.lines.length} produse</span>`:'1'}</td><td>${esc(o.id)}</td></tr>`).join('')}</tbody></table>`;
+  const multi=orders.filter(o=>o.lines.length>1).length;
+  $('vInfo').textContent=`${orders.length} comenzi, sortate după canal și numerotate de la 1 la ${orders.length}`+(multi?` · ${multi} cu mai multe produse (fundal galben)`:'');
+  $('vBody').innerHTML=`<div class="scroll"><table class="stack"><thead><tr>${VCOLS.map((h,i)=>`<th class="${i===3||i===6?'n':''}">${h}</th>`).join('')}</tr></thead><tbody>${verifRows().map(({o,l,k})=>`<tr class="${k===0&&o.nr>1?'grp':''}${o.lines.length>1?' mlt':''}"><td>${esc(o.canal)}</td><td>${esc(o.cf)}</td><td>${esc(o.id)}</td><td class="nr n">${o.nr}</td><td>${esc(o.client)}</td><td>${esc(l.sku)}</td><td class="n"><b>${l.qty}</b></td><td class="prod">${esc(l.prod)}</td><td style="white-space:nowrap">${esc(o.tel)}</td><td>${esc(o.firma)}</td><td>${esc(o.deleg)}</td></tr>`).join('')}</tbody></table></div>`;
 }
 function renderPick(){
   if(!orders.length){$('pBody').innerHTML=EMPTY;return}
@@ -251,7 +258,7 @@ async function act(fn,okText){try{await fn();say($('locMsg'),okText,'ok')}catch(
 
 /* ---------- exporturi ---------- */
 function sheet(aoa,w){const s=XLSX.utils.aoa_to_sheet(aoa);s['!cols']=w.map(x=>({wch:x}));return s}
-const verifAoa=()=>[['Nr.','Canal','Cod fiscal','Denumire','Telefon','Nume companie','Nume delegat','Nr. produse','ID comandă'],...orders.map(o=>[o.nr,o.canal,o.cf,o.client,o.tel,o.firma,o.deleg,o.lines.length,o.id])];
+const verifAoa=()=>[VCOLS,...verifRows().map(({o,l})=>[o.canal,o.cf,o.id,o.nr,o.client,l.sku,l.qty,l.prod,o.tel,o.firma,o.deleg])];
 const pickAoa=b=>[['Nr. comandă','SKU','Cantitate','Denumire','Rând','Alveolă'],...b.lines.map(l=>[l.nr,l.sku,l.qty,l.prod,l.loc?l.loc.c:'FĂRĂ',l.loc?l.loc.a:'LOCAȚIE'])];
 const xbuf=wb=>new Uint8Array(XLSX.write(wb,{bookType:'xlsx',type:'array'}));
 async function save(name,data){
@@ -259,7 +266,7 @@ async function save(name,data){
   try{await dl.save({filename:name,data})}catch(e){if(e.code!=='declined')say($('msg'),'Descărcarea nu a mers: '+(e.message||e.code),'err')}
 }
 const stamp=()=>new Date().toISOString().slice(0,10);
-function printDoc(title,body){return `<!DOCTYPE html><html lang="ro"><head><meta charset="utf-8"><title>${esc(title)}</title><style>body{font:12px Arial,sans-serif;margin:12mm}h2{font-size:16px;margin:0 0 6px}table{border-collapse:collapse;width:100%;margin-bottom:10px}th,td{border:1px solid #444;padding:4px 6px;text-align:left;vertical-align:top}th{background:#eee}.n{text-align:right}.b{font-weight:bold;font-size:14px}.pb{page-break-after:always}.pb:last-child{page-break-after:auto}@page{margin:10mm}</style></head><body>${body}<script>window.onload=()=>window.print()<\/script></body></html>`}
+function printDoc(title,body){return `<!DOCTYPE html><html lang="ro"><head><meta charset="utf-8"><title>${esc(title)}</title><style>body{font:12px Arial,sans-serif;margin:12mm}h2{font-size:16px;margin:0 0 6px}table{border-collapse:collapse;width:100%;margin-bottom:10px}th,td{border:1px solid #444;padding:4px 6px;text-align:left;vertical-align:top}th{background:#eee}.n{text-align:right}.b{font-weight:bold;font-size:14px}.pb{page-break-after:always}.pb:last-child{page-break-after:auto}@page{margin:10mm;size:landscape}</style></head><body>${body}<script>window.onload=()=>window.print()<\/script></body></html>`}
 function tbl(aoa,nums){return `<table><thead><tr>${aoa[0].map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${aoa.slice(1).map(r=>`<tr>${r.map((c,i)=>`<td class="${nums.includes(i)?'n b':''}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`}
 
 /* ---------- evenimente ---------- */
@@ -283,9 +290,9 @@ document.addEventListener('click',e=>{
   else if(b.classList.contains('edl')){const l=loc(sku);$('lSku').value=sku;$('lC').value=l?l.c:'';$('lA').value=l?l.a:'';$('lC').focus();window.scrollTo({top:$('locForm').offsetTop-20})}
   else if(b.classList.contains('dell'))act(()=>delLoc(sku),'Am șters locația adăugată pentru '+sku+(base.has(sku)?' (rămâne cea din fișierul inițial).':'.'));
 });
-$('dlV').onclick=()=>{if(!orders.length)return;const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheet(verifAoa(),[6,14,14,30,15,28,26,10,24]),'Verificare');save(`verificare_${stamp()}.xlsx`,xbuf(wb))};
+$('dlV').onclick=()=>{if(!orders.length)return;const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheet(verifAoa(),[14,14,24,7,28,12,9,60,16,26,24]),'Verificare');save(`verificare_${stamp()}.xlsx`,xbuf(wb))};
 $('dlP').onclick=()=>{if(!orders.length)return;const wb=XLSX.utils.book_new();for(const b of batches())XLSX.utils.book_append_sheet(wb,sheet(pickAoa(b),[12,12,10,70,8,9]),`${b.from}-${b.to}`);save(`picking_${stamp()}.xlsx`,xbuf(wb))};
-$('prV').onclick=()=>{if(!orders.length)return;save(`verificare_${stamp()}.html`,printDoc('Listă de verificare',`<h2>Listă de verificare · ${orders.length} comenzi · ${esc(fileName)}</h2>`+tbl(verifAoa(),[0])))};
+$('prV').onclick=()=>{if(!orders.length)return;save(`verificare_${stamp()}.html`,printDoc('Listă de verificare',`<h2>Listă de verificare · ${orders.length} comenzi · ${esc(fileName)}</h2>`+tbl(verifAoa(),[3,6])))};
 $('prP').onclick=()=>{if(!orders.length)return;save(`picking_${stamp()}.html`,printDoc('Picking',batches().map((b,i)=>`<div class="pb"><h2>Calup ${i+1} · comenzile ${b.from}–${b.to}</h2>${tbl(pickAoa(b),[0,2,4,5])}</div>`).join('')))};
 $('dlL').onclick=()=>{const all=new Map([...base].map(([s,l])=>[s,l]));for(const [s,l] of extra)all.set(s,l);const aoa=[['Cod','Culoar','Alveola'],...[...all].map(([s,l])=>[/^\d+$/.test(s)?Number(s):s,l.c,l.a])];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheet(aoa,[14,8,8]),'Locatii');save(`locatii_${stamp()}.xlsx`,xbuf(wb))};
 $('impBtn').onclick=()=>$('impFile').click();

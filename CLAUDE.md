@@ -1,7 +1,9 @@
 # Comenzi → verificare și picking (Quasar Comex)
 
-Aplicație într-o singură pagină (UI în română): încarci exportul de comenzi (.xlsx) și generează lista de verificare
-(Nr. generat, Canal, Cod fiscal, Denumire = numele clientului, Telefon, Nume companie, Nume delegat) și picking-ul pe calupuri de 20 de comenzi
+Aplicație într-o singură pagină (UI în română): încarci exportul de comenzi (.xlsx); comenzile se sortează alfabetic după canal
+și primesc Nr. crt 1, 2, 3… în această ordine (același număr pentru toate produsele unei comenzi). Lista de verificare are câte un rând pe produs,
+în ordinea cerută de utilizator: Canal, Cod fiscal, Id comandă, Nr. crt, Nume client, Cod produs, Cantitate, Denumire produs, Telefon livrare,
+Nume companie, Nume delegat. Picking-ul e pe calupuri de 20 de comenzi
 (Nr. comandă, SKU, Cantitate, Denumire produs, Rând, Alveolă). Exportul se citește doar în browser.
 
 ## Fișiere
