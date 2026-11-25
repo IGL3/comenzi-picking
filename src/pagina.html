@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Comenzi și picking</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* VOICE: practic, de depozit — clar, rapid, fără podoabe
+   IDEA: eticheta de raft și bonul de picking
+   PICTURE: zona de încărcare, apoi listele însele, cu locații ca etichete de raft
+   COLOUR and TYPE: galben de siguranță, negru, carton deschis; Barlow Condensed + Barlow
+   LAYOUT: bandă de titlu cu dunga de avertizare, încărcare, cifre, trei file */
+:root{color-scheme:light dark;--bg:light-dark(#f3efe6,#14130f);--ink:light-dark(#17160f,#f1eee4);--card:light-dark(#fffdf8,#1e1c16);--line:light-dark(#dcd5c4,#3a362b);--mut:light-dark(#655f52,#aaa492);--yel:#ffd21f;--red:light-dark(#b8241b,#ff8577);--ok:light-dark(#2f6b2a,#8fd283);--soft:light-dark(#f8f1d6,#2a2615)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Barlow,system-ui,sans-serif;overflow-x:clip}
+.hz{height:10px;background:repeating-linear-gradient(135deg,var(--yel) 0 14px,#17160f 14px 28px)}
+.band{padding:clamp(20px,3vw,40px) max(4vw,14px)}
+.wrap{max-width:1240px;margin:0 auto}
+h1{font:800 clamp(32px,5vw,48px)/1.05 "Barlow Condensed",sans-serif;margin:0 0 6px;text-wrap:balance}
+h2{font:800 26px/1.1 "Barlow Condensed",sans-serif;margin:0}
+.sub{color:var(--mut);margin:0 0 20px;max-width:70ch}
+.drop{border:2px dashed var(--line);border-radius:14px;background:var(--card);padding:28px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;transition:border-color .15s,background .15s}
+.drop.on{border-color:var(--ink);background:var(--soft)}
+.drop b{font:800 24px/1.1 "Barlow Condensed",sans-serif;display:block}
+.drop span{color:var(--mut)}
+button,.btn{font:600 16px Barlow,sans-serif;min-height:44px;padding:0 18px;border-radius:10px;border:2px solid var(--ink);background:var(--ink);color:var(--bg);cursor:pointer}
+button.ghost{background:transparent;color:var(--ink)}
+button.sm{min-height:36px;padding:0 12px;font-size:14px}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--yel);outline-offset:2px}
+button:disabled{opacity:.4;cursor:default}
+input,select{font:16px Barlow,sans-serif;min-height:44px;padding:0 12px;border:2px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
+.stats{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.st{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 16px}
+.st b{font:800 30px/1 "Barlow Condensed",sans-serif;display:block}
+.st small{color:var(--mut);font-size:14px}
+.st.warn b{color:var(--red)}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;border-bottom:2px solid var(--ink);margin-bottom:18px}
+.tabs button{border-radius:10px 10px 0 0;border:2px solid var(--ink);border-bottom:0;background:transparent;color:var(--ink);font:800 20px "Barlow Condensed",sans-serif}
+.tabs button[aria-selected=true]{background:var(--yel);color:#17160f}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.bar .grow{flex:1}
+table{width:100%;border-collapse:collapse;background:var(--card);font-size:15px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 14px Barlow,sans-serif;color:var(--mut);background:var(--bg);position:sticky;top:0}
+td.n,th.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+td.nr{font:800 20px/1 "Barlow Condensed",sans-serif;white-space:nowrap}
+.tag{display:inline-block;background:#17160f;color:var(--yel);font:800 17px/1 "Barlow Condensed",sans-serif;padding:5px 8px;border-radius:5px;white-space:nowrap}
+.miss{color:var(--red);font-weight:600;white-space:nowrap}
+.multi{display:inline-block;background:var(--yel);color:#17160f;font-size:13px;font-weight:600;border-radius:5px;padding:1px 7px;white-space:nowrap}
+tr.grp td{border-top:2px solid var(--ink)}
+.batch{margin-bottom:26px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.bh{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;padding:12px 14px;background:var(--soft);border-bottom:2px solid var(--ink)}
+.bh span{color:var(--mut)}
+.prod{max-width:46ch}
+.empty{padding:40px 20px;text-align:center;color:var(--mut);background:var(--card);border:1px dashed var(--line);border-radius:12px}
+.locform{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) auto;gap:10px;align-items:end;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+label{display:grid;gap:4px;font-size:14px;color:var(--mut)}
+.note{font-size:14px;color:var(--mut);margin:6px 0 0}
+.msg{min-height:22px;font-size:15px;margin:8px 0}
+.msg.err{color:var(--red)}.msg.ok{color:var(--ok)}
+.mrow input{width:84px;min-height:38px}
+.acct{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:15px;color:var(--mut);margin-top:6px}
+.hidden{display:none!important}
+.scroll{overflow-x:auto}
+@media(max-width:600px){.drop{grid-template-columns:1fr}.locform{grid-template-columns:1fr 1fr}.locform label:first-child{grid-column:1/-1}table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;white-space:normal;color:var(--mut)}.stack td:empty{display:none}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
+</head>
+<body>
+<div class="hz"></div>
+<header class="band"><div class="wrap">
+  <h1>Comenzi → verificare și picking</h1>
+  <p class="sub">Încarcă exportul de comenzi. Aplicația numerotează fiecare comandă, face lista de verificare și împarte picking-ul în calupuri, cu rândul și alveola fiecărui produs.</p>
+  <div class="drop" id="drop">
+    <div><b id="dropT">Trage aici exportul de comenzi (.xlsx)</b><span id="dropS">sau apasă butonul ca să alegi fișierul</span></div>
+    <div><input type="file" id="file" accept=".xlsx,.xls,.csv" class="hidden"><button id="pick">Alege fișierul</button></div>
+  </div>
+  <div class="msg" id="msg"></div>
+  <div class="acct hidden" id="acct"><span id="acctTxt"></span><button class="ghost sm hidden" id="acctBtn"></button></div>
+  <div class="stats hidden" id="stats"></div>
+</div></header>
+
+<main class="band" style="padding-top:0"><div class="wrap">
+  <div class="tabs" role="tablist">
+    <button role="tab" id="t-verif" aria-selected="true">Listă de verificare</button>
+    <button role="tab" id="t-pick" aria-selected="false">Picking pe calupuri</button>
+    <button role="tab" id="t-loc" aria-selected="false">Locații produse</button>
+  </div>
+
+  <section id="p-verif">
+    <div class="bar"><span class="grow" id="vInfo"></span>
+      <button class="ghost dl" id="dlV">Descarcă Excel</button>
+      <button class="ghost dl" id="prV">Pentru printare (.html)</button></div>
+    <div id="vBody"></div>
+  </section>
+
+  <section id="p-pick" class="hidden">
+    <div class="bar">
+      <label>Comenzi pe calup<input type="number" id="bsize" min="1" value="20" style="width:110px"></label>
+      <label>Ordonare în calup<select id="sort"><option value="nr">după nr. comandă</option><option value="loc">după rând și alveolă</option></select></label>
+      <span class="grow"></span>
+      <button class="ghost dl" id="dlP">Descarcă Excel</button>
+      <button class="ghost dl" id="prP">Pentru printare (.html)</button>
+    </div>
+    <div id="pBody"></div>
+  </section>
+
+  <section id="p-loc" class="hidden">
+    <form class="locform" id="locForm">
+      <label>SKU<input id="lSku" required autocomplete="off" inputmode="numeric"></label>
+      <label>Rând<input id="lC" required type="number" min="0"></label>
+      <label>Alveolă<input id="lA" required type="number" min="0"></label>
+      <button type="submit">Salvează</button>
+    </form>
+    <div class="msg" id="locMsg"></div>
+    <div id="missBox"></div>
+    <div class="bar">
+      <input id="lq" placeholder="Caută SKU…" class="grow" style="max-width:260px">
+      <span class="grow" id="locInfo"></span>
+      <button class="ghost sm" id="impBtn">Importă locații (.xlsx)</button>
+      <input type="file" id="impFile" accept=".xlsx,.xls,.csv" class="hidden">
+      <button class="ghost sm dl" id="dlL">Descarcă toate locațiile</button>
+    </div>
+    <div id="locBody"></div>
+    <p class="note" id="store"></p>
+  </section>
+</div></main>
+
+<script>
+{
+const BASE=__LOCATII__;
+/* Proiectul Firebase folosit doar pe GitHub Pages (aceeași configurație ca la „Activitățile mele”, date separate). */
+const FIREBASE_CONFIG={apiKey:"AIzaSyDQeBrb22f7KbiKa4dQb6wmiw45wgs9UMM",authDomain:"myactivity9.firebaseapp.com",projectId:"myactivity9",storageBucket:"myactivity9.firebasestorage.app",messagingSenderId:"140434832126",appId:"1:140434832126:web:d1f6e071f37edae0ff03af"};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm=s=>String(s??'').normalize('NFD').replace(/[̀-ͯ]/g,'').trim().toLowerCase();
+const clean=v=>v==null?'':String(v).trim();
+const base=new Map(BASE.map(r=>[r[0],{c:r[1],a:r[2]}]));
+let extra=new Map();   // locații adăugate/modificate (sku -> {c,a})
+let orders=[];         // [{nr,id,canal,cf,client,tel,firma,deleg,lines:[{sku,qty,prod}]}]
+let fileName='';
+let db=null,dl=null,useLocal=false;
+
+const loc=sku=>extra.get(sku)||base.get(sku)||null;
+const tag=l=>l?`<span class="tag">R ${esc(l.c)} · A ${esc(l.a)}</span>`:'<span class="miss">fără locație</span>';
+const docId=s=>{let d=s.replace(/[^A-Za-z0-9_\-.~:@+]/g,'_');return d==='.'||d==='..'?'_'+d:d};
+const say=(el,t,k)=>{el.textContent=t;el.className='msg'+(k?' '+k:'')};
+
+/* ---------- citire export ---------- */
+function readBook(file){return file.arrayBuffer().then(b=>{const wb=XLSX.read(b,{type:'array'});return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:false,defval:''})})}
+function parse(rows){
+  const h=(rows[0]||[]).map(norm);
+  const at=(n,o=0)=>{let k=-1;for(let i=0;i<h.length;i++)if(h[i]===n&&++k===o)return i;return -1};
+  const C={id:at('id comanda'),canal:at('canal'),prod:at('nume',0),sku:at('sku'),qty:at('cantitate'),client:at('nume',1),firma:at('nume companie'),cf:at('cod fiscal'),deleg:at('nume',2),tel:at('telefon')};
+  const lipsa=['id','sku','qty'].filter(k=>C[k]<0);
+  if(lipsa.length)throw new Error('Nu găsesc coloanele: '+lipsa.map(k=>({id:'ID comandă',sku:'SKU',qty:'Cantitate'}[k])).join(', '));
+  const g=(r,k)=>C[k]<0?'':clean(r[C[k]]);
+  const map=new Map(),out=[];
+  for(const r of rows.slice(1)){
+    const id=g(r,'id');if(!id)continue;
+    let o=map.get(id);
+    if(!o){o={nr:out.length+1,id,canal:g(r,'canal'),cf:g(r,'cf'),client:g(r,'client'),tel:g(r,'tel'),firma:g(r,'firma'),deleg:g(r,'deleg'),lines:[]};map.set(id,o);out.push(o)}
+    for(const k of ['cf','tel','firma','deleg','client'])if(!o[k])o[k]=g(r,k);
+    const sku=g(r,'sku'),qty=Number(String(g(r,'qty')).replace(',','.'))||0,prod=g(r,'prod');
+    const ex=o.lines.find(l=>l.sku===sku);
+    if(ex)ex.qty+=qty;else o.lines.push({sku,qty,prod});
+  }
+  return out;
+}
+async function load(file){
+  try{
+    const rows=await readBook(file);
+    orders=parse(rows);fileName=file.name.replace(/\.[^.]+$/,'');
+    if(!orders.length)throw new Error('Fișierul nu conține comenzi.');
+    $('dropT').textContent=file.name;$('dropS').textContent='Încarcă alt fișier oricând — listele se refac.';
+    say($('msg'),'','');renderAll();
+  }catch(e){say($('msg'),'Nu am putut citi fișierul: '+e.message,'err')}
+}
+
+/* ---------- calcule ---------- */
+const bsize=()=>Math.max(1,parseInt($('bsize').value)||20);
+function batches(){
+  const n=bsize(),out=[];
+  for(let i=0;i<orders.length;i+=n){
+    const os=orders.slice(i,i+n);
+    let lines=os.flatMap(o=>o.lines.map(l=>({...l,nr:o.nr,loc:loc(l.sku)})));
+    if($('sort').value==='loc')lines.sort((a,b)=>(a.loc?0:1)-(b.loc?0:1)||(a.loc&&b.loc?(a.loc.c-b.loc.c)||(a.loc.a-b.loc.a):0)||a.nr-b.nr);
+    out.push({from:os[0].nr,to:os[os.length-1].nr,lines});
+  }
+  return out;
+}
+function missing(){
+  const m=new Map();
+  for(const o of orders)for(const l of o.lines)if(!loc(l.sku)){const x=m.get(l.sku)||{sku:l.sku,prod:l.prod,n:0};x.n++;m.set(l.sku,x)}
+  return [...m.values()];
+}
+
+/* ---------- afișare ---------- */
+function renderStats(){
+  if(!orders.length){$('stats').classList.add('hidden');return}
+  const lines=orders.reduce((s,o)=>s+o.lines.length,0),multi=orders.filter(o=>o.lines.length>1).length,miss=missing().length;
+  const st=[[orders.length,'comenzi'],[lines,'linii de produs'],[multi,'comenzi cu mai multe produse'],[Math.ceil(orders.length/bsize()),'calupuri de '+bsize()],[miss,'SKU fără locație',miss?'warn':'']];
+  $('stats').innerHTML=st.map(s=>`<div class="st ${s[2]||''}"><b>${s[0]}</b><small>${s[1]}</small></div>`).join('');
+  $('stats').classList.remove('hidden');
+}
+const EMPTY='<div class="empty">Încarcă exportul de comenzi ca să apară lista.</div>';
+function renderVerif(){
+  if(!orders.length){$('vBody').innerHTML=EMPTY;$('vInfo').textContent='';return}
+  $('vInfo').textContent=orders.length+' comenzi, numerotate de la 1 la '+orders.length;
+  $('vBody').innerHTML=`<table class="stack"><thead><tr><th class="n">Nr.</th><th>Canal</th><th>Cod fiscal</th><th>Denumire</th><th>Telefon</th><th>Nume companie</th><th>Nume delegat</th><th>Produse</th><th>ID comandă</th></tr></thead><tbody>${orders.map(o=>`<tr><td class="nr">${o.nr}</td><td>${esc(o.canal)}</td><td>${esc(o.cf)}</td><td>${esc(o.client)}</td><td style="white-space:nowrap">${esc(o.tel)}</td><td>${esc(o.firma)}</td><td>${esc(o.deleg)}</td><td>${o.lines.length>1?`<span class="multi">${o.lines.length} produse</span>`:'1'}</td><td>${esc(o.id)}</td></tr>`).join('')}</tbody></table>`;
+}
+function renderPick(){
+  if(!orders.length){$('pBody').innerHTML=EMPTY;return}
+  $('pBody').innerHTML=batches().map((b,i)=>{
+    const buc=b.lines.reduce((s,l)=>s+l.qty,0);let prev=null;
+    return `<div class="batch"><div class="bh"><h2>Calup ${i+1}</h2><span>comenzile ${b.from}–${b.to} · ${b.lines.length} linii · ${buc} bucăți</span></div><div class="scroll"><table class="stack"><thead><tr><th class="n">Nr. comandă</th><th>SKU</th><th class="n">Cantitate</th><th>Denumire</th><th>Rând</th><th>Alveolă</th></tr></thead><tbody>${b.lines.map(l=>{const g=$('sort').value==='nr'&&prev!==null&&prev!==l.nr;prev=l.nr;return `<tr class="${g?'grp':''}"><td class="nr">${l.nr}</td><td>${esc(l.sku)}</td><td class="n"><b>${l.qty}</b></td><td class="prod">${esc(l.prod)}</td>${l.loc?`<td><span class="tag">R ${esc(l.loc.c)}</span></td><td><span class="tag">A ${esc(l.loc.a)}</span></td>`:`<td colspan="2"><span class="miss">fără locație</span> <button class="ghost sm addl" data-sku="${esc(l.sku)}">Adaugă</button></td>`}</tr>`}).join('')}</tbody></table></div></div>`;
+  }).join('');
+}
+function renderMiss(){
+  const m=missing();
+  if(!m.length){$('missBox').innerHTML=orders.length?'<p class="msg ok">Toate produsele din comenzile încărcate au locație.</p>':'';return}
+  $('missBox').innerHTML=`<div class="batch"><div class="bh"><h2>Fără locație în comenzile de azi</h2><span>${m.length} SKU — completează rândul și alveola și apasă Salvează</span></div><table class="stack"><thead><tr><th>SKU</th><th>Denumire</th><th>Rând</th><th>Alveolă</th><th></th></tr></thead><tbody>${m.map(x=>`<tr class="mrow"><td><b>${esc(x.sku)}</b></td><td class="prod">${esc(x.prod)}</td><td><input type="number" min="0" aria-label="Rând"></td><td><input type="number" min="0" aria-label="Alveolă"></td><td><button class="sm savem" data-sku="${esc(x.sku)}">Salvează</button></td></tr>`).join('')}</tbody></table></div>`;
+}
+function renderLoc(){
+  const q=$('lq').value.trim();
+  const added=[...extra.entries()].map(([s,l])=>({s,...l,added:true}));
+  let list;
+  if(q){const all=new Map([...base].map(([s,l])=>[s,{s,...l,added:false}]));for(const a of added)all.set(a.s,a);list=[...all.values()].filter(x=>x.s.includes(q)).slice(0,200)}
+  else list=added.sort((a,b)=>(b.t||0)-(a.t||0));
+  $('locInfo').textContent=`${base.size} locații din fișierul inițial · ${extra.size} adăugate sau modificate`;
+  $('locBody').innerHTML=list.length?`<table class="stack"><thead><tr><th>SKU</th><th>Locație</th><th>Sursă</th><th></th></tr></thead><tbody>${list.map(x=>`<tr><td><b>${esc(x.s)}</b></td><td>${tag(x)}</td><td>${x.added?(base.has(x.s)?'modificată de tine':'adăugată de tine'):'fișierul inițial'}</td><td style="white-space:nowrap"><button class="ghost sm edl" data-sku="${esc(x.s)}">Modifică</button>${x.added?` <button class="ghost sm dell" data-sku="${esc(x.s)}">Șterge</button>`:''}</td></tr>`).join('')}</tbody></table>`:`<div class="empty">${q?'Niciun SKU găsit.':'Încă nu ai adăugat locații. Cele noi apar aici.'}</div>`;
+}
+function renderAll(){renderStats();renderVerif();renderPick();renderMiss();renderLoc()}
+
+/* ---------- salvare locații ---------- */
+function saveLocal(){try{localStorage.setItem('locatii_extra',JSON.stringify([...extra]))}catch(e){}}
+async function putLoc(sku,c,a){
+  sku=clean(sku);if(!sku)throw new Error('SKU lipsă');
+  const v={c:Number(c),a:Number(a),t:Date.now()};
+  if(!Number.isFinite(v.c)||!Number.isFinite(v.a))throw new Error('Rândul și alveola trebuie să fie numere');
+  extra.set(sku,v);
+  if(db)await db.collection('locatii').doc(docId(sku)).set({sku,...v});else saveLocal();
+}
+async function delLoc(sku){extra.delete(sku);if(db)await db.collection('locatii').doc(docId(sku)).delete();else saveLocal()}
+async function act(fn,okText){try{await fn();say($('locMsg'),okText,'ok')}catch(e){say($('locMsg'),'Nu s-a salvat: '+(e.message||e.code||e),'err')}renderAll()}
+
+/* ---------- exporturi ---------- */
+function sheet(aoa,w){const s=XLSX.utils.aoa_to_sheet(aoa);s['!cols']=w.map(x=>({wch:x}));return s}
+const verifAoa=()=>[['Nr.','Canal','Cod fiscal','Denumire','Telefon','Nume companie','Nume delegat','Nr. produse','ID comandă'],...orders.map(o=>[o.nr,o.canal,o.cf,o.client,o.tel,o.firma,o.deleg,o.lines.length,o.id])];
+const pickAoa=b=>[['Nr. comandă','SKU','Cantitate','Denumire','Rând','Alveolă'],...b.lines.map(l=>[l.nr,l.sku,l.qty,l.prod,l.loc?l.loc.c:'FĂRĂ',l.loc?l.loc.a:'LOCAȚIE'])];
+const xbuf=wb=>new Uint8Array(XLSX.write(wb,{bookType:'xlsx',type:'array'}));
+async function save(name,data){
+  if(!dl){const u=URL.createObjectURL(new Blob([data])),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);return}
+  try{await dl.save({filename:name,data})}catch(e){if(e.code!=='declined')say($('msg'),'Descărcarea nu a mers: '+(e.message||e.code),'err')}
+}
+const stamp=()=>new Date().toISOString().slice(0,10);
+function printDoc(title,body){return `<!DOCTYPE html><html lang="ro"><head><meta charset="utf-8"><title>${esc(title)}</title><style>body{font:12px Arial,sans-serif;margin:12mm}h2{font-size:16px;margin:0 0 6px}table{border-collapse:collapse;width:100%;margin-bottom:10px}th,td{border:1px solid #444;padding:4px 6px;text-align:left;vertical-align:top}th{background:#eee}.n{text-align:right}.b{font-weight:bold;font-size:14px}.pb{page-break-after:always}.pb:last-child{page-break-after:auto}@page{margin:10mm}</style></head><body>${body}<script>window.onload=()=>window.print()<\/script></body></html>`}
+function tbl(aoa,nums){return `<table><thead><tr>${aoa[0].map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${aoa.slice(1).map(r=>`<tr>${r.map((c,i)=>`<td class="${nums.includes(i)?'n b':''}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`}
+
+/* ---------- evenimente ---------- */
+const drop=$('drop');
+$('pick').onclick=()=>$('file').click();
+$('file').onchange=e=>{if(e.target.files[0])load(e.target.files[0]);e.target.value=''};
+['dragenter','dragover'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.add('on')}));
+['dragleave','drop'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.remove('on')}));
+drop.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f)load(f)});
+const tabs=['verif','pick','loc'];
+function show(t){for(const x of tabs){$('t-'+x).setAttribute('aria-selected',x===t);$('p-'+x).classList.toggle('hidden',x!==t)}}
+for(const x of tabs)$('t-'+x).onclick=()=>show(x);
+$('bsize').oninput=()=>{renderStats();renderPick()};
+$('sort').onchange=renderPick;
+$('lq').oninput=renderLoc;
+$('locForm').onsubmit=e=>{e.preventDefault();const s=$('lSku').value;act(()=>putLoc(s,$('lC').value,$('lA').value),'Locație salvată pentru '+clean(s)+'.');$('lSku').value=$('lC').value=$('lA').value='';$('lSku').focus()};
+document.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;const sku=b.dataset.sku;
+  if(b.classList.contains('addl')){show('loc');$('lSku').value=sku;$('lC').focus()}
+  else if(b.classList.contains('savem')){const ins=b.closest('tr').querySelectorAll('input');if(ins[0].value===''||ins[1].value===''){say($('locMsg'),'Completează rândul și alveola pentru '+sku+'.','err');return}act(()=>putLoc(sku,ins[0].value,ins[1].value),'Locație salvată pentru '+sku+'.')}
+  else if(b.classList.contains('edl')){const l=loc(sku);$('lSku').value=sku;$('lC').value=l?l.c:'';$('lA').value=l?l.a:'';$('lC').focus();window.scrollTo({top:$('locForm').offsetTop-20})}
+  else if(b.classList.contains('dell'))act(()=>delLoc(sku),'Am șters locația adăugată pentru '+sku+(base.has(sku)?' (rămâne cea din fișierul inițial).':'.'));
+});
+$('dlV').onclick=()=>{if(!orders.length)return;const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheet(verifAoa(),[6,14,14,30,15,28,26,10,24]),'Verificare');save(`verificare_${stamp()}.xlsx`,xbuf(wb))};
+$('dlP').onclick=()=>{if(!orders.length)return;const wb=XLSX.utils.book_new();for(const b of batches())XLSX.utils.book_append_sheet(wb,sheet(pickAoa(b),[12,12,10,70,8,9]),`${b.from}-${b.to}`);save(`picking_${stamp()}.xlsx`,xbuf(wb))};
+$('prV').onclick=()=>{if(!orders.length)return;save(`verificare_${stamp()}.html`,printDoc('Listă de verificare',`<h2>Listă de verificare · ${orders.length} comenzi · ${esc(fileName)}</h2>`+tbl(verifAoa(),[0])))};
+$('prP').onclick=()=>{if(!orders.length)return;save(`picking_${stamp()}.html`,printDoc('Picking',batches().map((b,i)=>`<div class="pb"><h2>Calup ${i+1} · comenzile ${b.from}–${b.to}</h2>${tbl(pickAoa(b),[0,2,4,5])}</div>`).join('')))};
+$('dlL').onclick=()=>{const all=new Map([...base].map(([s,l])=>[s,l]));for(const [s,l] of extra)all.set(s,l);const aoa=[['Cod','Culoar','Alveola'],...[...all].map(([s,l])=>[/^\d+$/.test(s)?Number(s):s,l.c,l.a])];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheet(aoa,[14,8,8]),'Locatii');save(`locatii_${stamp()}.xlsx`,xbuf(wb))};
+$('impBtn').onclick=()=>$('impFile').click();
+$('impFile').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{
+    const rows=await readBook(f),h=(rows[0]||[]).map(norm);
+    const ci=h.findIndex(x=>x==='cod'||x==='sku'),cc=h.findIndex(x=>x==='culoar'||x==='rand'),ca=h.findIndex(x=>x==='alveola');
+    if(ci<0||cc<0||ca<0)throw new Error('trebuie coloanele Cod (sau SKU), Culoar (sau Rând) și Alveola');
+    const ch=rows.slice(1).map(r=>[clean(r[ci]),Number(r[cc]),Number(r[ca])]).filter(r=>r[0]&&Number.isFinite(r[1])&&Number.isFinite(r[2])).filter(r=>{const l=loc(r[0]);return !l||l.c!==r[1]||l.a!==r[2]});
+    if(!ch.length){say($('locMsg'),'Fișierul nu aduce nicio locație nouă sau schimbată.','ok');return}
+    say($('locMsg'),`Salvez ${ch.length} locații…`,'');
+    for(const r of ch)await putLoc(r[0],r[1],r[2]);
+    say($('locMsg'),`Am importat ${ch.length} locații noi sau schimbate.`,'ok');
+  }catch(err){say($('locMsg'),'Importul nu a mers: '+(err.message||err.code),'err')}
+  renderAll();
+};
+
+/* ---------- pornire ---------- */
+renderAll();
+const COLS={claude:'locatii'};let COL='locatii';
+const setStore=t=>{$('store').textContent=t;$('acctTxt').textContent=t};
+function useLocalStore(t){db=null;useLocal=true;try{extra=new Map(JSON.parse(localStorage.getItem('locatii_extra')||'[]'))}catch(e){}setStore(t);renderAll()}
+function listen(okText){
+  setStore('Se încarcă locațiile salvate…');
+  const timer=setTimeout(()=>setStore('Locațiile salvate nu au putut fi încărcate încă.'),10000);
+  let first=true;
+  db.collection(COL).onSnapshot(s=>{
+    const m=new Map();for(const d of s.docs){const x=d.data();if(x&&x.sku)m.set(String(x.sku),{c:x.c,a:x.a,t:x.t})}
+    extra=m;
+    if(!s.metadata.fromCache){clearTimeout(timer);setStore(okText);
+      if(first){first=false;let loc0=[];try{loc0=JSON.parse(localStorage.getItem('locatii_extra')||'[]')}catch(e){}
+        const up=loc0.filter(([k])=>!m.has(k));
+        (async()=>{for(const [k,v] of up){try{await putLoc(k,v.c,v.a)}catch(e){}}if(up.length){try{localStorage.removeItem('locatii_extra')}catch(e){}renderAll()}})();}}
+    renderAll();
+  },err=>{clearTimeout(timer);useLocalStore('Nu pot ajunge la locațiile salvate ('+(err.code||err.message)+'). Ce adaugi acum se păstrează doar în acest browser.')});
+}
+/* --- în Claude: db + downloads ale paginii --- */
+if(window.claude){
+  (async()=>{try{dl=await claude.use('downloads')}catch(e){dl=null}})();
+  (async()=>{
+    try{db=await claude.use('db')}catch(e){db=null}
+    if(!db)return useLocalStore('Locațiile adăugate se păstrează în acest browser.');
+    listen('Locațiile adăugate se salvează în aplicație și apar pe orice calculator de pe care o deschizi.');
+  })();
+}
+/* --- pe GitHub Pages: Firebase (logare Google), separat în data/users/<uid>/picking/locatii --- */
+else if(/github\.io$/.test(location.hostname)&&FIREBASE_CONFIG){
+  const V='10.12.2',ld=src=>new Promise((ok,bad)=>{const t=document.createElement('script');t.src=src;t.onload=ok;t.onerror=bad;document.head.appendChild(t)});
+  $('acct').classList.remove('hidden');
+  useLocalStore('Se pornește sincronizarea…');
+  (async()=>{
+    try{await ld(`https://www.gstatic.com/firebasejs/${V}/firebase-app-compat.js`);await Promise.all([ld(`https://www.gstatic.com/firebasejs/${V}/firebase-auth-compat.js`),ld(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore-compat.js`)])}
+    catch(e){return useLocalStore('Nu am putut încărca sincronizarea. Locațiile adăugate se păstrează în acest browser.')}
+    const app=firebase.apps.find(a=>a.name==='picking')||firebase.initializeApp(FIREBASE_CONFIG,'picking');
+    const auth=app.auth(),fs=app.firestore();
+    auth.onAuthStateChanged(u=>{
+      const b=$('acctBtn');
+      if(u){COL=`data/users/${u.uid}/picking/locatii`;db=fs;useLocal=false;b.textContent='Ieșire';b.onclick=()=>auth.signOut();
+        listen('Sincronizat ca '+(u.email||'')+' — locațiile adăugate apar pe orice calculator.');}
+      else{b.textContent='Conectează-te cu Google';b.onclick=async()=>{const p=new firebase.auth.GoogleAuthProvider();try{await auth.signInWithPopup(p)}catch(e){if(e&&(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'))auth.signInWithRedirect(p);else if(e&&e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request')setStore('Conectarea nu a mers ('+(e.code||'eroare')+').')}};
+        useLocalStore('Nu ești conectat: locațiile adăugate stau doar în acest browser. Conectează-te ca să le sincronizezi.')}
+      b.classList.remove('hidden');
+    });
+  })();
+}
+else useLocalStore('Locațiile adăugate se păstrează în acest browser.');
+}
+</script>
+</body>
+</html>
