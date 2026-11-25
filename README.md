@@ -8,4 +8,4 @@ Aplicație în browser pentru Quasar Comex: încarci exportul de comenzi (.xlsx)
 
 Exportul de comenzi se citește doar în browser, nu se trimite nicăieri.
 
-Sincronizare între calculatoare: completează `window.FB_CONFIG` din `index.html` cu datele proiectului Firebase. Locațiile se salvează în colecția `locatii_picking`.
+Lucru în echipă: unul încarcă exportul, toți văd aceeași listă și bifează în timp real ce au verificat și cules. Pe GitHub Pages datele comune stau în Firebase (configurația în `src/firebase.json`), sub un cod de echipă care nu e scris în repo.
