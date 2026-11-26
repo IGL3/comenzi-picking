@@ -30,6 +30,16 @@ vechiul doc `meta`/`p0..` e mutat automat pe ziua lui), `bife/<listId>` {v:{nr:{
 `zi/faraloc` {items:{<sku>:{p,d}|null}, bf} = SKU-urile fără locație văzute în toate listele (completat la încărcare; `bf` = căutarea o singură dată prin zilele vechi);
 secțiunea Locații arată „Fără locație în toate listele” (cu ziua listei), iar meniul arată totalul; cardul din Dashboard rămâne pe ziua aleasă.
 
+## Retururi
+Secțiunea „Retururi” (cheie de acces `ret`) e centralizatorul de retururi, cu capul de tabel din centralizator_retururi.xlsx:
+PLATFORMA, DATA COM, DATA RETUR, NR DE COMANDA, CLIENT, MOTIVUL, STATUSUL COM, OBSERVATII (+ Modifică/Șterge). Formular de adăugare/modificare
+(platforma din listă, date cu calendar, motivul cu sugestii din cele folosite, „S-a întors azi” pune data de azi în STATUSUL COM; gol = „în așteptare”),
+căutare, filtru pe platformă și status, „Importă din Excel” (caută foaia cu capul de tabel; rândurile identice se sar doar câte există deja) și
+„Descarcă Excel” (aceleași coloane, datele ca date Excel dd.mm.yyyy). Platformele se normalizează (eMAG RO/BG/HU, Trendyol RO/BG/GR, Fashion Days RO/BG,
+Altex, Pepita HU, Skroutz); datele scrise greșit în centralizator rămân text și apar roșu punctat. Ordinea: cele introduse ultimele sus.
+Date: `zi/ret_<an>` {tip:'retururi', items:{<id>:{p,dc,dr,nr,c,m,s,o,k,t,n}|null}} (în colecția `zi`, ca să meargă cu regulile Firestore existente),
+citite cu where('tip','=='). Datele clienților nu se pun în repo (e public): centralizatorul se importă din aplicație.
+
 ## VIES (TVA pentru firme din alte țări)
 Țara se deduce din canal: PepitaHU/eMAG HU → HU, eMAG BG/Trendyol BG/Fashion Days BG → BG, Trendyol GR/Skroutz → EL (codul VIES al Greciei);
 restul (România) nu se verifică. Codul fiscal se curăță (fără prefix de țară; la HU primele 8 cifre din formatul 12345678-2-25) și se verifică
@@ -47,7 +57,7 @@ Browserul întreabă întâi proxy-ul Apps Script din `src/vies.json` {"proxy":"
 - Pagina Claude: https://claude.ai/artifact/6BER2wjVDKSPE3H1NgV4kk (capabilități `db` + `downloads`; colecțiile de mai sus la rădăcina db).
 - GitHub Pages: https://igl3.github.io/comenzi-picking/ — fără `window.claude`; logare Firebase Auth cu email și parolă (cont nou cere numele,
   care devine displayName și apare la bife; emailul trebuie confirmat; sesiunea rămâne salvată în browser, iar fereastra de logare apare doar dacă nu ești conectat). Acces doar pentru emailurile din doc `echipa/membri` {emails:[], admini:[]};
-  primul cont confirmat poate crea echipa („Sunt administratorul: creează echipa”). Administratorii văd în „Setări” partea „Echipă” (bife de acces pe secțiuni pentru fiecare cont: Listă de verificare, Picking, Facturare, Ambalare, Locații; salvate în `echipa/membri.acces[<email cu „.” înlocuit de „,”>]` = listă de chei verif/pick/fact/amb/loc; fără listă = acces la toate; Dashboard și Setări le văd toți, administratorii văd tot; e o restricție de interfață, nu de bază de date; adaugă/scot emailuri,
+  primul cont confirmat poate crea echipa („Sunt administratorul: creează echipa”). Administratorii văd în „Setări” partea „Echipă” (bife de acces pe secțiuni pentru fiecare cont: Listă de verificare, Picking, Facturare, Ambalare, Locații, Retururi; salvate în `echipa/membri.acces[<email cu „.” înlocuit de „,”>]` = listă de chei verif/pick/fact/amb/loc/ret; fără listă = acces la toate; Dashboard și Setări le văd toți, administratorii văd tot; e o restricție de interfață, nu de bază de date; adaugă/scot emailuri,
   rol de administrator, mutarea datelor vechi de pe `teams/<cod>` din localStorage). Datele: `firma/quasar/<zi|bife|locatii>/<doc>`.
   Regulile Firestore sunt în `firebase/firestore.rules` (se copiază în consola Firebase → Firestore → Rules).
 

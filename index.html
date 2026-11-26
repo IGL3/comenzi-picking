@@ -135,6 +135,13 @@ td.q.lock{cursor:default}
 .mlogo{display:block;flex:none}.mlogo .logo-wrap{width:44px;height:44px}
 /* meniul e mereu închis (#1A1C21), deci logo-ul e bej pe orice temă a browserului */
 .pc-tel{font-size:15px;font-weight:600;color:#4a4a52;margin:2px 0 6px;font-variant-numeric:tabular-nums}.a-tel{font-size:13px;color:#5a5a62;white-space:nowrap;margin-top:2px;font-variant-numeric:tabular-nums}
+.retform{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 12px;align-items:end;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px}
+.retform label{font-size:12px;font-weight:700;letter-spacing:.03em}.retform .w2{grid-column:span 2}
+.retform .rst{display:flex;gap:6px}.retform .rst input{flex:1;min-width:0}.retform .rbtn{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
+.retform .bad{outline:2px solid #c0261c}.rwait{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:#f3dfb8;color:#6b4a00;white-space:nowrap}
+#rBody td{vertical-align:top}#rBody th,#rBody td{padding-inline:8px}#rBody td:nth-child(8){min-width:140px}#rBody td.rbad{color:#c0261c;text-decoration:underline dotted;cursor:help}#rBody .rnr{white-space:nowrap;font-variant-numeric:tabular-nums}#rBody tr.redit{outline:2px solid #00D8F2;outline-offset:-2px}
+@media(max-width:860px){.retform{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.retform{grid-template-columns:1fr}.retform .w2{grid-column:auto}}
 .ptitle{font:800 30px/1.1 "Barlow Condensed",sans-serif;margin:0 0 14px}
 .mbar,.mback{display:none}
 @media(max-width:860px){
@@ -204,7 +211,7 @@ tr.short .ck input{accent-color:#c0261c}
   --bg:#1A1C21;--ink:#ECE6DA;--card:#ECE6DA;--line:#33363d;--mut:#9a968d;--soft:#22252b;--yel:#00D8F2;--red:#ff6b5e;--ok:#3ec27a}
 body{background:var(--main)}
 /* suprafețele deschise (30%) — în interiorul lor textul e închis */
-.drop,.kpi:not(.main),.batch,.team,.locform,.empty,.cal,.flow,.acard,table,.st,#vBody,#fBody,#aBody,#locBody,#memBody{
+.drop,.kpi:not(.main),.batch,.team,.locform,.retform,.empty,.cal,.flow,.acard,table,.st,#vBody,#fBody,#aBody,#locBody,#rBody,#memBody{
   --ink:#1A1C21;--mut:#615d55;--line:#d4ccbd;--bg:#E2DACB;--soft:#E2DACB;--card:#ECE6DA;--red:#c0261c;color:#1A1C21;color-scheme:light}
 input,select{color-scheme:light}
 table{background:#ECE6DA}th{background:#E2DACB!important;color:#615d55}
@@ -273,6 +280,7 @@ tr.short td{background:#f4d9d4!important}
   <button role="tab" id="t-fact" aria-selected="false">Facturare<span class="cnt" id="c-fact"></span></button>
   <button role="tab" id="t-amb" aria-selected="false">Ambalare<span class="cnt" id="c-amb"></span></button>
   <button role="tab" id="t-loc" aria-selected="false">Locații produse<span class="cnt" id="c-loc"></span></button>
+  <button role="tab" id="t-ret" aria-selected="false">Retururi<span class="cnt" id="c-ret"></span></button>
   <button role="tab" id="t-setari" aria-selected="false">Setări<span class="cnt" id="c-setari"></span></button>
   <div class="foot" id="sideFoot"></div>
 </aside>
@@ -383,6 +391,32 @@ tr.short td{background:#f4d9d4!important}
       <button class="ghost sm dl" id="dlL">Descarcă toate locațiile</button>
     </div>
     <div id="locBody"></div>
+  </section>
+
+  <section id="p-ret" class="hidden">
+    <h2 class="ptitle">Retururi</h2>
+    <form class="retform" id="retForm" novalidate>
+      <label>PLATFORMA<select id="rP" required></select></label>
+      <label>DATA COM<input id="rDc" type="date"></label>
+      <label>DATA RETUR<input id="rDr" type="date" required></label>
+      <label>NR DE COMANDA<input id="rNr" required autocomplete="off"></label>
+      <label class="w2">CLIENT<input id="rC" autocomplete="off"></label>
+      <label class="w2">MOTIVUL<input id="rM" list="rMl" autocomplete="off" placeholder="scrie sau alege"><datalist id="rMl"></datalist></label>
+      <label class="w2">STATUSUL COM<span class="rst"><input id="rS" autocomplete="off" placeholder="gol = în așteptare"><button type="button" class="ghost sm" id="rSToday">S-a întors azi</button></span></label>
+      <label class="w2">OBSERVATII<input id="rO" autocomplete="off"></label>
+      <div class="rbtn"><button type="submit" id="rSave">Adaugă returul</button><button type="button" class="ghost hidden" id="rCancel">Renunță</button></div>
+    </form>
+    <div class="msg" id="retMsg"></div>
+    <div class="bar">
+      <input id="rq" placeholder="Caută nr. comandă, client, motiv…" class="grow" style="max-width:300px">
+      <select id="rfP" aria-label="Platforma"></select>
+      <select id="rfS" aria-label="Status"><option value="">Toate</option><option value="w">În așteptare (fără status)</option><option value="b">Cu status completat</option></select>
+      <span class="grow" id="retInfo"></span>
+      <button class="ghost sm" id="rImpBtn">Importă din Excel</button>
+      <input type="file" id="rImpFile" accept=".xlsx,.xls" class="hidden">
+      <button class="ghost sm dl" id="rDl">Descarcă Excel</button>
+    </div>
+    <div id="rBody"></div>
   </section>
 </div></main>
 </div></div>
@@ -839,6 +873,133 @@ async function putLoc(sku,c,a){
 async function delLoc(sku){extra.delete(sku);if(store)await store.col('locatii').doc(docId(sku)).delete();else saveLocal()}
 async function act(fn,okText){try{await fn();say($('locMsg'),okText,'ok')}catch(e){say($('locMsg'),'Nu s-a salvat: '+(e.message||e.code||e),'err')}renderAll()}
 
+/* ---------- retururi ---------- */
+// date: zi/ret_<an> {tip:'retururi', items:{id:{p,dc,dr,nr,c,m,s,o,k,t,n}|null}} — în colecția `zi`, ca să meargă cu regulile existente
+const RCOLS=['PLATFORMA','DATA COM','DATA RETUR','NR DE COMANDA','CLIENT','MOTIVUL','STATUSUL COM','OBSERVATII'];
+const PLAT=['eMAG RO','eMAG BG','eMAG HU','Trendyol RO','Trendyol BG','Trendyol GR','Fashion Days RO','Fashion Days BG','Altex','Pepita HU','Skroutz'];
+let rets={},retEdit=null;
+const nbs=v=>clean(v).replace(/[\s ]+/g,' ').trim();
+function normPlat(v){
+  const raw=nbs(v),s=raw.toLowerCase().replace(/[._\-]/g,' ').replace(/\s+/g,' ').trim();if(!s)return '';
+  const cc=(/\b(ro|bg|hu|gr)\b/.exec(s)||[])[1];
+  if(s.includes('emag'))return 'eMAG '+(cc||'ro').toUpperCase();
+  if(/^tren/.test(s))return 'Trendyol '+(cc||'ro').toUpperCase();
+  const fd=/^fd ?(ro|bg)$/.exec(s);if(fd)return 'Fashion Days '+fd[1].toUpperCase();
+  if(s.includes('fashion'))return 'Fashion Days '+(cc||'ro').toUpperCase();
+  if(/^pe ?hu$/.test(s)||s.includes('pepita'))return 'Pepita HU';
+  if(s.includes('altex'))return 'Altex';
+  if(s.includes('skroutz'))return 'Skroutz';
+  return raw;
+}
+const isoOk=(y,m,d)=>{const t=new Date(y,m-1,d);return y>1990&&t.getFullYear()===y&&t.getMonth()===m-1&&t.getDate()===d};
+function parseD(v){ // -> 'YYYY-MM-DD' sau textul original dacă nu e o dată
+  if(v==null||v==='')return '';
+  if(v instanceof Date){if(isNaN(v))return '';const t=new Date(v.getTime()+12*3600e3);return dkey(t)}
+  if(typeof v==='number'&&v>20000&&v<80000){const o=XLSX.SSF.parse_date_code(v);return `${o.y}-${pad(o.m)}-${pad(o.d)}`}
+  const s=nbs(v);let m=/^(\d{1,2})[.,\/\- ]+(\d{1,2})[.,\/\- ]+(\d{4})(?: \d)?$/.exec(s); // acceptă și „15,08.2026” sau „13.08.2026 1” (cifră scăpată la final)
+  if(m&&isoOk(+m[3],+m[2],+m[1]))return `${m[3]}-${pad(+m[2])}-${pad(+m[1])}`;
+  m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s);if(m&&isoOk(+m[1],+m[2],+m[3]))return `${m[1]}-${m[2]}-${m[3]}`;
+  return s;
+}
+const isIso=x=>/^\d{4}-\d{2}-\d{2}$/.test(x||'');
+const fmtD=x=>isIso(x)?dshort(x):(x||'');
+const normSt=v=>{const d=parseD(v);return isIso(d)?dshort(d):nbs(v)};
+const rkey=r=>[r.p,r.dc,r.dr,String(r.nr),r.c,r.m,r.s,r.o].join('|').toLowerCase();
+const rdoc=v=>'ret_'+(isIso(v.dr)?v.dr.slice(0,4):new Date().getFullYear());
+const saveRetLocal=()=>{if(!store)ls.set('retururi',JSON.stringify(rets))};
+async function putRets(list){ // list: [[id,val]]
+  const by={};for(const [id,v] of list){const d=rets[id]?._d||rdoc(v);(by[d]=by[d]||{})[id]=v;rets[id]={...v,_d:d}}
+  renderRet();
+  if(!store)return saveRetLocal();
+  for(const [d,items] of Object.entries(by))await merge(store.col('zi').doc(d),{tip:'retururi',items});
+}
+async function delRet(id){const d=rets[id]?._d;delete rets[id];renderRet();if(store&&d)await merge(store.col('zi').doc(d),{items:{[id]:null}});else saveRetLocal()}
+const rid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+function fillOpts(sel,vals,first){const cur=sel.value,h=(first?`<option value="">${first}</option>`:'')+vals.map(v=>`<option>${esc(v)}</option>`).join('');if(sel.dataset.h!==h){sel.innerHTML=h;sel.dataset.h=h;sel.value=cur}}
+function renderRet(){
+  const all=Object.entries(rets).map(([id,v])=>({id,...v})),w=all.filter(r=>!r.s).length;
+  $('c-ret').textContent=all.length?`${w} în așteptare`:'';
+  const ps=[...new Set([...PLAT,...all.map(r=>r.p).filter(Boolean)])];
+  fillOpts($('rP'),ps,'alege platforma…');fillOpts($('rfP'),ps,'Toate platformele');
+  const mc={};for(const r of all)if(r.m)mc[r.m]=(mc[r.m]||0)+1;
+  const ml=Object.entries(mc).sort((a,b)=>b[1]-a[1]).slice(0,60).map(([m])=>`<option value="${esc(m)}">`).join('');if($('rMl').dataset.h!==ml){$('rMl').innerHTML=ml;$('rMl').dataset.h=ml}
+  const q=norm($('rq').value),fp=$('rfP').value,fs=$('rfS').value;
+  const L=all.filter(r=>(!fp||r.p===fp)&&(!fs||(fs==='w'?!r.s:!!r.s))&&(!q||norm([r.nr,r.c,r.m,r.o,r.s].join(' ')).includes(q)))
+    .sort((a,b)=>(b.k||0)-(a.k||0)); // ordinea introducerii, cele mai noi sus (ca în centralizator, dar invers)
+  $('retInfo').textContent=all.length?`${all.length} retururi · ${w} în așteptare${L.length!==all.length?` · ${L.length} afișate`:''}`:'';
+  if(!L.length){$('rBody').innerHTML=`<div class="empty">${all.length?'Niciun retur nu se potrivește cu filtrul.':'Încă nu e niciun retur. Adaugă unul mai sus sau importă centralizatorul din Excel.'}</div>`;return}
+  const S=L.slice(0,400);
+  $('rBody').innerHTML=`<div class="scroll"><table class="stack"><thead><tr>${RCOLS.map(h=>`<th>${h}</th>`).join('')}<th></th></tr></thead><tbody>${S.map(r=>`<tr class="${retEdit===r.id?'redit':''}"><td style="white-space:nowrap">${esc(r.p)}</td>${['dc','dr'].map(k=>`<td style="white-space:nowrap"${r[k]&&!isIso(r[k])?' class="rbad" title="Dată scrisă greșit — apasă Modifică și alege data corectă"':''}>${esc(fmtD(r[k]))}</td>`).join('')}<td class="rnr"><b>${esc(r.nr)}</b></td><td>${esc(r.c)}</td><td>${esc(r.m)}</td><td>${r.s?esc(r.s):'<span class="rwait">în așteptare</span>'}</td><td>${esc(r.o)}</td><td style="white-space:nowrap"><button class="ghost sm" data-red="${r.id}">Modifică</button> <button class="ghost sm" data-rdel="${r.id}">Șterge</button></td></tr>`).join('')}</tbody></table></div>${L.length>S.length?`<p class="msg">Se văd primele ${S.length} din ${L.length}. Folosește căutarea sau filtrele.</p>`:''}`;
+}
+function retForm(r){
+  retEdit=r?r.id:null;
+  $('rP').value=r?r.p:'';$('rDc').value=r&&isIso(r.dc)?r.dc:'';$('rDr').value=r?(isIso(r.dr)?r.dr:''):dkey(new Date());
+  $('rNr').value=r?r.nr:'';$('rC').value=r?r.c||'':'';$('rM').value=r?r.m||'':'';$('rS').value=r?r.s||'':'';$('rO').value=r?r.o||'':'';
+  $('rSave').textContent=r?'Salvează modificarea':'Adaugă returul';$('rCancel').classList.toggle('hidden',!r);
+  for(const x of $('retForm').querySelectorAll('.bad'))x.classList.remove('bad');
+  const old=r?[['DATA COM',r.dc],['DATA RETUR',r.dr]].filter(([,v])=>v&&!isIso(v)):[];
+  say($('retMsg'),r?`Modifici returul comenzii ${r.nr}.`+(old.length?' Data veche nu e validă ('+old.map(([k,v])=>k+': „'+v+'”').join(', ')+'); dacă lași câmpul gol, rămâne cum era.':''):'',r?'':'');
+  renderRet();
+}
+$('rSToday').onclick=()=>{$('rS').value=dshort(dkey(new Date()))};
+$('rCancel').onclick=()=>retForm(null);
+$('retForm').onsubmit=async e=>{
+  e.preventDefault();
+  const old=retEdit&&rets[retEdit];
+  const v={p:normPlat($('rP').value),dc:$('rDc').value||(old&&!isIso(old.dc)?old.dc:''),dr:$('rDr').value||(old&&!isIso(old.dr)?old.dr:''),nr:nbs($('rNr').value),c:nbs($('rC').value),m:nbs($('rM').value),s:normSt($('rS').value),o:nbs($('rO').value)};
+  const miss=[['rP',v.p],['rDr',v.dr],['rNr',v.nr]].filter(([,x])=>!x);
+  for(const x of $('retForm').querySelectorAll('.bad'))x.classList.remove('bad');
+  if(miss.length){for(const [id] of miss)$(id).classList.add('bad');say($('retMsg'),'Completează platforma, data returului și numărul comenzii.','err');$(miss[0][0]).focus();return}
+  if(!old){const dup=Object.values(rets).find(r=>r.p===v.p&&String(r.nr)===v.nr);if(dup&&!confirm(`Există deja un retur ${v.p} pentru comanda ${v.nr} (din ${fmtD(dup.dr)}). Îl adaugi totuși?`))return}
+  const id=retEdit||rid(),val={...v,k:old?.k||Date.now(),t:Date.now(),n:me()};
+  try{await putRets([[id,val]]);retForm(null);say($('retMsg'),old?`Am salvat modificarea pentru comanda ${v.nr}.`:`Am adăugat returul comenzii ${v.nr}.`,'ok');$('rNr').focus()}
+  catch(err){say($('retMsg'),'Nu s-a salvat: '+(err.message||err.code||err),'err')}
+};
+$('rBody').addEventListener('click',async e=>{
+  const ed=e.target.closest('[data-red]'),dl_=e.target.closest('[data-rdel]');
+  if(ed){const r=rets[ed.dataset.red];if(r){retForm({id:ed.dataset.red,...r});$('retForm').scrollIntoView({behavior:'smooth',block:'start'})}}
+  if(dl_){const id=dl_.dataset.rdel,r=rets[id];if(!r||!confirm(`Ștergi returul comenzii ${r.nr} (${r.p})?`))return;if(retEdit===id)retForm(null);try{await delRet(id);say($('retMsg'),`Am șters returul comenzii ${r.nr}.`,'ok')}catch(err){say($('retMsg'),'Nu s-a șters: '+(err.message||err.code),'err')}}
+});
+for(const id of ['rq','rfP','rfS'])$(id).addEventListener(id==='rq'?'input':'change',renderRet);
+$('rImpBtn').onclick=()=>$('rImpFile').click();
+$('rImpFile').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{
+    const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});
+    // caută foaia cu capul de tabel (fișierul poate avea și foi cu grafice)
+    let rows=[],C=null;
+    for(const n of wb.SheetNames){const ws=wb.Sheets[n];if(!ws||!ws['!ref'])continue;
+      const rr=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});
+      const h=(rr[0]||[]).map(x=>norm(x).replace(/\s+/g,' ')),col=k=>h.findIndex(x=>x===k||x.startsWith(k));
+      const c={p:col('platforma'),dc:col('data com'),dr:col('data retur'),nr:col('nr de comanda'),c:col('client'),m:col('motivul'),s:col('statusul'),o:col('observatii')};
+      if(c.p>=0&&c.nr>=0&&c.dr>=0){rows=rr;C=c;break}}
+    if(!C)throw new Error('fișierul nu are capul de tabel al retururilor (PLATFORMA, DATA COM, DATA RETUR, NR DE COMANDA…)');
+    // rândurile identice pot fi produse diferite din aceeași comandă: la reimport se sar doar câte există deja
+    const have=new Map();for(const r of Object.values(rets)){const k=rkey(r);have.set(k,(have.get(k)||0)+1)}
+    const t0=Date.now(),list=[];let skip=0;
+    rows.slice(1).forEach((r,i)=>{
+      const g=k=>C[k]<0?'':r[C[k]];
+      const v={p:normPlat(g('p')),dc:parseD(g('dc')),dr:parseD(g('dr')),nr:nbs(g('nr')),c:nbs(g('c')),m:nbs(g('m')),s:normSt(g('s')),o:nbs(g('o'))};
+      if(!v.nr&&!v.c)return;
+      const k=rkey(v);if(have.get(k)>0){have.set(k,have.get(k)-1);skip++;return}
+      list.push([rid()+i.toString(36),{...v,k:t0+i,t:t0,n:me()}]);
+    });
+    if(!list.length){say($('retMsg'),`Fișierul nu aduce retururi noi${skip?` (${skip} existau deja)`:''}.`,'ok');return}
+    say($('retMsg'),`Salvez ${list.length} retururi…`,'');
+    await putRets(list);
+    say($('retMsg'),`Am importat ${list.length} retururi${skip?`; ${skip} existau deja și au fost sărite`:''}.`,'ok');
+  }catch(err){say($('retMsg'),'Importul nu a mers: '+(err.message||err.code||err),'err')}
+};
+$('rDl').onclick=()=>{
+  const L=Object.values(rets).sort((a,b)=>(a.k||0)-(b.k||0));
+  const toD=x=>{if(!isIso(x))return x||'';const [y,m,d]=x.split('-').map(Number);return (Date.UTC(y,m-1,d)-Date.UTC(1899,11,30))/864e5}; // număr de serie Excel
+  const aoa=[RCOLS,...L.map(r=>[r.p,toD(r.dc),toD(r.dr),/^\d{1,11}$/.test(r.nr)?Number(r.nr):r.nr,r.c,r.m,r.s,r.o])];
+  const sh=XLSX.utils.aoa_to_sheet(aoa);
+  for(let i=1;i<aoa.length;i++)for(const c of [1,2]){const cell=sh[XLSX.utils.encode_cell({r:i,c})];if(cell&&cell.t==='n')cell.z='dd\\.mm\\.yyyy'}sh['!cols']=[16,12,12,22,28,50,18,34].map(x=>({wch:x}));sh['!autofilter']={ref:sh['!ref'].replace(/\d+$/,String(aoa.length))};
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sh,'Retururi');save(`centralizator_retururi_${dkey(new Date())}.xlsx`,xbuf(wb));
+};
+retForm(null);
+
 /* ---------- exporturi ---------- */
 function sheet(aoa,w){const s=XLSX.utils.aoa_to_sheet(aoa);s['!cols']=w.map(x=>({wch:x}));return s}
 const verifAoa=()=>[VCOLS,...verifRows().map(({o,l})=>[o.canal,o.cf,o.id,o.nr,o.client,l.sku,l.qty,l.prod,o.tel,o.firma,o.deleg])];
@@ -881,12 +1042,12 @@ $('delBox').onclick=e=>{const b=e.target.closest('button[data-del]');if(b)doDel(
 $('replAdd').onclick=()=>{if(pending)append(pending.list,pending.name)};
 $('part').onchange=()=>{renderStats();renderVerif();renderPick()};
 $('replNo').onclick=()=>{pending=null;$('repl').classList.add('hidden')};
-const tabs=['dash','verif','pick','fact','amb','loc','setari'];
+const tabs=['dash','verif','pick','fact','amb','loc','ret','setari'];
 function menu(o){$('side').classList.toggle('open',o);$('mback').classList.toggle('open',o);$('menuBtn').setAttribute('aria-expanded',o)}
 {const cur=tabs.find(x=>$('t-'+x).getAttribute('aria-selected')==='true');if(cur)$('mTitle').textContent=$('t-'+cur).firstChild.textContent}
 $('menuBtn').onclick=()=>menu(!$('side').classList.contains('open'));$('mback').onclick=()=>menu(false);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')menu(false)});
-const ACC=[['verif','Listă de verificare'],['pick','Picking'],['fact','Facturare'],['amb','Ambalare'],['loc','Locații produse']];
+const ACC=[['verif','Listă de verificare'],['pick','Picking'],['fact','Facturare'],['amb','Ambalare'],['loc','Locații produse'],['ret','Retururi']];
 let isAdmin=true;
 let allowed=null; // null = toate; altfel Set cu secțiunile permise (Dashboard și Setări sunt mereu permise)
 const canSee=t=>t==='dash'||t==='setari'||!allowed||allowed.has(t);
@@ -983,7 +1144,7 @@ $('impFile').onchange=async e=>{
 };
 
 /* ---------- sincronizare ---------- */
-function goLocal(t){store=null;try{extra=new Map(JSON.parse(ls.get('locatii_extra')||'[]'))}catch(e){}team(t,false);renderAll()}
+function goLocal(t){store=null;try{extra=new Map(JSON.parse(ls.get('locatii_extra')||'[]'))}catch(e){}try{rets=JSON.parse(ls.get('retururi')||'{}')}catch(e){rets={}}renderRet();team(t,false);renderAll()}
 function connect(st,label){
   store=st;team('Se conectează la lista echipei…',false);
   const timer=setTimeout(()=>team('Lista echipei nu răspunde încă. Verifică internetul.',false),10000);
@@ -996,6 +1157,7 @@ function connect(st,label){
       const up=l0.filter(([k])=>!m.has(k));if(up.length)(async()=>{for(const [k,v] of up){try{await putLoc(k,v.c,v.a)}catch(e){}}ls.set('locatii_extra',null)})()}
     renderAll();
   },fail);
+  store.col('zi').where('tip','==','retururi').onSnapshot(s=>{const r={};for(const d of s.docs){const x=d.data()||{};for(const [id,v] of Object.entries(x.items||{}))if(v)r[id]={...v,_d:d.id}}rets=r;renderRet()},()=>{});
   let bfDone=false;
   store.col('zi').doc('faraloc').onSnapshot(d=>{const x=d.exists?d.data():{};farLoc=x.items||{};if(!x.bf&&!bfDone){bfDone=true;backfillMissing()}renderStats();renderMiss()},()=>{});
   store.col('zi').doc('index').onSnapshot(s=>{

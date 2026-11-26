@@ -3,7 +3,7 @@
   --bg:#1A1C21;--ink:#ECE6DA;--card:#ECE6DA;--line:#33363d;--mut:#9a968d;--soft:#22252b;--yel:#00D8F2;--red:#ff6b5e;--ok:#3ec27a}
 body{background:var(--main)}
 /* suprafețele deschise (30%) — în interiorul lor textul e închis */
-.drop,.kpi:not(.main),.batch,.team,.locform,.empty,.cal,.flow,.acard,table,.st,#vBody,#fBody,#aBody,#locBody,#memBody{
+.drop,.kpi:not(.main),.batch,.team,.locform,.retform,.empty,.cal,.flow,.acard,table,.st,#vBody,#fBody,#aBody,#locBody,#rBody,#memBody{
   --ink:#1A1C21;--mut:#615d55;--line:#d4ccbd;--bg:#E2DACB;--soft:#E2DACB;--card:#ECE6DA;--red:#c0261c;color:#1A1C21;color-scheme:light}
 input,select{color-scheme:light}
 table{background:#ECE6DA}th{background:#E2DACB!important;color:#615d55}
