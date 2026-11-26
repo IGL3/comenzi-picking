@@ -178,7 +178,7 @@ tr.short .ck input{accent-color:#c0261c}
     <div class="bar"><span class="grow" id="vInfo"></span>
       <label class="ck"><input type="checkbox" id="vHide"> Doar ce nu e verificat</label>
       <button class="ghost dl" id="dlV">Descarcă Excel</button>
-      <button class="ghost dl" id="prV">Pentru printare (.html)</button></div>
+      <button class="ghost dl" id="prV">Printează</button></div>
     <div id="vBody"></div>
   </section>
 
@@ -189,7 +189,7 @@ tr.short .ck input{accent-color:#c0261c}
       <label class="ck"><input type="checkbox" id="pHide"> Doar ce nu e cules</label>
       <span class="grow"></span>
       <button class="ghost dl" id="dlP">Descarcă Excel</button>
-      <button class="ghost dl" id="prP">Pentru printare (.html)</button>
+      <button class="ghost dl" id="prP">Printează</button>
     </div>
     <p class="note" style="margin:0 0 12px">Produsele din fiecare calup sunt ordonate după rând și alveolă. Dacă lipsește un produs, ține apăsat pe cantitate ca s-o micșorezi: rândul se bifează singur și se face roșu.</p>
     <div id="pBody"></div>
@@ -571,6 +571,16 @@ async function save(name,data){
   try{await dl.save({filename:name,data})}catch(e){if(e.code!=='declined')say($('msg'),'Descărcarea nu a mers: '+(e.message||e.code),'err')}
 }
 const stamp=()=>new Date().toISOString().slice(0,10);
+/* Printare: pe GitHub se deschide direct fereastra de printare (iframe ascuns); în Claude pagina nu poate printa, așa că se descarcă fișierul. */
+function printNow(name,html){
+  if(window.claude){save(name,html);return}
+  document.querySelectorAll('iframe.prt').forEach(f=>f.remove());
+  const f=document.createElement('iframe');f.className='prt';f.setAttribute('aria-hidden','true');
+  f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+  document.body.appendChild(f);
+  const d=f.contentWindow.document;d.open();d.write(html.replace(/<script>window\.onload[^<]*<\/script>/,''));d.close();
+  setTimeout(()=>{try{f.contentWindow.focus();f.contentWindow.print()}catch(e){save(name,html)}},250);
+}
 function printDoc(title,body){return `<!DOCTYPE html><html lang="ro"><head><meta charset="utf-8"><title>${esc(title)}</title><style>body{font:12px Arial,sans-serif;margin:12mm}h2{font-size:16px;margin:0 0 6px}table{border-collapse:collapse;width:100%;margin-bottom:10px}th,td{border:1px solid #444;padding:4px 6px;text-align:left;vertical-align:top}th{background:#eee}.n{text-align:right}.b{font-weight:bold;font-size:14px}.pb{page-break-after:always}.pb:last-child{page-break-after:auto}@page{margin:10mm;size:landscape}</style></head><body>${body}<script>window.onload=()=>window.print()<\/script></body></html>`}
 function tbl(aoa,nums){return `<table><thead><tr>${aoa[0].map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${aoa.slice(1).map(r=>`<tr>${r.map((c,i)=>`<td class="${nums.includes(i)?'n b':''}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`}
 
@@ -635,8 +645,8 @@ document.addEventListener('click',e=>{
 });
 $('dlV').onclick=()=>{if(!orders.length)return;const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheet(verifAoa(),[14,14,24,7,28,12,9,60,16,26,24]),'Verificare');save(`verificare_${stamp()}.xlsx`,xbuf(wb))};
 $('dlP').onclick=()=>{if(!orders.length)return;const wb=XLSX.utils.book_new();for(const b of batches())XLSX.utils.book_append_sheet(wb,sheet(pickAoa(b),[8,9,12,12,10,70]),`${b.from}-${b.to}`);save(`picking_${stamp()}.xlsx`,xbuf(wb))};
-$('prV').onclick=()=>{if(!orders.length)return;save(`verificare_${stamp()}.html`,printDoc('Listă de verificare',`<h2>Listă de verificare · ${vis().length} comenzi · ${esc(meta?.file||'')}</h2>`+tbl(verifAoa(),[3,6])))};
-$('prP').onclick=()=>{if(!orders.length)return;save(`picking_${stamp()}.html`,printDoc('Picking',batches().map(b=>`<div class="pb"><h2>Calup ${b.idx} · comenzile ${b.from}–${b.to}</h2>${tbl(pickAoa(b),[0,1,2,4])}</div>`).join('')))};
+$('prV').onclick=()=>{if(!orders.length)return;printNow(`verificare_${stamp()}.html`,printDoc('Listă de verificare',`<h2>Listă de verificare · ${vis().length} comenzi · ${esc(meta?.file||'')}</h2>`+tbl(verifAoa(),[3,6])))};
+$('prP').onclick=()=>{if(!orders.length)return;printNow(`picking_${stamp()}.html`,printDoc('Picking',batches().map(b=>`<div class="pb"><h2>Calup ${b.idx} · comenzile ${b.from}–${b.to}</h2>${tbl(pickAoa(b),[0,1,2,4])}</div>`).join('')))};
 $('dlL').onclick=()=>{const all=new Map([...base].map(([s,l])=>[s,l]));for(const [s,l] of extra)all.set(s,l);const aoa=[['Cod','Culoar','Alveola'],...[...all].map(([s,l])=>[/^\d+$/.test(s)?Number(s):s,l.c,l.a])];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheet(aoa,[14,8,8]),'Locatii');save(`locatii_${stamp()}.xlsx`,xbuf(wb))};
 $('impBtn').onclick=()=>$('impFile').click();
 $('impFile').onchange=async e=>{

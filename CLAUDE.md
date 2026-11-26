@@ -11,6 +11,7 @@ Unul încarcă exportul → lista devine comună pentru toți. Dacă există dej
 „Adaugă în continuare” (ex. lista de la prânz: comenzile noi primesc numerele de după ultima, ID-urile deja existente sunt sărite,
 sortarea după canal se face doar în lista nouă, iar fiecare listă are calupurile ei) sau „Înlocuiește lista” (de la 1, șterge bifele).
 Filtrul „Arată” alege toate listele sau doar una; Excelul și printarea folosesc filtrul.
+Printare: butonul „Printează” deschide direct fereastra de printare (iframe ascuns, fără descărcare); doar în pagina Claude, unde printarea e blocată, descarcă fișierul .html.
 Bife în timp real: „Verificat” pe comandă (lista de verificare) și „Cules” pe linie (picking), cu numele celui care a bifat („Numele tău”, ținut în localStorage).
 Picking: calupurile apar închise (acordeon), se deschid pe rând; liniile sunt ordonate după rând și alveolă. Ținut apăsat pe cantitate (550 ms)
 deschide un editor −/+ care permite doar scăderea (0 = lipsă); OK cu cantitate mai mică bifează automat linia și o colorează roșu (verde = cules complet). Când toate liniile sunt bifate, „Trimite la facturare” blochează calupul
