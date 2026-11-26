@@ -15,11 +15,13 @@ Bife în timp real: „Verificat” pe comandă (lista de verificare) și „Cul
 Picking: calupurile apar închise (acordeon), se deschid pe rând; liniile sunt ordonate după rând și alveolă. Ținut apăsat pe cantitate (550 ms)
 deschide un editor −/+ care permite doar scăderea (0 = lipsă); OK cu cantitate mai mică bifează automat linia și o colorează roșu (verde = cules complet). Când toate liniile sunt bifate, „Trimite la facturare” blochează calupul
 („Redeschide calupul” îl deblochează). Secțiunea „Facturare” arată calupurile trimise, cu Comandat vs Cules și bifa „Facturat” pe comandă, plus Excel.
+Secțiunea „Ambalare” arată comenzile facturate, cu bifa „Ambalat”. „Dashboard” (pe ziua aleasă): Total comenzi, De pickuit, Pickuite (toate liniile bifate),
+Facturate, De ambalat (facturate neambalate), Ambalate, plus tabele pe canale și pe calupuri.
 Calendar: listele se salvează pe zile (YYYY-MM-DD). Bara de zi de sus (‹ › Azi, Calendar, Șterge) alege ziua pentru toate secțiunile;
 calendarul marchează zilele cu liste (numărul de comenzi). Ștergere („Șterge liste”): o listă anume din zi (bifele ei se golesc, numerele celorlalte rămân), toată ziua sau toate listele din toate zilele (cu a doua confirmare; locațiile rămân).
 Date: colecțiile `zi` (doc `m_<zi>` {day,listId,file,at,by,n,parts,rev,bsize,tranches:[{from,to,at,by,file}]} + bucăți `p_<zi>_<i>` {day,listId,rev,orders}
 câte 150 de comenzi, citite cu where('day','=='); doc `index` {days:{<zi>:{n,tr}|null}} pentru calendar; fiecare comandă are `t` = indexul listei;
-vechiul doc `meta`/`p0..` e mutat automat pe ziua lui), `bife/<listId>` {v:{nr:{n,t}|null}, p:{"nr_sku":{n,t}|null}, q:{"nr_sku":{q,n,t}|null} (cantitate culeasă mai mică), s:{"from-to":{n,t}|null} (calupuri trimise), f:{nr:{n,t}|null} (facturat)}, `locatii/<sku>` {sku,c,a,t,n}.
+vechiul doc `meta`/`p0..` e mutat automat pe ziua lui), `bife/<listId>` {v:{nr:{n,t}|null}, p:{"nr_sku":{n,t}|null}, q:{"nr_sku":{q,n,t}|null} (cantitate culeasă mai mică), s:{"from-to":{n,t}|null} (calupuri trimise), f:{nr:{n,t}|null} (facturat), a:{nr:{n,t}|null} (ambalat)}, `locatii/<sku>` {sku,c,a,t,n}.
 
 ## Fișiere
 - `src/pagina.html` — sursa; `src/locatii.json` — lista de bază de locații `[[sku, rand, alveola], ...]` (din locatii_aplicatie_comenzi.xlsx).
