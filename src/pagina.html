@@ -876,7 +876,15 @@ function menu(o){$('side').classList.toggle('open',o);$('mback').classList.toggl
 {const cur=tabs.find(x=>$('t-'+x).getAttribute('aria-selected')==='true');if(cur)$('mTitle').textContent=$('t-'+cur).firstChild.textContent}
 $('menuBtn').onclick=()=>menu(!$('side').classList.contains('open'));$('mback').onclick=()=>menu(false);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')menu(false)});
-function show(t){placeDay(t);menu(false);const tb=$('t-'+t);if(tb)$('mTitle').textContent=tb.firstChild.textContent;for(const x of tabs){$('t-'+x).setAttribute('aria-selected',x===t);$('p-'+x).classList.toggle('hidden',x!==t)}ls.set('sectiune',t);const m=document.querySelector('main');if(window.scrollY>m.offsetTop)window.scrollTo({top:m.offsetTop})}
+const ACC=[['verif','Listă de verificare'],['pick','Picking'],['fact','Facturare'],['amb','Ambalare'],['loc','Locații produse']];
+let allowed=null; // null = toate; altfel Set cu secțiunile permise (Dashboard și Setări sunt mereu permise)
+const canSee=t=>t==='dash'||t==='setari'||!allowed||allowed.has(t);
+function applyAccess(list){
+  allowed=list?new Set(list):null;
+  for(const [t] of ACC)$('t-'+t).classList.toggle('hidden',!canSee(t));
+  const cur=tabs.find(x=>$('t-'+x).getAttribute('aria-selected')==='true');if(cur&&!canSee(cur))show('dash');
+}
+function show(t){if(!canSee(t))t='dash';placeDay(t);menu(false);const tb=$('t-'+t);if(tb)$('mTitle').textContent=tb.firstChild.textContent;for(const x of tabs){$('t-'+x).setAttribute('aria-selected',x===t);$('p-'+x).classList.toggle('hidden',x!==t)}ls.set('sectiune',t);const m=document.querySelector('main');if(window.scrollY>m.offsetTop)window.scrollTo({top:m.offsetTop})}
 for(const x of tabs)$('t-'+x).onclick=()=>show(x);
 if(ls.get('sectiune')==='echipa')ls.set('sectiune','setari');if(location.hash==='#dashboard')show('dash');else if(tabs.includes(ls.get('sectiune')))show(ls.get('sectiune'));
 $('brand').addEventListener('click',e=>{if(e.ctrlKey||e.metaKey||e.shiftKey||e.button!==0)return;e.preventDefault();show('dash')});
@@ -888,7 +896,7 @@ $('fBody').addEventListener('change',e=>{const c=e.target.closest('input[data-fa
   const x=sentList().find(y=>y.k===c.dataset.fall);if(!x)return;const st={n:me(),t:Date.now()},f={};
   for(const o of x.os){if(c.checked){if(!prog.f[o.nr])f[o.nr]=st}else f[o.nr]=null}
   setProg({f})},true);
-$('dBody').addEventListener('click',e=>{if(e.target.closest('[data-go]'))show('loc')});
+$('dBody').addEventListener('click',e=>{if(e.target.closest('[data-go]')&&canSee('loc'))show('loc')});
 $('dBody').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.closest('[data-go]'))show('loc')});$('aHide').onchange=renderAmb;
 function ambAll(on,list){const st={n:me(),t:Date.now()},a={};for(const o of list){if(on){if(!isA(o))a[o.nr]=st}else if(isA(o))a[o.nr]=null}if(Object.keys(a).length)setProg({a})}
 $('aAll').onclick=()=>{const all=orders.filter(isF);ambAll(all.some(o=>!isA(o)),all)};
@@ -1035,13 +1043,15 @@ if(window.claude){
         members=d.data()||{emails:[],admini:[]};const mail=u.email.toLowerCase();
         if(!members.emails.includes(mail)){$('aNoTxt').textContent=`Contul ${u.email} nu e încă în echipă. Cere-i administratorului să te adauge.`;panel('aNoAcc');return}
         $('auth').classList.add('hidden');
-        const isAdm=members.admini.includes(mail);$('p-echipa').classList.toggle('hidden',!isAdm);renderTeam(isAdm);
+        const isAdm=members.admini.includes(mail);$('p-echipa').classList.toggle('hidden',!isAdm);renderTeam(isAdm);applyAccess(isAdm?null:accOf(mail));
         if(!started){started=true;connect({kind:'fb',col:n=>fs.collection(`${ROOT}/${n}`)},`Conectat ca ${nume||u.email}: toată echipa vede aceeași listă și aceleași bife.`)}
       },()=>{$('aNoTxt').textContent=`Contul ${u.email} nu are acces încă. Cere-i administratorului să te adauge. Dacă ești primul care intră (administratorul), creează echipa.`;panel('aNoAcc')});
     }
+    const akey=m=>m.replace(/\./g,',');
+    const accOf=m=>{const a=members&&members.acces&&members.acces[akey(m)];return Array.isArray(a)?a:null};
     function renderTeam(isAdm){
       if(!members)return;$('c-echipa').textContent=` · ${members.emails.length} ${members.emails.length>1?'persoane':'persoană'}`;
-      $('memBody').innerHTML=`<table class="stack"><thead><tr><th>Email</th><th>Rol</th><th></th></tr></thead><tbody>${members.emails.map(m=>`<tr><td><b>${esc(m)}</b></td><td>${members.admini.includes(m)?'administrator':'membru'}</td><td style="white-space:nowrap">${isAdm&&m!==auth.currentUser.email.toLowerCase()?`<button class="ghost sm" data-adm="${esc(m)}">${members.admini.includes(m)?'Fă-l membru':'Fă-l administrator'}</button> <button class="ghost sm" data-rm="${esc(m)}">Scoate</button>`:''}</td></tr>`).join('')}</tbody></table>`;
+      $('memBody').innerHTML=`<table class="stack"><thead><tr><th>Email</th><th>Rol</th><th>Poate vedea (Dashboard și Setări le văd toți)</th><th></th></tr></thead><tbody>${members.emails.map(m=>`<tr><td><b>${esc(m)}</b></td><td>${members.admini.includes(m)?'administrator':'membru'}</td><td>${members.admini.includes(m)?'<span style="color:var(--mut)">toate (administrator)</span>':ACC.map(([t,lbl])=>{const a=accOf(m);return `<label class="ck" style="margin:2px 12px 2px 0"><input type="checkbox" data-acc="${esc(m)}" data-tab="${t}" ${!a||a.includes(t)?'checked':''}${isAdm?'':' disabled'}> ${lbl}</label>`}).join('')}</td><td style="white-space:nowrap">${isAdm&&m!==auth.currentUser.email.toLowerCase()?`<button class="ghost sm" data-adm="${esc(m)}">${members.admini.includes(m)?'Fă-l membru':'Fă-l administrator'}</button> <button class="ghost sm" data-rm="${esc(m)}">Scoate</button>`:''}</td></tr>`).join('')}</tbody></table>`;
       const code=ls.get('cod_echipa');
       $('migBox').innerHTML=isAdm&&code?`<div class="confirm" style="margin-top:18px"><span style="flex-basis:100%">Pe acest calculator există date salvate cu vechiul cod de echipă. Le muți în contul echipei (liste, bife, locații)?</span><button id="migGo">Mută datele vechi</button><button class="ghost" id="migNo">Nu, ignoră-le</button></div>`:'';
     }
@@ -1049,6 +1059,9 @@ if(window.claude){
     $('memForm').onsubmit=async e=>{e.preventDefault();const m=clean($('memMail').value).toLowerCase();if(!m)return;
       try{await upd({emails:firebase.firestore.FieldValue.arrayUnion(m),...($('memAdm').checked?{admini:firebase.firestore.FieldValue.arrayUnion(m)}:{})});say($('memMsg'),`Am adăugat ${m}. Trimite-i linkul aplicației; își creează cont cu emailul ăsta.`,'ok');$('memMail').value='';$('memAdm').checked=false}
       catch(err){say($('memMsg'),'Nu am putut adăuga: '+(err.code||err.message),'err')}};
+    $('p-echipa').addEventListener('change',async e=>{const c=e.target.closest('input[data-acc]');if(!c)return;const m=c.dataset.acc;
+      const list=[...document.querySelectorAll(`#memBody input[data-acc="${CSS.escape(m)}"]`)].filter(x=>x.checked).map(x=>x.dataset.tab);
+      try{await upd({['acces.'+akey(m)]:list});say($('memMsg'),`Am salvat accesul pentru ${m}.`,'ok')}catch(err){say($('memMsg'),'Nu am putut salva accesul: '+(err.code||err.message),'err')}});
     $('p-echipa').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;const F=firebase.firestore.FieldValue;
       try{
         if(b.dataset.rm){await upd({emails:F.arrayRemove(b.dataset.rm),admini:F.arrayRemove(b.dataset.rm)});say($('memMsg'),`Am scos ${b.dataset.rm} din echipă.`,'ok')}
