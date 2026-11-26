@@ -23,6 +23,14 @@ Date: colecțiile `zi` (doc `m_<zi>` {day,listId,file,at,by,n,parts,rev,bsize,tr
 câte 150 de comenzi, citite cu where('day','=='); doc `index` {days:{<zi>:{n,tr}|null}} pentru calendar; fiecare comandă are `t` = indexul listei;
 vechiul doc `meta`/`p0..` e mutat automat pe ziua lui), `bife/<listId>` {v:{nr:{n,t}|null}, p:{"nr_sku":{n,t}|null}, q:{"nr_sku":{q,n,t}|null} (cantitate culeasă mai mică), s:{"from-to":{n,t}|null} (calupuri trimise), f:{nr:{n,t}|null} (facturat), a:{nr:{n,t}|null} (ambalat și trimis)}, `locatii/<sku>` {sku,c,a,t,n}.
 
+## VIES (TVA pentru firme din alte țări)
+Țara se deduce din canal: PepitaHU/eMAG HU → HU, eMAG BG/Trendyol BG/Fashion Days BG → BG, Trendyol GR/Skroutz → EL (codul VIES al Greciei);
+restul (România) nu se verifică. Codul fiscal se curăță (fără prefix de țară; la HU primele 8 cifre din formatul 12345678-2-25) și se verifică
+automat în VIES; rezultatul se salvează în `bife/<listId>.x["<CC><nr>"]` {ok,name,t,n} ca să nu se verifice din nou. Celula Cod fiscal
+(Verificare și Facturare) e verde = plătitor TVA, roșu = neplătitor, gri = se verifică, contur punctat = VIES indisponibil (buton „reîncearcă”).
+Browserul întreabă întâi proxy-ul Apps Script din `src/vies.json` {"proxy":"https://script.google.com/macros/s/…/exec"} (cod în
+`apps-script/vies-proxy.gs`), apoi VIES direct. În pagina Claude, cererile către alte site-uri sunt blocate, deci verificarea merge doar pe GitHub.
+
 ## Fișiere
 - `src/pagina.html` — sursa; `src/locatii.json` — lista de bază de locații `[[sku, rand, alveola], ...]` (din locatii_aplicatie_comenzi.xlsx).
 - `src/firebase.json` — configurația proiectului Firebase al aplicației (dacă lipsește, pagina de pe GitHub merge doar local).
