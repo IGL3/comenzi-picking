@@ -94,11 +94,11 @@ td.q.lock{cursor:default}
 .kpi.old{border-color:#e0a800}.kpi.go{cursor:pointer}.kpi.go:hover{border-color:var(--ink)}
 .kpi.main{background:#17160f;color:#f1eee4;border-color:#17160f}.kpi.main .k,.kpi.main small{color:#c9c3b2}
 .flow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:22px}
-.flow div{padding:14px 16px;border-right:1px solid var(--line)}.flow div:last-child{border-right:0}
+.flow>div{padding:14px 16px;border-right:1px solid var(--line)}.flow>div:last-child{border-right:0}
 .flow .t{font:800 20px "Barlow Condensed",sans-serif}.flow .v{font-size:14px;color:var(--mut)}
 .flow .meter{height:14px}
 .dsub{font:800 22px "Barlow Condensed",sans-serif;margin:0 0 10px}
-@media(max-width:600px){.flow{grid-template-columns:1fr}.flow div{border-right:0;border-bottom:1px solid var(--line)}}
+@media(max-width:600px){.flow{grid-template-columns:1fr}.flow>div{border-right:0;border-bottom:1px solid var(--line)}}
 .auth{position:fixed;inset:0;z-index:50;background:color-mix(in srgb,#17160f 88%,transparent);display:grid;place-items:center;padding:16px;overflow:auto}
 .acard{background:var(--card);color:var(--ink);border-radius:14px;padding:28px;width:min(440px,100%);overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4)}
 .acard h2{font:800 32px/1.1 "Barlow Condensed",sans-serif;margin:0}
