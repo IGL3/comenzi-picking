@@ -64,6 +64,22 @@ input,select{font:16px Barlow,sans-serif;min-height:44px;padding:0 12px;border:2
 .cal .d.today{border-color:var(--ink)}
 .cal .d.sel{background:var(--ink);color:var(--bg)}
 .cal .d:hover{border-color:var(--mut)}
+.bh{cursor:default}
+.bhead{width:100%;display:flex;flex-wrap:wrap;gap:4px 16px;align-items:center;text-align:left;background:var(--soft);border:0;border-radius:0;padding:14px 16px;min-height:64px;color:var(--ink);font:inherit;cursor:pointer}
+.bhead h2{margin:0}.bhead span{color:var(--mut)}.bhead .bp{margin-left:auto;font-weight:600;color:var(--ink)}
+.bhead .arr{font-size:20px;transition:transform .15s}.batch.open .bhead .arr{transform:rotate(90deg)}
+.batch.open .bhead{border-bottom:2px solid var(--ink)}
+.batch.sent .bhead{background:light-dark(#dde9f7,#1b2636)}
+.chip{display:inline-block;font:600 13px Barlow,sans-serif;border-radius:20px;padding:2px 10px;background:var(--ink);color:var(--bg);white-space:nowrap}
+.chip.blue{background:#2f63b5;color:#fff}.chip.green{background:#2f8f3a;color:#fff}
+.bfoot{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px 16px;border-top:1px solid var(--line);background:var(--card)}
+td.q{cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
+td.q.lock{cursor:default}
+.qx{color:var(--red);font-weight:600;white-space:nowrap}.qx s{color:var(--mut);font-weight:400}
+.qed{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.qed button{min-width:40px;min-height:40px;padding:0;font-size:22px}
+.qed b{min-width:2ch;text-align:center;font-size:20px}
+.fo td{border-top:2px solid var(--ink)}
 .ptitle{font:800 30px/1.1 "Barlow Condensed",sans-serif;margin:0 0 14px}
 @media(max-width:860px){.shell{grid-template-columns:1fr}.side{height:auto;flex-direction:row;padding:8px;gap:6px;z-index:5;overflow-x:auto}.side .brand,.side .lbl,.side .foot{display:none}.side button{flex:1 0 auto;width:auto;min-height:48px;padding:8px 12px;font-size:18px}}
 .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
@@ -78,7 +94,7 @@ td.nr{font:800 20px/1 "Barlow Condensed",sans-serif;white-space:nowrap}
 .multi{display:inline-block;background:var(--yel);color:#17160f;font-size:13px;font-weight:600;border-radius:5px;padding:1px 7px;white-space:nowrap}
 tr.grp td{border-top:2px solid var(--ink)}
 tr.mlt td{background:var(--soft)}
-@media(min-width:601px){#vBody table{min-width:1400px}#vBody .prod{min-width:360px}#vBody td:nth-child(3){white-space:nowrap}}
+@media(min-width:601px){#fBody table{min-width:1250px}#fBody .prod{min-width:320px}#vBody table{min-width:1400px}#vBody .prod{min-width:360px}#vBody td:nth-child(3){white-space:nowrap}}
 .batch{margin-bottom:26px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .bh{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;padding:12px 14px;background:var(--soft);border-bottom:2px solid var(--ink)}
 .bh span{color:var(--mut)}
@@ -121,6 +137,7 @@ tr.done .tag{opacity:.55}
   <div class="lbl">Deschide</div>
   <button role="tab" id="t-verif" aria-selected="true">Listă de verificare<span class="cnt" id="c-verif"></span></button>
   <button role="tab" id="t-pick" aria-selected="false">Picking pe calupuri<span class="cnt" id="c-pick"></span></button>
+  <button role="tab" id="t-fact" aria-selected="false">Facturare<span class="cnt" id="c-fact"></span></button>
   <button role="tab" id="t-loc" aria-selected="false">Locații produse<span class="cnt" id="c-loc"></span></button>
   <div class="foot" id="sideFoot"></div>
 </aside>
@@ -166,13 +183,21 @@ tr.done .tag{opacity:.55}
     <h2 class="ptitle">Picking pe calupuri</h2>
     <div class="bar">
       <label>Comenzi pe calup<input type="number" id="bsize" min="1" value="20" style="width:110px"></label>
-      <label>Ordonare în calup<select id="sort"><option value="nr">după nr. comandă</option><option value="loc">după rând și alveolă</option></select></label>
       <label class="ck"><input type="checkbox" id="pHide"> Doar ce nu e cules</label>
       <span class="grow"></span>
       <button class="ghost dl" id="dlP">Descarcă Excel</button>
       <button class="ghost dl" id="prP">Pentru printare (.html)</button>
     </div>
+    <p class="note" style="margin:0 0 12px">Produsele din fiecare calup sunt ordonate după rând și alveolă. Dacă lipsește un produs, ține apăsat pe cantitate ca s-o micșorezi.</p>
     <div id="pBody"></div>
+  </section>
+
+  <section id="p-fact" class="hidden">
+    <h2 class="ptitle">Facturare</h2>
+    <div class="bar"><span class="grow" id="fInfo"></span>
+      <label class="ck"><input type="checkbox" id="fHide"> Doar ce nu e facturat</label>
+      <button class="ghost dl" id="dlF">Descarcă Excel</button></div>
+    <div id="fBody"></div>
   </section>
 
   <section id="p-loc" class="hidden">
@@ -211,9 +236,10 @@ const base=new Map(BASE.map(r=>[r[0],{c:r[1],a:r[2]}]));
 let extra=new Map();          // locații adăugate/modificate (sku -> {c,a,t})
 let orders=[];                // lista comună a zilei
 let meta=null;                // {listId,file,at,by,n,parts,bsize}
-let prog={v:{},p:{}};         // bife: v[nr] = verificat, p["nr_sku"] = cules; valoare {n,t} sau null
+let prog={v:{},p:{},q:{},s:{},f:{}};         // bife: v[nr] = verificat, p["nr_sku"] = cules; valoare {n,t} sau null
 let store=null;               // {kind:'claude'|'fb', col(name)}
-let dl=null,pending=null,bifeOff=null;
+let dl=null,pending=null,bifeOff=null,openB=null,editQ=null,editV=0,pressT=null;
+const P0=()=>({v:{},p:{},q:{},s:{},f:{}});
 const pad=n=>String(n).padStart(2,'0');
 const dkey=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const pdate=k=>{const [y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
@@ -283,7 +309,7 @@ async function publish(list,name){
   $('repl').classList.add('hidden');pending=null;
   const at=Date.now(),m={day:curDay,listId:at.toString(36),file:name,at,by:me(),bsize:bsize(),tranches:[{from:1,to:list.length,at,by:me(),file:name}]};
   list.forEach(o=>o.t=0);$('part').value='all';
-  if(!store){orders=list;meta=m;prog={v:{},p:{}};renderAll();return}
+  if(!store){orders=list;meta=m;prog=P0();renderAll();return}
   say($('msg'),'Salvez lista pentru '+dshort(curDay)+'…','');
   try{
     const old=meta;await writeList(list,m,old);
@@ -310,8 +336,8 @@ function saveLocalDay(){if(store)return;if(orders.length)localDays[curDay]={orde
 function applyDay(m,list){
   const changed=(meta?.listId||null)!==(m?.listId||null);
   meta=m||null;orders=list||[];
-  if(changed){if(bifeOff){bifeOff();bifeOff=null}prog={v:{},p:{}};
-    if(store&&m)bifeOff=store.col('bife').doc(m.listId).onSnapshot(b=>{const x=b.exists?b.data():{};prog={v:x.v||{},p:x.p||{}};renderAll()},()=>{})}
+  if(changed){if(bifeOff){bifeOff();bifeOff=null}prog=P0();
+    if(store&&m)bifeOff=store.col('bife').doc(m.listId).onSnapshot(b=>{const x=b.exists?b.data():{};prog={v:x.v||{},p:x.p||{},q:x.q||{},s:x.s||{},f:x.f||{}};renderAll()},()=>{})}
   if(m?.bsize&&document.activeElement!==$('bsize'))$('bsize').value=m.bsize;
   renderAll();
 }
@@ -369,7 +395,7 @@ async function doDel(k){
   $('delBox').classList.add('hidden');if(k==='no')return;
   if(k==='every!'){
     const zile=Object.keys(dayIdx).filter(x=>dayIdx[x]);
-    try{if(!store){localDays={};orders=[];meta=null;prog={v:{},p:{}};dayIdx={};renderAll()}
+    try{if(!store){localDays={};orders=[];meta=null;prog=P0();dayIdx={};renderAll()}
       else{say($('msg'),'Șterg listele…','');for(const d of zile)await delDay(d);await store.col('zi').doc('index').set({days:{}})}
       say($('msg'),`Am șters toate listele din ${zile.length} ${zile.length>1?'zile':'zi'}.`,'ok');
     }catch(e){say($('msg'),'Nu am putut șterge: '+(e.message||e.code),'err')}
@@ -377,16 +403,17 @@ async function doDel(k){
   }
   const tr=tranches(),all=k==='all'||tr.length<2;
   const rm=all?orders:orders.filter(o=>(o.t||0)===+k);
-  const clr={v:{},p:{}};for(const o of rm){clr.v[o.nr]=null;for(const l of o.lines)clr.p[o.nr+'_'+l.sku]=null}
+  const clr={v:{},p:{},q:{},f:{},s:{}};for(const o of rm){clr.v[o.nr]=null;clr.f[o.nr]=null;for(const l of o.lines){clr.p[o.nr+'_'+l.sku]=null;clr.q[o.nr+'_'+l.sku]=null}}
+  const rmN=new Set(rm.map(o=>o.nr));for(const k in prog.s){const [a,b]=k.split('-').map(Number);for(let n=a;n<=b;n++)if(rmN.has(n)){clr.s[k]=null;break}}
   try{
     if(all){
-      if(!store){orders=[];meta=null;prog={v:{},p:{}};saveLocalDay();renderAll()}
+      if(!store){orders=[];meta=null;prog=P0();saveLocalDay();renderAll()}
       else await delDay(curDay);
       say($('msg'),`Am șters listele din ${dshort(curDay)}.`,'ok');return;
     }
     const keep=orders.filter(o=>(o.t||0)!==+k).map(o=>({...o,t:(o.t||0)>+k?o.t-1:(o.t||0)}));
     const m={...meta,tranches:tr.filter((_,i)=>i!==+k)};$('part').value='all';
-    if(!store){orders=keep;meta=m;for(const x in clr.v)delete prog.v[x];for(const x in clr.p)delete prog.p[x];saveLocalDay();renderAll()}
+    if(!store){orders=keep;meta=m;for(const g in clr)for(const x in clr[g])delete prog[g][x];saveLocalDay();renderAll()}
     else{await writeList(keep,m,meta);await merge(store.col('bife').doc(meta.listId),clr).catch(()=>{})}
     say($('msg'),`Am șters Lista ${+k+1} (${tr[+k].from}–${tr[+k].to}) din ${dshort(curDay)}.`,'ok');
   }catch(e){say($('msg'),'Nu am putut șterge: '+(e.message||e.code),'err')}
@@ -411,7 +438,7 @@ function batches(){
       const ch=os.slice(i,i+n);idx++;
       if(v!=='all'&&v&&String(t)!==v)continue;
       let lines=ch.flatMap(o=>o.lines.map(l=>({...l,nr:o.nr,loc:loc(l.sku)})));
-      if($('sort').value==='loc')lines.sort((a,b)=>(a.loc?0:1)-(b.loc?0:1)||(a.loc&&b.loc?(a.loc.c-b.loc.c)||(a.loc.a-b.loc.a):0)||a.nr-b.nr);
+      lines.sort((a,b)=>(a.loc?0:1)-(b.loc?0:1)||(a.loc&&b.loc?(a.loc.c-b.loc.c)||(a.loc.a-b.loc.a):0)||a.nr-b.nr);
       out.push({idx,t,from:ch[0].nr,to:ch[ch.length-1].nr,lines});
     }
   });
@@ -454,15 +481,41 @@ function renderVerif(){
   const rows=verifRows().filter(r=>!hide||!isV(r.o.nr));
   $('vBody').innerHTML=rows.length?`<div class="scroll"><table class="stack"><thead><tr><th>Verificat</th>${VCOLS.map((h,i)=>`<th class="${i===3||i===6?'n':''}">${h}</th>`).join('')}</tr></thead><tbody>${rows.map(({o,l,k})=>`<tr class="${k===0&&o.nr>1?'grp':''}${o.lines.length>1?' mlt':''}${isV(o.nr)?' done':''}"><td>${ck('v',o.nr,prog.v[o.nr],'Comanda '+o.nr+' verificată')}</td><td>${esc(o.canal)}</td><td>${esc(o.cf)}</td><td>${esc(o.id)}</td><td class="nr n">${o.nr}</td><td>${esc(o.client)}</td><td>${esc(l.sku)}</td><td class="n"><b>${l.qty}</b></td><td class="prod">${esc(l.prod)}</td><td style="white-space:nowrap">${esc(o.tel)}</td><td>${esc(o.firma)}</td><td>${esc(o.deleg)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Toate comenzile sunt verificate.</div>';
 }
+const bkey=b=>`${b.from}-${b.to}`;
+const pq=(nr,l)=>{const x=prog.q[nr+'_'+l.sku];return x&&x.q!=null?x.q:l.qty};
+function qcell(l,lock){
+  const key=l.nr+'_'+l.sku,q=pq(l.nr,l);
+  if(editQ===key&&!lock)return `<td class="n"><span class="qed"><button class="ghost qm" aria-label="Mai puțin" ${editV<=0?'disabled':''}>−</button><b>${editV}</b><button class="ghost qp" aria-label="Mai mult" ${editV>=l.qty?'disabled':''}>+</button><button class="sm qok">OK</button><button class="ghost sm qno">Renunță</button></span></td>`;
+  return `<td class="n q${lock?' lock':''}" data-q="${esc(key)}" data-max="${l.qty}" title="${lock?'':'Ține apăsat ca să micșorezi cantitatea'}">${q<l.qty?`<span class="qx">${q} <s>${l.qty}</s>${q===0?' · lipsă':''}</span>`:`<b>${l.qty}</b>`}</td>`;
+}
 function renderPick(){
   if(!orders.length){$('pBody').innerHTML=EMPTY;return}
   const hide=$('pHide').checked;
-  $('pBody').innerHTML=batches().map(b=>{const i=b.idx-1;
-    const buc=b.lines.reduce((s,l)=>s+l.qty,0),dn=b.lines.filter(l=>isP(l.nr,l.sku)).length,full=dn===b.lines.length;
-    if(hide&&full)return '';
-    let prev=null;const ls=b.lines.filter(l=>!hide||!isP(l.nr,l.sku));
-    return `<div class="batch${full?' done':''}"><div class="bh"><h2>Calup ${i+1}</h2><span>comenzile ${b.from}–${b.to} · ${b.lines.length} linii · ${buc} bucăți</span><span class="bp">${full?'Cules complet':`${dn}/${b.lines.length} culese`}</span></div><div class="scroll"><table class="stack"><thead><tr><th>Cules</th><th class="n">Nr. comandă</th><th>SKU</th><th class="n">Cantitate</th><th>Denumire</th><th>Rând</th><th>Alveolă</th></tr></thead><tbody>${ls.map(l=>{const g=$('sort').value==='nr'&&prev!==null&&prev!==l.nr;prev=l.nr;const key=l.nr+'_'+l.sku;return `<tr class="${g?'grp':''}${isP(l.nr,l.sku)?' done':''}"><td>${ck('p',key,prog.p[key],'Cules')}</td><td class="nr">${l.nr}</td><td>${esc(l.sku)}</td><td class="n"><b>${l.qty}</b></td><td class="prod">${esc(l.prod)}</td>${l.loc?`<td><span class="tag">R ${esc(l.loc.c)}</span></td><td><span class="tag">A ${esc(l.loc.a)}</span></td>`:`<td colspan="2"><span class="miss">fără locație</span> <button class="ghost sm addl" data-sku="${esc(l.sku)}">Adaugă</button></td>`}</tr>`}).join('')}</tbody></table></div></div>`;
-  }).join('')||'<div class="empty">Totul e cules.</div>';
+  $('pBody').innerHTML=batches().map(b=>{
+    const k=bkey(b),sent=prog.s[k],open=openB===k,buc=b.lines.reduce((s,l)=>s+l.qty,0),dn=b.lines.filter(l=>isP(l.nr,l.sku)).length,full=dn===b.lines.length;
+    const lips=b.lines.filter(l=>pq(l.nr,l)<l.qty).length;
+    const st=sent?`<span class="chip blue">Trimis la facturare${sent.n?' de '+esc(sent.n):''} · ${hhmm(sent.t)}</span>`:full?'<span class="chip green">Cules complet</span>':dn?`<span class="chip">${dn}/${b.lines.length} culese</span>`:'';
+    let body='';
+    if(open){
+      const ls=b.lines.filter(l=>!hide||!isP(l.nr,l.sku));
+      body=`<div class="scroll"><table class="stack"><thead><tr><th>Cules</th><th>Rând</th><th>Alveolă</th><th class="n">Nr. comandă</th><th>SKU</th><th class="n">Cantitate</th><th>Denumire</th></tr></thead><tbody>${ls.map(l=>{const key=l.nr+'_'+l.sku;return `<tr class="${isP(l.nr,l.sku)?'done':''}"><td>${sent?(isP(l.nr,l.sku)?'✓':''):ck('p',key,prog.p[key],'Cules')}</td>${l.loc?`<td><span class="tag">R ${esc(l.loc.c)}</span></td><td><span class="tag">A ${esc(l.loc.a)}</span></td>`:`<td colspan="2"><span class="miss">fără locație</span> <button class="ghost sm addl" data-sku="${esc(l.sku)}">Adaugă</button></td>`}<td class="nr n">${l.nr}</td><td>${esc(l.sku)}</td>${qcell(l,!!sent)}<td class="prod">${esc(l.prod)}</td></tr>`}).join('')}</tbody></table></div>
+      <div class="bfoot">${sent?`<span class="grow">Calupul e la facturare. Dacă trebuie corectat ceva, redeschide-l.</span><button class="ghost sm" data-reopen="${k}">Redeschide calupul</button>`:`<span class="grow">${full?`Totul e cules${lips?` · ${lips} ${lips>1?'linii au':'linie are'} cantitate mai mică`:''}. Trimite calupul la facturare.`:`Mai ai ${b.lines.length-dn} ${b.lines.length-dn>1?'linii':'linie'} de bifat.`}</span><button data-send="${k}" data-from="${b.from}" data-to="${b.to}" ${full?'':'disabled'}>Trimite la facturare</button>`}</div>`;
+    }
+    return `<div class="batch${open?' open':''}${sent?' sent':''}"><button class="bhead" data-open="${k}" aria-expanded="${open}"><span class="arr">›</span><h2>Calup ${b.idx}</h2><span>comenzile ${b.from}–${b.to} · ${b.lines.length} linii · ${buc} bucăți</span><span class="bp">${st}</span></button>${body}</div>`;
+  }).join('');
+}
+function sentList(){return Object.entries(prog.s).filter(([,v])=>v).map(([k,v])=>{const [from,to]=k.split('-').map(Number);return {k,from,to,...v,os:orders.filter(o=>o.nr>=from&&o.nr<=to)}}).filter(x=>x.os.length).sort((a,b)=>a.from-b.from)}
+function renderFact(){
+  const L=sentList(),hide=$('fHide').checked;
+  const nOrd=L.reduce((s,x)=>s+x.os.length,0),nF=L.reduce((s,x)=>s+x.os.filter(o=>prog.f[o.nr]).length,0);
+  $('fInfo').textContent=L.length?`${L.length} ${L.length>1?'calupuri trimise':'calup trimis'} · ${nF}/${nOrd} comenzi facturate`:'';
+  $('c-fact').textContent=L.length?`${nOrd-nF} de facturat`:'';
+  if(!L.length){$('fBody').innerHTML=`<div class="empty">${orders.length?'Încă nu a fost trimis niciun calup de la picking.':'Nu există liste în ziua asta.'}</div>`;return}
+  $('fBody').innerHTML=L.map(x=>{
+    const os=x.os.filter(o=>!hide||!prog.f[o.nr]);if(!os.length)return '';
+    const fd=x.os.filter(o=>prog.f[o.nr]).length;
+    return `<div class="batch open"><div class="bhead" style="cursor:default"><h2>Comenzile ${x.from}–${x.to}</h2><span>trimis${x.n?' de '+esc(x.n):''} la ${hhmm(x.t)}</span><span class="bp">${fd===x.os.length?'<span class="chip green">Facturat complet</span>':`<span class="chip">${fd}/${x.os.length} facturate</span>`}</span></div><div class="scroll"><table class="stack"><thead><tr><th>Facturat</th><th class="n">Nr.</th><th>Canal</th><th>Id comandă</th><th>Nume client</th><th>Cod fiscal</th><th>SKU</th><th>Denumire produs</th><th class="n">Comandat</th><th class="n">Cules</th></tr></thead><tbody>${os.map(o=>o.lines.map((l,i)=>{const q=pq(o.nr,l);return `<tr class="${i===0?'fo':''}${prog.f[o.nr]?' done':''}"><td>${i===0?ck('f',o.nr,prog.f[o.nr],'Comanda '+o.nr+' facturată'):''}</td><td class="nr n">${i===0?o.nr:''}</td><td>${i===0?esc(o.canal):''}</td><td>${i===0?esc(o.id):''}</td><td>${i===0?esc(o.client):''}</td><td>${i===0?esc(o.cf):''}</td><td>${esc(l.sku)}</td><td class="prod">${esc(l.prod)}</td><td class="n">${l.qty}</td><td class="n">${q<l.qty?`<span class="qx">${q}${q===0?' · lipsă':''}</span>`:`<b>${q}</b>`}</td></tr>`}).join('')).join('')}</tbody></table></div></div>`;
+  }).join('')||'<div class="empty">Totul e facturat.</div>';
 }
 function renderMiss(){
   const m=missing();
@@ -478,11 +531,11 @@ function renderLoc(){
   $('locInfo').textContent=`${base.size} locații din fișierul inițial · ${extra.size} adăugate sau modificate`;
   $('locBody').innerHTML=list.length?`<table class="stack"><thead><tr><th>SKU</th><th>Locație</th><th>Sursă</th><th></th></tr></thead><tbody>${list.map(x=>`<tr><td><b>${esc(x.s)}</b></td><td>${tag(x)}</td><td>${x.added?(base.has(x.s)?'modificată':'adăugată')+(x.n?' de '+esc(x.n):''):'fișierul inițial'}</td><td style="white-space:nowrap"><button class="ghost sm edl" data-sku="${esc(x.s)}">Modifică</button>${x.added?` <button class="ghost sm dell" data-sku="${esc(x.s)}">Șterge</button>`:''}</td></tr>`).join('')}</tbody></table>`:`<div class="empty">${q?'Niciun SKU găsit.':'Încă nu s-au adăugat locații. Cele noi apar aici.'}</div>`;
 }
-function renderAll(){saveLocalDay();renderDay();renderParts();renderStats();renderVerif();renderPick();renderMiss();renderLoc()}
+function renderAll(){saveLocalDay();renderDay();renderParts();renderStats();renderVerif();renderPick();renderFact();renderMiss();renderLoc()}
 
 /* ---------- bife ---------- */
-async function tick(k,key,on){
-  const val=on?{n:me(),t:Date.now()}:null;
+async function tick(k,key,on,extra){
+  const val=on?{n:me(),t:Date.now(),...(extra||{})}:null;
   prog={...prog,[k]:{...prog[k],[key]:val}};renderAll();
   if(!store||!meta)return;
   try{await merge(store.col('bife').doc(meta.listId),{[k]:{[key]:val}})}catch(e){say($('msg'),'Bifa nu s-a salvat: '+(e.message||e.code),'err')}
@@ -503,7 +556,7 @@ async function act(fn,okText){try{await fn();say($('locMsg'),okText,'ok')}catch(
 /* ---------- exporturi ---------- */
 function sheet(aoa,w){const s=XLSX.utils.aoa_to_sheet(aoa);s['!cols']=w.map(x=>({wch:x}));return s}
 const verifAoa=()=>[VCOLS,...verifRows().map(({o,l})=>[o.canal,o.cf,o.id,o.nr,o.client,l.sku,l.qty,l.prod,o.tel,o.firma,o.deleg])];
-const pickAoa=b=>[['Nr. comandă','SKU','Cantitate','Denumire','Rând','Alveolă'],...b.lines.map(l=>[l.nr,l.sku,l.qty,l.prod,l.loc?l.loc.c:'FĂRĂ',l.loc?l.loc.a:'LOCAȚIE'])];
+const pickAoa=b=>[['Rând','Alveolă','Nr. comandă','SKU','Cantitate','Denumire'],...b.lines.map(l=>[l.loc?l.loc.c:'FĂRĂ',l.loc?l.loc.a:'LOCAȚIE',l.nr,l.sku,l.qty,l.prod])];
 const xbuf=wb=>new Uint8Array(XLSX.write(wb,{bookType:'xlsx',type:'array'}));
 async function save(name,data){
   if(!dl){const u=URL.createObjectURL(new Blob([data])),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);return}
@@ -532,14 +585,35 @@ $('delBox').onclick=e=>{const b=e.target.closest('button[data-del]');if(b)doDel(
 $('replAdd').onclick=()=>{if(pending)append(pending.list,pending.name)};
 $('part').onchange=()=>{renderStats();renderVerif();renderPick()};
 $('replNo').onclick=()=>{pending=null;$('repl').classList.add('hidden')};
-const tabs=['verif','pick','loc'];
+const tabs=['verif','pick','fact','loc'];
 function show(t){for(const x of tabs){$('t-'+x).setAttribute('aria-selected',x===t);$('p-'+x).classList.toggle('hidden',x!==t)}ls.set('sectiune',t);const m=document.querySelector('main');if(window.scrollY>m.offsetTop)window.scrollTo({top:m.offsetTop})}
 for(const x of tabs)$('t-'+x).onclick=()=>show(x);
 if(tabs.includes(ls.get('sectiune')))show(ls.get('sectiune'));
 $('bsize').oninput=()=>{renderStats();renderPick()};
 $('bsize').onchange=()=>{if(store&&meta)merge(store.col('zi').doc('meta'),{bsize:bsize()}).catch(()=>{})};
-$('sort').onchange=renderPick;
-$('vHide').onchange=renderVerif;$('pHide').onchange=renderPick;
+$('vHide').onchange=renderVerif;$('pHide').onchange=renderPick;$('fHide').onchange=renderFact;
+$('pBody').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.open){openB=openB===b.dataset.open?null:b.dataset.open;editQ=null;renderPick();return}
+  if(b.dataset.send){tick('s',b.dataset.send,true);return}
+  if(b.dataset.reopen){tick('s',b.dataset.reopen,false);return}
+  if(b.classList.contains('qm')){editV=Math.max(0,editV-1);renderPick();return}
+  if(b.classList.contains('qp')){editV=Math.min(qMax,editV+1);renderPick();return}
+  if(b.classList.contains('qno')){editQ=null;renderPick();return}
+  if(b.classList.contains('qok')){const k=editQ,mx=qMax;editQ=null;tick('q',k,editV<mx,{q:editV});return}
+});
+let qMax=0;
+let px=0,py=0;
+const startPress=e=>{const c=e.target.closest('td.q:not(.lock)');if(!c)return;px=e.clientX;py=e.clientY;clearTimeout(pressT);pressT=setTimeout(()=>{const k=c.dataset.q;qMax=+c.dataset.max;const x=prog.q[k];editV=x&&x.q!=null?x.q:qMax;editQ=k;renderPick();if(navigator.vibrate)try{navigator.vibrate(30)}catch(_){}},550)};
+const endPress=()=>clearTimeout(pressT);
+$('pBody').addEventListener('pointerdown',startPress);
+['pointerup','pointercancel'].forEach(t=>$('pBody').addEventListener(t,endPress));
+$('pBody').addEventListener('pointermove',e=>{if(Math.hypot(e.clientX-px,e.clientY-py)>12)endPress()});
+window.addEventListener('scroll',endPress,{passive:true});
+$('pBody').addEventListener('contextmenu',e=>{if(e.target.closest('td.q'))e.preventDefault()});
+$('dlF').onclick=()=>{const L=sentList();if(!L.length)return;const aoa=[['Calup','Nr.','Canal','Id comandă','Nume client','Cod fiscal','SKU','Denumire produs','Comandat','Cules','Facturat']];
+  for(const x of L)for(const o of x.os)for(const l of o.lines)aoa.push([`${x.from}-${x.to}`,o.nr,o.canal,o.id,o.client,o.cf,l.sku,l.prod,l.qty,pq(o.nr,l),prog.f[o.nr]?'da':'']);
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheet(aoa,[9,6,14,24,28,14,12,60,10,8,9]),'Facturare');save(`facturare_${curDay}.xlsx`,xbuf(wb))};
 $('lq').oninput=renderLoc;
 $('me').value=ls.get('nume')||'';$('me').oninput=()=>ls.set('nume',me());
 document.addEventListener('change',e=>{const c=e.target;if(c.matches('input[data-k]'))tick(c.dataset.k,c.dataset.key,c.checked)});
@@ -552,9 +626,9 @@ document.addEventListener('click',e=>{
   else if(b.classList.contains('dell'))act(()=>delLoc(sku),'Am șters locația adăugată pentru '+sku+(base.has(sku)?' (rămâne cea din fișierul inițial).':'.'));
 });
 $('dlV').onclick=()=>{if(!orders.length)return;const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheet(verifAoa(),[14,14,24,7,28,12,9,60,16,26,24]),'Verificare');save(`verificare_${stamp()}.xlsx`,xbuf(wb))};
-$('dlP').onclick=()=>{if(!orders.length)return;const wb=XLSX.utils.book_new();for(const b of batches())XLSX.utils.book_append_sheet(wb,sheet(pickAoa(b),[12,12,10,70,8,9]),`${b.from}-${b.to}`);save(`picking_${stamp()}.xlsx`,xbuf(wb))};
+$('dlP').onclick=()=>{if(!orders.length)return;const wb=XLSX.utils.book_new();for(const b of batches())XLSX.utils.book_append_sheet(wb,sheet(pickAoa(b),[8,9,12,12,10,70]),`${b.from}-${b.to}`);save(`picking_${stamp()}.xlsx`,xbuf(wb))};
 $('prV').onclick=()=>{if(!orders.length)return;save(`verificare_${stamp()}.html`,printDoc('Listă de verificare',`<h2>Listă de verificare · ${vis().length} comenzi · ${esc(meta?.file||'')}</h2>`+tbl(verifAoa(),[3,6])))};
-$('prP').onclick=()=>{if(!orders.length)return;save(`picking_${stamp()}.html`,printDoc('Picking',batches().map(b=>`<div class="pb"><h2>Calup ${b.idx} · comenzile ${b.from}–${b.to}</h2>${tbl(pickAoa(b),[0,2,4,5])}</div>`).join('')))};
+$('prP').onclick=()=>{if(!orders.length)return;save(`picking_${stamp()}.html`,printDoc('Picking',batches().map(b=>`<div class="pb"><h2>Calup ${b.idx} · comenzile ${b.from}–${b.to}</h2>${tbl(pickAoa(b),[0,1,2,4])}</div>`).join('')))};
 $('dlL').onclick=()=>{const all=new Map([...base].map(([s,l])=>[s,l]));for(const [s,l] of extra)all.set(s,l);const aoa=[['Cod','Culoar','Alveola'],...[...all].map(([s,l])=>[/^\d+$/.test(s)?Number(s):s,l.c,l.a])];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheet(aoa,[14,8,8]),'Locatii');save(`locatii_${stamp()}.xlsx`,xbuf(wb))};
 $('impBtn').onclick=()=>$('impFile').click();
 $('impFile').onchange=async e=>{
