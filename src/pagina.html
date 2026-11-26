@@ -188,7 +188,6 @@ tr.short .ck input{accent-color:#c0261c}
   <button role="tab" id="t-fact" aria-selected="false">Facturare<span class="cnt" id="c-fact"></span></button>
   <button role="tab" id="t-amb" aria-selected="false">Ambalare<span class="cnt" id="c-amb"></span></button>
   <button role="tab" id="t-loc" aria-selected="false">Locații produse<span class="cnt" id="c-loc"></span></button>
-  <button role="tab" id="t-echipa" aria-selected="false" class="hidden">Echipă<span class="cnt" id="c-echipa"></span></button>
   <button role="tab" id="t-setari" aria-selected="false">Setări<span class="cnt" id="c-setari"></span></button>
   <div class="foot" id="sideFoot"></div>
 </aside>
@@ -260,8 +259,14 @@ tr.short .ck input{accent-color:#c0261c}
     <div id="aBody"></div>
   </section>
 
-  <section id="p-echipa" class="hidden">
-    <h2 class="ptitle">Echipă</h2>
+
+  <section id="p-setari" class="hidden">
+    <h2 class="ptitle">Setări</h2>
+  <div class="team" id="team"><span class="dot"></span><span id="teamTxt" class="grow">Se pornește…</span>
+    <label style="display:flex;gap:6px;align-items:center">Numele tău <input id="me" placeholder="ex. Ionuț" style="width:150px;min-height:38px"></label>
+    <span id="userBox" class="hidden" style="display:flex;gap:8px;align-items:center"><span id="userMail" style="color:var(--mut)"></span><button class="ghost sm" id="logout">Ieși din cont</button></span></div>
+    <div id="p-echipa" class="hidden">
+    <h3 class="dsub" style="margin-top:26px">Echipă <span id="c-echipa" class="pday"></span></h3>
     <p class="note" style="margin:0 0 12px">Doar emailurile de aici pot intra în aplicație, după ce își creează cont și își confirmă emailul. Administratorii pot adăuga și scoate oameni.</p>
     <form class="locform" id="memForm" style="grid-template-columns:minmax(0,3fr) auto auto">
       <label>Email coleg<input id="memMail" type="email" required placeholder="nume@firma.ro"></label>
@@ -271,13 +276,7 @@ tr.short .ck input{accent-color:#c0261c}
     <div class="msg" id="memMsg"></div>
     <div id="memBody"></div>
     <div id="migBox"></div>
-  </section>
-
-  <section id="p-setari" class="hidden">
-    <h2 class="ptitle">Setări</h2>
-  <div class="team" id="team"><span class="dot"></span><span id="teamTxt" class="grow">Se pornește…</span>
-    <label style="display:flex;gap:6px;align-items:center">Numele tău <input id="me" placeholder="ex. Ionuț" style="width:150px;min-height:38px"></label>
-    <span id="userBox" class="hidden" style="display:flex;gap:8px;align-items:center"><span id="userMail" style="color:var(--mut)"></span><button class="ghost sm" id="logout">Ieși din cont</button></span></div>
+    </div>
   </section>
 
   <section id="p-loc" class="hidden">
@@ -748,10 +747,10 @@ $('delBox').onclick=e=>{const b=e.target.closest('button[data-del]');if(b)doDel(
 $('replAdd').onclick=()=>{if(pending)append(pending.list,pending.name)};
 $('part').onchange=()=>{renderStats();renderVerif();renderPick()};
 $('replNo').onclick=()=>{pending=null;$('repl').classList.add('hidden')};
-const tabs=['dash','verif','pick','fact','amb','loc','echipa','setari'];
+const tabs=['dash','verif','pick','fact','amb','loc','setari'];
 function show(t){placeDay(t);for(const x of tabs){$('t-'+x).setAttribute('aria-selected',x===t);$('p-'+x).classList.toggle('hidden',x!==t)}ls.set('sectiune',t);const m=document.querySelector('main');if(window.scrollY>m.offsetTop)window.scrollTo({top:m.offsetTop})}
 for(const x of tabs)$('t-'+x).onclick=()=>show(x);
-if(tabs.includes(ls.get('sectiune')))show(ls.get('sectiune'));
+if(ls.get('sectiune')==='echipa')ls.set('sectiune','setari');if(tabs.includes(ls.get('sectiune')))show(ls.get('sectiune'));
 $('bsize').oninput=()=>{renderStats();renderPick()};
 $('bsize').onchange=()=>{if(store&&meta)merge(store.col('zi').doc('meta'),{bsize:bsize()}).catch(()=>{})};
 $('vHide').onchange=renderVerif;$('pHide').onchange=renderPick;$('fHide').onchange=renderFact;
@@ -886,12 +885,12 @@ if(window.claude){
         members=d.data()||{emails:[],admini:[]};const mail=u.email.toLowerCase();
         if(!members.emails.includes(mail)){$('aNoTxt').textContent=`Contul ${u.email} nu e încă în echipă. Cere-i administratorului să te adauge.`;panel('aNoAcc');return}
         $('auth').classList.add('hidden');
-        const isAdm=members.admini.includes(mail);$('t-echipa').classList.toggle('hidden',!isAdm);renderTeam(isAdm);
+        const isAdm=members.admini.includes(mail);$('p-echipa').classList.toggle('hidden',!isAdm);renderTeam(isAdm);
         if(!started){started=true;connect({kind:'fb',col:n=>fs.collection(`${ROOT}/${n}`)},`Conectat ca ${nume||u.email}: toată echipa vede aceeași listă și aceleași bife.`)}
       },()=>{$('aNoTxt').textContent=`Contul ${u.email} nu are acces încă. Cere-i administratorului să te adauge. Dacă ești primul care intră (administratorul), creează echipa.`;panel('aNoAcc')});
     }
     function renderTeam(isAdm){
-      if(!members)return;$('c-echipa').textContent=`${members.emails.length} ${members.emails.length>1?'persoane':'persoană'}`;
+      if(!members)return;$('c-echipa').textContent=` · ${members.emails.length} ${members.emails.length>1?'persoane':'persoană'}`;
       $('memBody').innerHTML=`<table class="stack"><thead><tr><th>Email</th><th>Rol</th><th></th></tr></thead><tbody>${members.emails.map(m=>`<tr><td><b>${esc(m)}</b></td><td>${members.admini.includes(m)?'administrator':'membru'}</td><td style="white-space:nowrap">${isAdm&&m!==auth.currentUser.email.toLowerCase()?`<button class="ghost sm" data-adm="${esc(m)}">${members.admini.includes(m)?'Fă-l membru':'Fă-l administrator'}</button> <button class="ghost sm" data-rm="${esc(m)}">Scoate</button>`:''}</td></tr>`).join('')}</tbody></table>`;
       const code=ls.get('cod_echipa');
       $('migBox').innerHTML=isAdm&&code?`<div class="confirm" style="margin-top:18px"><span style="flex-basis:100%">Pe acest calculator există date salvate cu vechiul cod de echipă. Le muți în contul echipei (liste, bife, locații)?</span><button id="migGo">Mută datele vechi</button><button class="ghost" id="migNo">Nu, ignoră-le</button></div>`:'';
