@@ -38,9 +38,19 @@ input,select{font:16px Barlow,sans-serif;min-height:44px;padding:0 12px;border:2
 .st b{font:800 30px/1 "Barlow Condensed",sans-serif;display:block}
 .st small{color:var(--mut);font-size:14px}
 .st.warn b{color:var(--red)}
-.tabs{display:flex;flex-wrap:wrap;gap:6px;border-bottom:2px solid var(--ink);margin-bottom:18px}
-.tabs button{border-radius:10px 10px 0 0;border:2px solid var(--ink);border-bottom:0;background:transparent;color:var(--ink);font:800 20px "Barlow Condensed",sans-serif}
-.tabs button[aria-selected=true]{background:var(--yel);color:#17160f}
+.shell{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:100vh}
+.side{background:#17160f;color:#f1eee4;position:sticky;top:0;height:100vh;padding:22px 12px;display:flex;flex-direction:column;gap:6px;overflow-y:auto}
+.side .brand{font:800 24px/1.05 "Barlow Condensed",sans-serif;color:var(--yel);margin:0 10px 6px}
+.side .brand small{display:block;font:500 14px Barlow,sans-serif;color:#aaa492;margin-top:4px}
+.side .lbl{font-size:13px;color:#aaa492;margin:18px 12px 4px}
+.side button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;background:transparent;border:0;border-radius:10px;color:#f1eee4;padding:12px 14px;min-height:56px;font:800 21px/1.1 "Barlow Condensed",sans-serif}
+.side button:hover{background:#2a2820}
+.side button[aria-selected=true]{background:var(--yel);color:#17160f}
+.side .cnt{font:500 14px Barlow,sans-serif;opacity:.85}
+.side .cnt.warn{color:#ff8577}.side button[aria-selected=true] .cnt.warn{color:#b8241b}
+.side .foot{margin-top:auto;font-size:13px;color:#aaa492;padding:0 12px}
+.ptitle{font:800 30px/1.1 "Barlow Condensed",sans-serif;margin:0 0 14px}
+@media(max-width:860px){.shell{grid-template-columns:1fr}.side{height:auto;flex-direction:row;padding:8px;gap:6px;z-index:5;overflow-x:auto}.side .brand,.side .lbl,.side .foot{display:none}.side button{flex:1 0 auto;width:auto;min-height:48px;padding:8px 12px;font-size:18px}}
 .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
 .bar .grow{flex:1}
 table{width:100%;border-collapse:collapse;background:var(--card);font-size:15px}
@@ -69,7 +79,7 @@ label{display:grid;gap:4px;font-size:14px;color:var(--mut)}
 .team{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-top:14px;font-size:15px}
 .team .dot{width:10px;height:10px;border-radius:50%;background:var(--mut);flex:none}
 .team.live .dot{background:#2fb344;box-shadow:0 0 0 4px color-mix(in srgb,#2fb344 25%,transparent)}
-.team .grow{flex:1}
+.team .grow{flex:1 1 220px}
 .team input{min-height:38px;width:170px}
 .confirm{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--yel);color:#17160f;border-radius:12px;padding:12px 14px;margin-top:12px;font-weight:600}
 .confirm button{background:#17160f;color:var(--yel);border-color:#17160f}.confirm button.ghost{background:transparent;color:#17160f}
@@ -90,6 +100,16 @@ tr.done .tag{opacity:.55}
 </head>
 <body>
 <div class="hz"></div>
+<div class="shell">
+<aside class="side" role="tablist" aria-label="Secțiuni">
+  <div class="brand">Comenzi și picking<small>Quasar Comex</small></div>
+  <div class="lbl">Deschide</div>
+  <button role="tab" id="t-verif" aria-selected="true">Listă de verificare<span class="cnt" id="c-verif"></span></button>
+  <button role="tab" id="t-pick" aria-selected="false">Picking pe calupuri<span class="cnt" id="c-pick"></span></button>
+  <button role="tab" id="t-loc" aria-selected="false">Locații produse<span class="cnt" id="c-loc"></span></button>
+  <div class="foot" id="sideFoot"></div>
+</aside>
+<div class="content">
 <header class="band"><div class="wrap">
   <h1>Comenzi → verificare și picking</h1>
   <p class="sub">Unul dintre voi încarcă exportul de comenzi, iar toată echipa vede aceeași listă de verificare și același picking pe calupuri și bifează în timp real ce a terminat.</p>
@@ -108,13 +128,9 @@ tr.done .tag{opacity:.55}
 
 <main class="band" style="padding-top:0"><div class="wrap">
   <div class="bar hidden" id="partBar"><label>Arată<select id="part"></select></label><span class="grow" id="partInfo"></span></div>
-  <div class="tabs" role="tablist">
-    <button role="tab" id="t-verif" aria-selected="true">Listă de verificare</button>
-    <button role="tab" id="t-pick" aria-selected="false">Picking pe calupuri</button>
-    <button role="tab" id="t-loc" aria-selected="false">Locații produse</button>
-  </div>
 
   <section id="p-verif">
+    <h2 class="ptitle">Listă de verificare</h2>
     <div class="bar"><span class="grow" id="vInfo"></span>
       <label class="ck"><input type="checkbox" id="vHide"> Doar ce nu e verificat</label>
       <button class="ghost dl" id="dlV">Descarcă Excel</button>
@@ -123,6 +139,7 @@ tr.done .tag{opacity:.55}
   </section>
 
   <section id="p-pick" class="hidden">
+    <h2 class="ptitle">Picking pe calupuri</h2>
     <div class="bar">
       <label>Comenzi pe calup<input type="number" id="bsize" min="1" value="20" style="width:110px"></label>
       <label>Ordonare în calup<select id="sort"><option value="nr">după nr. comandă</option><option value="loc">după rând și alveolă</option></select></label>
@@ -135,6 +152,7 @@ tr.done .tag{opacity:.55}
   </section>
 
   <section id="p-loc" class="hidden">
+    <h2 class="ptitle">Locații produse</h2>
     <form class="locform" id="locForm">
       <label>SKU<input id="lSku" required autocomplete="off" inputmode="numeric"></label>
       <label>Rând<input id="lC" required type="number" min="0"></label>
@@ -153,6 +171,7 @@ tr.done .tag{opacity:.55}
     <div id="locBody"></div>
   </section>
 </div></main>
+</div></div>
 
 <script>
 {
@@ -178,7 +197,7 @@ const docId=s=>{let d=s.replace(/[^A-Za-z0-9_\-.~:@+]/g,'_');return d==='.'||d==
 const say=(el,t,k)=>{el.textContent=t;el.className='msg'+(k?' '+k:'')};
 const me=()=>clean($('me').value);
 const hhmm=t=>t?new Date(t).toLocaleTimeString('ro-RO',{hour:'2-digit',minute:'2-digit'}):'';
-const team=(t,live)=>{$('teamTxt').textContent=t;$('team').classList.toggle('live',!!live)};
+const team=(t,live)=>{$('teamTxt').textContent=t;$('team').classList.toggle('live',!!live);$('sideFoot').textContent=live?'● Conectat la echipă':''};
 async function merge(ref,obj){if(store.kind==='fb')return ref.set(obj,{merge:true});try{await ref.update(obj)}catch(e){await ref.set(obj)}}
 
 /* ---------- citire export ---------- */
@@ -290,12 +309,14 @@ function ck(k,key,val,label){const w=val?`${val.n||'cineva'}${val.t?' · '+hhmm(
 
 /* ---------- afișare ---------- */
 function renderStats(){
-  const O=vis();if(!O.length){$('stats').classList.add('hidden');return}
+  const O=vis();if(!O.length){$('stats').classList.add('hidden');for(const x of ['verif','pick','loc'])$('c-'+x).textContent='';return}
   const L=O.reduce((s,o)=>s+o.lines.length,0),miss=missing().length;
   const vd=O.filter(o=>isV(o.nr)).length,pd=O.reduce((s,o)=>s+o.lines.filter(l=>isP(o.nr,l.sku)).length,0);
   const st=[[O.length,'comenzi'],[`${vd}/${O.length}`,'verificate',vd/O.length],[`${pd}/${L}`,'linii culese',pd/L],[batches().length,'calupuri de '+bsize()],[miss,'SKU fără locație',null,miss?'warn':'']];
   $('stats').innerHTML=st.map(s=>`<div class="st ${s[3]||''}"><b>${s[0]}</b><small>${s[1]}</small>${s[2]!=null?`<div class="meter"><i style="width:${Math.round(s[2]*100)}%"></i></div>`:''}</div>`).join('');
   $('stats').classList.remove('hidden');
+  $('c-verif').textContent=`${vd}/${O.length} verificate`;$('c-pick').textContent=`${pd}/${L} linii culese`;
+  $('c-loc').textContent=miss?`${miss} SKU fără locație`:'toate au locație';$('c-loc').classList.toggle('warn',!!miss);
 }
 const EMPTY='<div class="empty">Încă nu e încărcată nicio listă. Încarcă exportul de comenzi ca să apară pentru toată echipa.</div>';
 const VCOLS=['Canal','Cod fiscal','Id comandă','Nr. crt','Nume client','Cod produs','Cantitate','Denumire produs','Telefon livrare','Nume companie','Nume delegat'];
@@ -378,8 +399,9 @@ $('replAdd').onclick=()=>{if(pending)append(pending.list,pending.name)};
 $('part').onchange=()=>{renderStats();renderVerif();renderPick()};
 $('replNo').onclick=()=>{pending=null;$('repl').classList.add('hidden')};
 const tabs=['verif','pick','loc'];
-function show(t){for(const x of tabs){$('t-'+x).setAttribute('aria-selected',x===t);$('p-'+x).classList.toggle('hidden',x!==t)}}
+function show(t){for(const x of tabs){$('t-'+x).setAttribute('aria-selected',x===t);$('p-'+x).classList.toggle('hidden',x!==t)}ls.set('sectiune',t);const m=document.querySelector('main');if(window.scrollY>m.offsetTop)window.scrollTo({top:m.offsetTop})}
 for(const x of tabs)$('t-'+x).onclick=()=>show(x);
+if(tabs.includes(ls.get('sectiune')))show(ls.get('sectiune'));
 $('bsize').oninput=()=>{renderStats();renderPick()};
 $('bsize').onchange=()=>{if(store&&meta)merge(store.col('zi').doc('meta'),{bsize:bsize()}).catch(()=>{})};
 $('sort').onchange=renderPick;
