@@ -696,16 +696,24 @@ function renderAmb(){
   $('aBody').innerHTML=`<div class="scroll"><table class="stack"><thead><tr><th>Trimis</th><th class="n">Nr.</th><th>Canal</th><th>Id comandă</th><th>Nume client</th><th>Produse</th><th>Facturat</th></tr></thead><tbody>${L.map(o=>`<tr class="${isA(o)?'done':''}"><td>${ck('a',o.nr,prog.a[o.nr],'Comanda '+o.nr+' ambalată și trimisă')}</td><td class="nr n">${o.nr}</td><td>${esc(o.canal)}</td><td style="white-space:nowrap">${esc(o.id)}</td><td>${esc(o.client)}</td><td>${o.lines.map(l=>{const q=pq(o.nr,l);return `<div>${q>=2?`<span class="qb">${q}</span>`:`<b>${q}</b>`} × ${esc(l.sku)}${q<l.qty?` <span class="qx">(din ${l.qty})</span>`:''}</div>`}).join('')}</td><td style="white-space:nowrap;color:var(--mut)">${esc(prog.f[o.nr]?.n||'')}${prog.f[o.nr]?.t?' · '+hhmm(prog.f[o.nr].t):''}</td></tr>`).join('')}</tbody></table></div>`;
 }
 function sentList(){return Object.entries(prog.s).filter(([,v])=>v).map(([k,v])=>{const [from,to]=k.split('-').map(Number);return {k,from,to,...v,os:orders.filter(o=>o.nr>=from&&o.nr<=to)}}).filter(x=>x.os.length).sort((a,b)=>a.from-b.from)}
+let openF=null;
 function renderFact(){
   const L=sentList(),hide=$('fHide').checked;
   const nOrd=L.reduce((s,x)=>s+x.os.length,0),nF=L.reduce((s,x)=>s+x.os.filter(o=>prog.f[o.nr]).length,0);
   $('fInfo').textContent=L.length?`${L.length} ${L.length>1?'calupuri trimise':'calup trimis'} · ${nF}/${nOrd} comenzi facturate`:'';
   $('c-fact').textContent=L.length?`${nOrd-nF} de facturat`:'';
   if(!L.length){$('fBody').innerHTML=`<div class="empty">${orders.length?'Încă nu a fost trimis niciun calup de la picking.':'Nu există liste în ziua asta.'}</div>`;return}
+  const idx=new Map(batches().map(b=>[bkey(b),b.idx]));
   $('fBody').innerHTML=L.map(x=>{
-    const os=x.os.filter(o=>!hide||!prog.f[o.nr]);if(!os.length)return '';
-    const fd=x.os.filter(o=>prog.f[o.nr]).length;
-    return `<div class="batch open"><div class="bhead" style="cursor:default"><h2>Comenzile ${x.from}–${x.to}</h2><span>trimis${x.n?' de '+esc(x.n):''} la ${hhmm(x.t)}</span><span class="bp">${fd===x.os.length?'<span class="chip green">Facturat complet</span>':`<span class="chip">${fd}/${x.os.length} facturate</span>`}</span></div><div class="scroll"><table class="stack"><thead><tr><th>Facturat</th><th class="n">Nr.</th><th>Canal</th><th>Id comandă</th><th>Nume client</th><th>Cod fiscal</th><th>SKU</th><th>Denumire produs</th><th class="n">Comandat</th><th class="n">Cules</th></tr></thead><tbody>${os.map(o=>o.lines.map((l,i)=>{const q=pq(o.nr,l);return `<tr class="${i===0?'fo':''}${q<l.qty?' short':prog.f[o.nr]?' done':''}"><td>${i===0?ck('f',o.nr,prog.f[o.nr],'Comanda '+o.nr+' facturată'):''}</td><td class="nr n">${i===0?o.nr:''}</td><td>${i===0?esc(o.canal):''}</td><td>${i===0?esc(o.id):''}</td><td>${i===0?esc(o.client):''}</td><td>${i===0?cfCell(o):''}</td><td>${esc(l.sku)}</td><td class="prod">${esc(l.prod)}</td><td class="n">${l.qty}</td><td class="n">${q<l.qty?`<span class="qx">${q}${q===0?' · lipsă':''}</span>`:`<b>${q}</b>`}</td></tr>`}).join('')).join('')}</tbody></table></div></div>`;
+    const fd=x.os.filter(o=>prog.f[o.nr]).length,full=fd===x.os.length;
+    if(hide&&full)return '';
+    const open=openF===x.k,os=x.os.filter(o=>!hide||!prog.f[o.nr]);
+    const st=full?'<span class="chip green">Facturat complet</span>':`<span class="chip">${fd}/${x.os.length} facturate</span>`;
+    let body='';
+    if(open){
+      body=`<div class="scroll"><table class="stack"><thead><tr><th><label class="ck" title="Bifează toate comenzile din calup"><input type="checkbox" data-fall="${esc(x.k)}" ${full?'checked':''} aria-label="Toate comenzile din calup facturate"> Toate</label></th><th class="n">Nr.</th><th>Canal</th><th>Id comandă</th><th>Nume client</th><th>SKU</th><th class="n">Comandat</th><th class="n">Cules</th><th>Denumire produs</th></tr></thead><tbody>${os.map(o=>o.lines.map((l,i)=>{const q=pq(o.nr,l);return `<tr class="${i===0?'fo':''}${q<l.qty?' short':prog.f[o.nr]?' done':''}"><td>${i===0?ck('f',o.nr,prog.f[o.nr],'Comanda '+o.nr+' facturată'):''}</td><td class="nr n">${i===0?o.nr:''}</td><td>${i===0?esc(o.canal):''}</td><td style="white-space:nowrap">${i===0?esc(o.id):''}</td><td>${i===0?esc(o.client):''}</td><td>${esc(l.sku)}</td><td class="n">${l.qty>=2?`<span class="qb">${l.qty}</span>`:l.qty}</td><td class="n">${q<l.qty?`<span class="qx">${q}${q===0?' · lipsă':''}</span>`:`<b>${q}</b>`}</td><td class="prod">${esc(l.prod)}</td></tr>`}).join('')).join('')}</tbody></table></div>`;
+    }
+    return `<div class="batch${open?' open':''}${full?' done':''}"><button class="bhead" data-fopen="${esc(x.k)}" aria-expanded="${open}"><span class="arr">›</span><h2>Calup ${idx.get(x.k)||''}</h2><span>comenzile ${x.from}–${x.to} · trimis${x.n?' de '+esc(x.n):''} la ${hhmm(x.t)}</span><span class="bp">${st}</span></button>${body}</div>`;
   }).join('')||'<div class="empty">Totul e facturat.</div>';
 }
 function renderMiss(){
@@ -798,6 +806,11 @@ if(ls.get('sectiune')==='echipa')ls.set('sectiune','setari');if(tabs.includes(ls
 $('bsize').oninput=()=>{renderStats();renderPick()};
 $('bsize').onchange=()=>{if(store&&meta)merge(store.col('zi').doc('meta'),{bsize:bsize()}).catch(()=>{})};
 $('vHide').onchange=renderVerif;$('pHide').onchange=renderPick;$('fHide').onchange=renderFact;
+$('fBody').addEventListener('click',e=>{const b=e.target.closest('button[data-fopen]');if(b){openF=openF===b.dataset.fopen?null:b.dataset.fopen;renderFact()}});
+$('fBody').addEventListener('change',e=>{const c=e.target.closest('input[data-fall]');if(!c)return;e.stopPropagation();
+  const x=sentList().find(y=>y.k===c.dataset.fall);if(!x)return;const st={n:me(),t:Date.now()},f={};
+  for(const o of x.os){if(c.checked){if(!prog.f[o.nr])f[o.nr]=st}else f[o.nr]=null}
+  setProg({f})},true);
 $('dBody').addEventListener('click',e=>{if(e.target.closest('[data-go]'))show('loc')});
 $('dBody').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.closest('[data-go]'))show('loc')});$('aHide').onchange=renderAmb;
 $('pBody').addEventListener('click',e=>{
@@ -820,9 +833,9 @@ $('pBody').addEventListener('pointerdown',startPress);
 $('pBody').addEventListener('pointermove',e=>{if(Math.hypot(e.clientX-px,e.clientY-py)>12)endPress()});
 window.addEventListener('scroll',endPress,{passive:true});
 $('pBody').addEventListener('contextmenu',e=>{if(e.target.closest('td.q'))e.preventDefault()});
-$('dlF').onclick=()=>{const L=sentList();if(!L.length)return;const aoa=[['Calup','Nr.','Canal','Id comandă','Nume client','Cod fiscal','SKU','Denumire produs','Comandat','Cules','Facturat']];
-  for(const x of L)for(const o of x.os)for(const l of o.lines)aoa.push([`${x.from}-${x.to}`,o.nr,o.canal,o.id,o.client,o.cf,l.sku,l.prod,l.qty,pq(o.nr,l),prog.f[o.nr]?'da':'']);
-  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheet(aoa,[9,6,14,24,28,14,12,60,10,8,9]),'Facturare');save(`facturare_${curDay}.xlsx`,xbuf(wb))};
+$('dlF').onclick=()=>{const L=sentList();if(!L.length)return;const idx=new Map(batches().map(b=>[bkey(b),b.idx]));const aoa=[['Calup','Nr.','Canal','Id comandă','Nume client','SKU','Comandat','Cules','Denumire produs','Facturat']];
+  for(const x of L)for(const o of x.os)for(const l of o.lines)aoa.push([`${idx.get(x.k)||''} (${x.from}-${x.to})`,o.nr,o.canal,o.id,o.client,l.sku,l.qty,pq(o.nr,l),l.prod,prog.f[o.nr]?'da':'']);
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheet(aoa,[12,6,14,24,28,12,10,8,60,9]),'Facturare');save(`facturare_${curDay}.xlsx`,xbuf(wb))};
 $('lq').oninput=renderLoc;
 $('me').value=ls.get('nume')||'';$('me').oninput=()=>{ls.set('nume',me());if($('team').classList.contains('live'))$('sideFoot').textContent=`● Conectat${me()?' ca '+me():''}`};$('me').onchange=()=>{if(window.__setName)window.__setName(me())};
 document.addEventListener('change',e=>{const c=e.target;if(c.matches('input[data-k]'))tick(c.dataset.k,c.dataset.key,c.checked)});

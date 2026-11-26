@@ -19,7 +19,7 @@ Printare: la Picking se printează doar calupul deschis (butonul de sus devine �
 Bife în timp real: „Verificat” pe comandă (lista de verificare) și „Cules” pe linie (picking), cu numele celui care a bifat („Numele tău”, ținut în localStorage).
 Picking: calupurile apar închise (acordeon), se deschid pe rând; liniile sunt ordonate după rând și alveolă. Ținut apăsat pe cantitate (550 ms)
 deschide un editor −/+ care permite doar scăderea (0 = lipsă); OK cu cantitate mai mică bifează automat linia și o colorează roșu (verde = cules complet). Când toate liniile sunt bifate, „Trimite la facturare” blochează calupul
-(„Redeschide calupul” îl deblochează). Secțiunea „Facturare” arată calupurile trimise, cu Comandat vs Cules și bifa „Facturat” pe comandă, plus Excel.
+(„Redeschide calupul” îl deblochează). Secțiunea „Facturare” arată calupurile trimise ca la Picking (închise, se deschid pe rând), coloane: (Facturat) Nr., Canal, Id comandă, Nume client, SKU, Comandat, Cules, Denumire produs; bifa „Toate” din antetul tabelului bifează/debifează toate comenzile calupului; plus Excel.
 Secțiunea „Ambalare” arată comenzile bifate „Facturat”; departamentul de ambalare le bifează „Trimis” după ce le ambalează. Rândul de cifre din antet a fost scos (cifrele stau doar în Dashboard). Bara de conexiune (stare, Numele tău, email, Ieși din cont) stă doar în secțiunea „Setări”. „Dashboard” (pe ziua aleasă): Total comenzi, De pickuit, Pickuite (toate liniile bifate),
 Facturate, De ambalat (facturate, netrimise), Ambalate și trimise, SKU fără locație (cardul duce la Locații), plus bara de progres (fără tabele pe canale/calupuri, la cererea utilizatorului).
 Calendar: listele se salvează pe zile (YYYY-MM-DD). Bara de zi (‹ › Azi, Calendar, Șterge) + zona de încărcare apar doar în Lista de verificare (în Dashboard doar navigarea pe zile; celelalte secțiuni arată data în titlu); ziua aleasă se aplică tuturor secțiunilor;
@@ -32,7 +32,7 @@ vechiul doc `meta`/`p0..` e mutat automat pe ziua lui), `bife/<listId>` {v:{nr:{
 Țara se deduce din canal: PepitaHU/eMAG HU → HU, eMAG BG/Trendyol BG/Fashion Days BG → BG, Trendyol GR/Skroutz → EL (codul VIES al Greciei);
 restul (România) nu se verifică. Codul fiscal se curăță (fără prefix de țară; la HU primele 8 cifre din formatul 12345678-2-25) și se verifică
 automat în VIES; rezultatul se salvează în `bife/<listId>.x["<CC><nr>"]` {ok,name,t,n} ca să nu se verifice din nou. Celula Cod fiscal
-(Verificare și Facturare) e verde = plătitor TVA, roșu = neplătitor, gri = se verifică, contur punctat = VIES indisponibil (buton „reîncearcă”).
+(Lista de verificare) e verde = plătitor TVA, roșu = neplătitor, gri = se verifică, contur punctat = VIES indisponibil (buton „reîncearcă”).
 Browserul întreabă întâi proxy-ul Apps Script din `src/vies.json` {"proxy":"https://script.google.com/macros/s/…/exec"} (cod în
 `apps-script/vies-proxy.gs`), apoi VIES direct. În pagina Claude, cererile către alte site-uri sunt blocate, deci verificarea merge doar pe GitHub.
 
