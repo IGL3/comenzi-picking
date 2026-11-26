@@ -437,7 +437,7 @@ async function publish(list,name){
   if(!store){orders=list;meta=m;prog=P0();renderAll();return}
   say($('msg'),'Salvez lista pentru '+dshort(curDay)+'…','');
   try{
-    const old=meta;await writeList(list,m,old);
+    const old=meta;await writeList(list,m,old);noteMissing(list,curDay);
     if(old?.listId)await store.col('bife').doc(old.listId).delete().catch(()=>{});
     say($('msg'),`Lista „${name}” e salvată pe ${dshort(curDay)} și o vede toată echipa.`,'ok');
   }catch(e){say($('msg'),'Lista nu a putut fi trimisă: '+(e.message||e.code),'err')}
@@ -452,7 +452,7 @@ async function append(list,name){
   const msg=`Am adăugat ${nou.length} comenzi noi, numerotate ${start+1}–${start+nou.length}`+(list.length>nou.length?`; ${list.length-nou.length} erau deja în listă și au fost sărite.`:'.');
   if(!store){orders=all;meta=m;$('part').value=String(t);renderAll();say($('msg'),msg,'ok');return}
   say($('msg'),'Adaug comenzile noi pentru toată echipa…','');
-  try{await writeList(all,m,meta);wantPart=String(t);say($('msg'),msg,'ok')}catch(e){say($('msg'),'Comenzile noi nu au putut fi trimise: '+(e.message||e.code),'err')}
+  try{await writeList(all,m,meta);noteMissing(nou,curDay);wantPart=String(t);say($('msg'),msg,'ok')}catch(e){say($('msg'),'Comenzile noi nu au putut fi trimise: '+(e.message||e.code),'err')}
 }
 let wantPart=null;
 function placeDay(t){const b=$('dayBlock');
@@ -583,6 +583,21 @@ function renderParts(){
   sel.value=[...sel.options].some(o=>o.value===cur)?cur:'all';delete sel.dataset.v;
   $('partInfo').textContent=tr.length>1?`${tr.length} liste încărcate azi; numerotarea continuă de la una la alta, iar fiecare listă are calupurile ei.`:'';
 }
+let farLoc={};   // SKU fără locație văzute în toate listele: sku -> {p: denumire, d: ziua}
+function missingIn(list,day){const r={};for(const o of list)for(const l of o.lines)if(!loc(l.sku)&&!r[l.sku])r[l.sku]={p:l.prod,d:day};return r}
+async function noteMissing(list,day){if(!store)return;const items=missingIn(list,day);if(Object.keys(items).length)await merge(store.col('zi').doc('faraloc'),{items}).catch(()=>{})}
+async function backfillMissing(){ // o singură dată: caută în listele din zilele trecute
+  try{const q=await store.col('zi').get();const items={};
+    for(const d of q.docs){const x=d.data();if(!x||!Array.isArray(x.orders))continue;Object.assign(items,missingIn(x.orders,x.day||''),items)}
+    await merge(store.col('zi').doc('faraloc'),{items,bf:true})}catch(e){}
+}
+function allMissing(){
+  const m=new Map();
+  for(const o of orders)for(const l of o.lines)if(!loc(l.sku)){const x=m.get(l.sku)||{sku:l.sku,prod:l.prod,n:0,day:curDay};x.n++;m.set(l.sku,x)}
+  const src=store?farLoc:Object.fromEntries(Object.entries(localDays).flatMap(([d,v])=>Object.entries(missingIn(v.orders||[],d))));
+  for(const [sku,v] of Object.entries(src))if(v&&!loc(sku)&&!m.has(sku))m.set(sku,{sku,prod:v.p||'',n:0,day:v.d||''});
+  return [...m.values()].sort((a,b)=>(b.day||'').localeCompare(a.day||'')||a.sku.localeCompare(b.sku));
+}
 function missing(){
   const m=new Map();
   for(const o of orders)for(const l of o.lines)if(!loc(l.sku)){const x=m.get(l.sku)||{sku:l.sku,prod:l.prod,n:0};x.n++;m.set(l.sku,x)}
@@ -592,8 +607,8 @@ function ck(k,key,val,label){const w=val?`${val.n||'cineva'}${val.t?' · '+hhmm(
 
 /* ---------- afișare ---------- */
 function renderStats(){
-  const O=vis();if(!O.length){for(const x of ['verif','pick','loc'])$('c-'+x).textContent='';return}
-  const L=O.reduce((s,o)=>s+o.lines.length,0),miss=missing().length;
+  const O=vis();if(!O.length){for(const x of ['verif','pick'])$('c-'+x).textContent='';const mm=allMissing().length;$('c-loc').textContent=mm?`${mm} SKU fără locație`:'';$('c-loc').classList.toggle('warn',!!mm);return}
+  const L=O.reduce((s,o)=>s+o.lines.length,0),miss=allMissing().length;
   const vd=O.filter(o=>isV(o.nr)).length,pd=O.reduce((s,o)=>s+o.lines.filter(l=>isP(o.nr,l.sku)).length,0);
   $('c-verif').textContent=`${vd}/${O.length} verificate`;$('c-pick').textContent=`${pd}/${L} linii culese`;
   $('c-loc').textContent=miss?`${miss} SKU fără locație`:'toate au locație';$('c-loc').classList.toggle('warn',!!miss);
@@ -717,9 +732,9 @@ function renderFact(){
   }).join('')||'<div class="empty">Totul e facturat.</div>';
 }
 function renderMiss(){
-  const m=missing();
-  if(!m.length){$('missBox').innerHTML=orders.length?'<p class="msg ok">Toate produsele din lista de azi au locație.</p>':'';return}
-  $('missBox').innerHTML=`<div class="batch"><div class="bh"><h2>Fără locație în lista de azi</h2><span>${m.length} SKU — completează rândul și alveola și apasă Salvează</span></div><table class="stack"><thead><tr><th>SKU</th><th>Denumire</th><th>Rând</th><th>Alveolă</th><th></th></tr></thead><tbody>${m.map(x=>`<tr class="mrow"><td><b>${esc(x.sku)}</b></td><td class="prod">${esc(x.prod)}</td><td><input type="number" min="0" aria-label="Rând"></td><td><input type="number" min="0" aria-label="Alveolă"></td><td><button class="sm savem" data-sku="${esc(x.sku)}">Salvează</button></td></tr>`).join('')}</tbody></table></div>`;
+  const m=allMissing();
+  if(!m.length){$('missBox').innerHTML='<p class="msg ok">Toate produsele din toate listele au locație.</p>';return}
+  $('missBox').innerHTML=`<div class="batch"><div class="bh"><h2>Fără locație în toate listele</h2><span>${m.length} SKU — completează rândul și alveola și apasă Salvează</span></div><div class="scroll"><table class="stack"><thead><tr><th>SKU</th><th>Denumire</th><th>Din lista</th><th>Rând</th><th>Alveolă</th><th></th></tr></thead><tbody>${m.map(x=>`<tr class="mrow"><td><b>${esc(x.sku)}</b></td><td class="prod">${esc(x.prod)}</td><td style="white-space:nowrap">${x.day?esc(dshort(x.day))+(x.day===curDay?' (ziua deschisă)':''):''}</td><td><input type="number" min="0" aria-label="Rând"></td><td><input type="number" min="0" aria-label="Alveolă"></td><td><button class="sm savem" data-sku="${esc(x.sku)}">Salvează</button></td></tr>`).join('')}</tbody></table></div></div>`;
 }
 function renderLoc(){
   const q=$('lq').value.trim();
@@ -752,7 +767,7 @@ async function putLoc(sku,c,a){
   const v={c:Number(c),a:Number(a),t:Date.now(),n:me()};
   if(!Number.isFinite(v.c)||!Number.isFinite(v.a))throw new Error('Rândul și alveola trebuie să fie numere');
   extra.set(sku,v);
-  if(store)await store.col('locatii').doc(docId(sku)).set({sku,...v});else saveLocal();
+  if(store){await store.col('locatii').doc(docId(sku)).set({sku,...v});if(farLoc[sku])merge(store.col('zi').doc('faraloc'),{items:{[sku]:null}}).catch(()=>{})}else saveLocal();
 }
 async function delLoc(sku){extra.delete(sku);if(store)await store.col('locatii').doc(docId(sku)).delete();else saveLocal()}
 async function act(fn,okText){try{await fn();say($('locMsg'),okText,'ok')}catch(e){say($('locMsg'),'Nu s-a salvat: '+(e.message||e.code||e),'err')}renderAll()}
@@ -883,6 +898,8 @@ function connect(st,label){
       const up=l0.filter(([k])=>!m.has(k));if(up.length)(async()=>{for(const [k,v] of up){try{await putLoc(k,v.c,v.a)}catch(e){}}ls.set('locatii_extra',null)})()}
     renderAll();
   },fail);
+  let bfDone=false;
+  store.col('zi').doc('faraloc').onSnapshot(d=>{const x=d.exists?d.data():{};farLoc=x.items||{};if(!x.bf&&!bfDone){bfDone=true;backfillMissing()}renderStats();renderMiss()},()=>{});
   store.col('zi').doc('index').onSnapshot(s=>{
     if(!s.metadata.fromCache){clearTimeout(timer);team(label,true)}
     const x=s.exists?(s.data().days||{}):{};dayIdx={};for(const k in x)if(x[k])dayIdx[k]=x[k];renderDay();

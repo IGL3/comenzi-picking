@@ -26,7 +26,9 @@ Calendar: listele se salvează pe zile (YYYY-MM-DD). Bara de zi (‹ › Azi, Ca
 calendarul marchează zilele cu liste (numărul de comenzi). Ștergere („Șterge liste”): o listă anume din zi (bifele ei se golesc, numerele celorlalte rămân), toată ziua sau toate listele din toate zilele (cu a doua confirmare; locațiile rămân).
 Date: colecțiile `zi` (doc `m_<zi>` {day,listId,file,at,by,n,parts,rev,bsize,tranches:[{from,to,at,by,file}]} + bucăți `p_<zi>_<i>` {day,listId,rev,orders}
 câte 150 de comenzi, citite cu where('day','=='); doc `index` {days:{<zi>:{n,tr}|null}} pentru calendar; fiecare comandă are `t` = indexul listei;
-vechiul doc `meta`/`p0..` e mutat automat pe ziua lui), `bife/<listId>` {v:{nr:{n,t}|null}, p:{"nr_sku":{n,t}|null}, q:{"nr_sku":{q,n,t}|null} (cantitate culeasă mai mică), s:{"from-to":{n,t}|null} (calupuri trimise), f:{nr:{n,t}|null} (facturat), a:{nr:{n,t}|null} (ambalat și trimis)}, `locatii/<sku>` {sku,c,a,t,n}.
+vechiul doc `meta`/`p0..` e mutat automat pe ziua lui), `bife/<listId>` {v:{nr:{n,t}|null}, p:{"nr_sku":{n,t}|null}, q:{"nr_sku":{q,n,t}|null} (cantitate culeasă mai mică), s:{"from-to":{n,t}|null} (calupuri trimise), f:{nr:{n,t}|null} (facturat), a:{nr:{n,t}|null} (ambalat și trimis)}, `locatii/<sku>` {sku,c,a,t,n},
+`zi/faraloc` {items:{<sku>:{p,d}|null}, bf} = SKU-urile fără locație văzute în toate listele (completat la încărcare; `bf` = căutarea o singură dată prin zilele vechi);
+secțiunea Locații arată „Fără locație în toate listele” (cu ziua listei), iar meniul arată totalul; cardul din Dashboard rămâne pe ziua aleasă.
 
 ## VIES (TVA pentru firme din alte țări)
 Țara se deduce din canal: PepitaHU/eMAG HU → HU, eMAG BG/Trendyol BG/Fashion Days BG → BG, Trendyol GR/Skroutz → EL (codul VIES al Greciei);
