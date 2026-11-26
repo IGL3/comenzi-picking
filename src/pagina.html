@@ -121,7 +121,7 @@ td.nr{font:800 20px/1 "Barlow Condensed",sans-serif;white-space:nowrap}
 .miss{color:var(--red);font-weight:600;white-space:nowrap}
 .multi{display:inline-block;background:var(--yel);color:#17160f;font-size:13px;font-weight:600;border-radius:5px;padding:1px 7px;white-space:nowrap}
 tr.grp td{border-top:2px solid var(--ink)}
-@media(min-width:601px){#fBody table{min-width:1250px}#fBody .prod{min-width:320px}#vBody table{min-width:1400px}#vBody .prod{min-width:360px}#vBody td:nth-child(4){white-space:nowrap}}
+@media(min-width:601px){#fBody table{min-width:1000px}#fBody .prod{min-width:360px}#fBody .prod div+div{border-top:1px dashed var(--line);margin-top:4px;padding-top:4px}#vBody table{min-width:1400px}#vBody .prod{min-width:360px}#vBody td:nth-child(4){white-space:nowrap}}
 .batch{margin-bottom:26px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .bh{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;padding:12px 14px;background:var(--soft);border-bottom:2px solid var(--ink)}
 .bh span{color:var(--mut)}
@@ -291,6 +291,7 @@ tr.short td{background:#f4d9d4!important}
     <h2 class="ptitle">Facturare<span class="pday"></span></h2>
     <div class="bar"><span class="grow" id="fInfo"></span>
       <label class="ck"><input type="checkbox" id="fHide"> Doar ce nu e facturat</label>
+      <button class="ghost" id="fAll">Selectează toate comenzile</button>
       <button class="ghost dl" id="dlF">Descarcă Excel</button></div>
     <div id="fBody"></div>
   </section>
@@ -717,6 +718,7 @@ function renderFact(){
   const nOrd=L.reduce((s,x)=>s+x.os.length,0),nF=L.reduce((s,x)=>s+x.os.filter(o=>prog.f[o.nr]).length,0);
   $('fInfo').textContent=L.length?`${L.length} ${L.length>1?'calupuri trimise':'calup trimis'} · ${nF}/${nOrd} comenzi facturate`:'';
   $('c-fact').textContent=L.length?`${nOrd-nF} de facturat`:'';
+  $('fAll').classList.toggle('hidden',!L.length);$('fAll').textContent=L.length&&nF===nOrd?'Deselectează toate comenzile':'Selectează toate comenzile';
   if(!L.length){$('fBody').innerHTML=`<div class="empty">${orders.length?'Încă nu a fost trimis niciun calup de la picking.':'Nu există liste în ziua asta.'}</div>`;return}
   const idx=new Map(batches().map(b=>[bkey(b),b.idx]));
   $('fBody').innerHTML=L.map(x=>{
@@ -726,7 +728,7 @@ function renderFact(){
     const st=full?'<span class="chip green">Facturat complet</span>':`<span class="chip">${fd}/${x.os.length} facturate</span>`;
     let body='';
     if(open){
-      body=`<div class="scroll"><table class="stack"><thead><tr><th><label class="ck" title="Bifează toate comenzile din calup"><input type="checkbox" data-fall="${esc(x.k)}" ${full?'checked':''} aria-label="Toate comenzile din calup facturate"> Toate</label></th><th class="n">Nr.</th><th>Canal</th><th>Id comandă</th><th>Nume client</th><th>SKU</th><th class="n">Comandat</th><th class="n">Cules</th><th>Denumire produs</th></tr></thead><tbody>${os.map(o=>o.lines.map((l,i)=>{const q=pq(o.nr,l);return `<tr class="${i===0?'fo':''}${q<l.qty?' short':prog.f[o.nr]?' done':''}"><td>${i===0?ck('f',o.nr,prog.f[o.nr],'Comanda '+o.nr+' facturată'):''}</td><td class="nr n">${i===0?o.nr:''}</td><td>${i===0?esc(o.canal):''}</td><td style="white-space:nowrap">${i===0?esc(o.id):''}</td><td>${i===0?esc(o.client):''}</td><td>${esc(l.sku)}</td><td class="n">${l.qty>=2?`<span class="qb">${l.qty}</span>`:l.qty}</td><td class="n">${q<l.qty?`<span class="qx">${q}${q===0?' · lipsă':''}</span>`:`<b>${q}</b>`}</td><td class="prod">${esc(l.prod)}</td></tr>`}).join('')).join('')}</tbody></table></div>`;
+      body=`<div class="bfoot" style="border-top:0;border-bottom:1px solid var(--line)"><button class="${full?'ghost ':''}sm" data-fall="${esc(x.k)}" data-on="${full?0:1}">${full?'Deselectează tot calupul':'Selectează tot calupul (facturat)'}</button><span class="grow">${fd}/${x.os.length} comenzi facturate</span></div><div class="scroll"><table class="stack"><thead><tr><th><label class="ck" title="Bifează toate comenzile din calup"><input type="checkbox" data-fall="${esc(x.k)}" data-on="${full?0:1}" ${full?'checked':''} aria-label="Toate comenzile din calup facturate"> Toate</label></th><th class="n">Nr.</th><th>Id comandă</th><th>Nume client</th><th>Produse</th><th>Denumire produse</th></tr></thead><tbody>${os.map(o=>{const sh=o.lines.some(l=>pq(o.nr,l)<l.qty);return `<tr class="fo${sh?' short':prog.f[o.nr]?' done':''}"><td>${ck('f',o.nr,prog.f[o.nr],'Comanda '+o.nr+' facturată')}</td><td class="nr n">${o.nr}</td><td style="white-space:nowrap">${esc(o.id)}</td><td>${esc(o.client)}</td><td style="white-space:nowrap">${o.lines.map(l=>{const q=pq(o.nr,l);return `<div>${q>=2?`<span class="qb">${q}</span>`:`<b>${q}</b>`} × ${esc(l.sku)}${q<l.qty?` <span class="qx">(din ${l.qty}${q===0?', lipsă':''})</span>`:''}</div>`}).join('')}</td><td class="prod">${o.lines.map(l=>`<div>${esc(l.prod)}</div>`).join('')}</td></tr>`}).join('')}</tbody></table></div>`;
     }
     return `<div class="batch${open?' open':''}${full?' done':''}"><button class="bhead" data-fopen="${esc(x.k)}" aria-expanded="${open}"><span class="arr">›</span><h2>Calup ${idx.get(x.k)||''}</h2><span>comenzile ${x.from}–${x.to} · trimis${x.n?' de '+esc(x.n):''} la ${hhmm(x.t)}</span><span class="bp">${st}</span></button>${body}</div>`;
   }).join('')||'<div class="empty">Totul e facturat.</div>';
@@ -822,10 +824,12 @@ $('bsize').oninput=()=>{renderStats();renderPick()};
 $('bsize').onchange=()=>{if(store&&meta)merge(store.col('zi').doc('meta'),{bsize:bsize()}).catch(()=>{})};
 $('vHide').onchange=renderVerif;$('pHide').onchange=renderPick;$('fHide').onchange=renderFact;
 $('fBody').addEventListener('click',e=>{const b=e.target.closest('button[data-fopen]');if(b){openF=openF===b.dataset.fopen?null:b.dataset.fopen;renderFact()}});
-$('fBody').addEventListener('change',e=>{const c=e.target.closest('input[data-fall]');if(!c)return;e.stopPropagation();
-  const x=sentList().find(y=>y.k===c.dataset.fall);if(!x)return;const st={n:me(),t:Date.now()},f={};
-  for(const o of x.os){if(c.checked){if(!prog.f[o.nr])f[o.nr]=st}else f[o.nr]=null}
-  setProg({f})},true);
+function factAll(keys,on){const L=sentList().filter(y=>keys.includes(y.k)),st={n:me(),t:Date.now()},f={};
+  for(const x of L)for(const o of x.os){if(on){if(!prog.f[o.nr])f[o.nr]=st}else if(prog.f[o.nr])f[o.nr]=null}
+  if(Object.keys(f).length)setProg({f})}
+$('fBody').addEventListener('change',e=>{const c=e.target.closest('input[data-fall]');if(!c)return;e.stopPropagation();factAll([c.dataset.fall],c.checked)},true);
+$('fBody').addEventListener('click',e=>{const b=e.target.closest('button[data-fall]');if(b)factAll([b.dataset.fall],b.dataset.on==='1')});
+$('fAll').onclick=()=>{const L=sentList(),on=L.some(x=>x.os.some(o=>!prog.f[o.nr]));factAll(L.map(x=>x.k),on)};
 $('dBody').addEventListener('click',e=>{if(e.target.closest('[data-go]'))show('loc')});
 $('dBody').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.closest('[data-go]'))show('loc')});$('aHide').onchange=renderAmb;
 $('pBody').addEventListener('click',e=>{
@@ -848,9 +852,9 @@ $('pBody').addEventListener('pointerdown',startPress);
 $('pBody').addEventListener('pointermove',e=>{if(Math.hypot(e.clientX-px,e.clientY-py)>12)endPress()});
 window.addEventListener('scroll',endPress,{passive:true});
 $('pBody').addEventListener('contextmenu',e=>{if(e.target.closest('td.q'))e.preventDefault()});
-$('dlF').onclick=()=>{const L=sentList();if(!L.length)return;const idx=new Map(batches().map(b=>[bkey(b),b.idx]));const aoa=[['Calup','Nr.','Canal','Id comandă','Nume client','SKU','Comandat','Cules','Denumire produs','Facturat']];
-  for(const x of L)for(const o of x.os)for(const l of o.lines)aoa.push([`${idx.get(x.k)||''} (${x.from}-${x.to})`,o.nr,o.canal,o.id,o.client,l.sku,l.qty,pq(o.nr,l),l.prod,prog.f[o.nr]?'da':'']);
-  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheet(aoa,[12,6,14,24,28,12,10,8,60,9]),'Facturare');save(`facturare_${curDay}.xlsx`,xbuf(wb))};
+$('dlF').onclick=()=>{const L=sentList();if(!L.length)return;const idx=new Map(batches().map(b=>[bkey(b),b.idx]));const aoa=[['Calup','Nr.','Id comandă','Nume client','SKU','Cantitate culeasă','Comandat','Denumire produs','Facturat']];
+  for(const x of L)for(const o of x.os)for(const l of o.lines)aoa.push([`${idx.get(x.k)||''} (${x.from}-${x.to})`,o.nr,o.id,o.client,l.sku,pq(o.nr,l),l.qty,l.prod,prog.f[o.nr]?'da':'']);
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheet(aoa,[12,6,24,28,12,10,10,60,9]),'Facturare');save(`facturare_${curDay}.xlsx`,xbuf(wb))};
 $('lq').oninput=renderLoc;
 $('me').value=ls.get('nume')||'';$('me').oninput=()=>{ls.set('nume',me());if($('team').classList.contains('live'))$('sideFoot').textContent=`● Conectat${me()?' ca '+me():''}`};$('me').onchange=()=>{if(window.__setName)window.__setName(me())};
 document.addEventListener('change',e=>{const c=e.target;if(c.matches('input[data-k]'))tick(c.dataset.k,c.dataset.key,c.checked)});
