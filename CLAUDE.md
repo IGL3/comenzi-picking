@@ -3,15 +3,14 @@
 Aplicație într-o singură pagină (UI în română): încarci exportul de comenzi (.xlsx); comenzile se sortează alfabetic după canal
 și primesc Nr. crt 1, 2, 3… în această ordine (același număr pentru toate produsele unei comenzi). Lista de verificare are câte un rând pe produs,
 în ordinea cerută de utilizator: Canal, Cod fiscal, Id comandă, Nr. crt, Nume client, Cod produs, Cantitate, Denumire produs, Telefon livrare,
-Nume companie, Nume delegat. Picking-ul e pe calupuri de 20 de comenzi, coloane în ordinea: (Cules) Nr. comandă, SKU, Cantitate, Denumire, Rând, Alveolă
-(Nr. comandă, SKU, Cantitate, Denumire produs, Rând, Alveolă). Exportul se citește doar în browser.
+Nume companie, Nume delegat. Picking-ul e pe calupuri de 20 de comenzi, coloane în ordinea: (Cules) Nr. comandă, SKU, Cantitate, Denumire, Rând, Alveolă. Exportul se citește doar în browser.
 
 ## Lucru în echipă
 Unul încarcă exportul → lista devine comună pentru toți. Dacă există deja o listă, încărcarea întreabă:
 „Adaugă în continuare” (ex. lista de la prânz: comenzile noi primesc numerele de după ultima, ID-urile deja existente sunt sărite,
 sortarea după canal se face doar în lista nouă, iar fiecare listă are calupurile ei) sau „Înlocuiește lista” (de la 1, șterge bifele).
 Filtrul „Arată” alege toate listele sau doar una; Excelul și printarea folosesc filtrul.
-Printare: butonul „Printează” deschide direct fereastra de printare (iframe ascuns, fără descărcare); doar în pagina Claude, unde printarea e blocată, descarcă fișierul .html.
+Printare: la Picking se printează doar calupul deschis (butonul de sus devine „Printează calupul N”, plus buton în subsolul calupului; fără calup deschis: toate). Butonul „Printează” deschide direct fereastra de printare (iframe ascuns, fără descărcare); doar în pagina Claude, unde printarea e blocată, descarcă fișierul .html.
 Bife în timp real: „Verificat” pe comandă (lista de verificare) și „Cules” pe linie (picking), cu numele celui care a bifat („Numele tău”, ținut în localStorage).
 Picking: calupurile apar închise (acordeon), se deschid pe rând; liniile sunt ordonate după rând și alveolă. Ținut apăsat pe cantitate (550 ms)
 deschide un editor −/+ care permite doar scăderea (0 = lipsă); OK cu cantitate mai mică bifează automat linia și o colorează roșu (verde = cules complet). Când toate liniile sunt bifate, „Trimite la facturare” blochează calupul
