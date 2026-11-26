@@ -316,7 +316,7 @@ tr.short td{background:#f4d9d4!important}
       <button class="ghost dl" id="dlP">Descarcă Excel</button>
       <button class="ghost dl" id="prP">Printează</button>
     </div>
-    <p class="note" style="margin:0 0 12px">Produsele din fiecare calup sunt ordonate după rând și alveolă (ultimele coloane). Dacă lipsește un produs, ține apăsat pe cantitate ca s-o micșorezi: rândul se bifează singur și se face roșu.</p>
+    <p class="note" style="margin:0 0 12px">Produsele din fiecare calup sunt ordonate după rând și alveolă (ultimele coloane). Dacă lipsește un produs, ține apăsat pe cantitate (pe telefon, oriunde pe chenar) ca s-o micșorezi: rândul se bifează singur și se face roșu.</p>
     <div id="pBody"></div>
   </section>
 
@@ -900,7 +900,7 @@ $('pBody').addEventListener('click',e=>{
 let qMax=0;
 let px=0,py=0;
 let pressFired=0;
-const startPress=e=>{pressFired=0;const c=e.target.closest('.q:not(.lock)');if(!c)return;px=e.clientX;py=e.clientY;clearTimeout(pressT);pressT=setTimeout(()=>{pressFired=Date.now();const k=c.dataset.q;qMax=+c.dataset.max;const x=prog.q[k];editV=x&&x.q!=null?x.q:qMax;editQ=k;renderPick();if(navigator.vibrate)try{navigator.vibrate(30)}catch(_){}},550)};
+const startPress=e=>{pressFired=0;if(e.target.closest('.qed,button,a,input'))return;const c=e.target.closest('.q:not(.lock)')||e.target.closest('.pcard[data-tick]')?.querySelector('.q:not(.lock)');if(!c)return;px=e.clientX;py=e.clientY;clearTimeout(pressT);pressT=setTimeout(()=>{pressFired=Date.now();const k=c.dataset.q;qMax=+c.dataset.max;const x=prog.q[k];editV=x&&x.q!=null?x.q:qMax;editQ=k;renderPick();if(navigator.vibrate)try{navigator.vibrate(30)}catch(_){}},550)};
 const endPress=()=>clearTimeout(pressT);
 $('pBody').addEventListener('pointerdown',startPress);
 ['pointerup','pointercancel'].forEach(t=>$('pBody').addEventListener(t,endPress));
