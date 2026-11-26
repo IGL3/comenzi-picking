@@ -1,9 +1,9 @@
 # Comenzi → verificare și picking (Quasar Comex)
 
 Aplicație într-o singură pagină (UI în română): încarci exportul de comenzi (.xlsx); comenzile se sortează alfabetic după canal
-și primesc Nr. crt 1, 2, 3… în această ordine (același număr pentru toate produsele unei comenzi). Lista de verificare are câte un rând pe produs,
+și primesc Nr. crt 1, 2, 3… în această ordine (același număr pentru toate produsele unei comenzi). Lista comenzi (fostă „Lista de verificare”, cheie `verif`) are câte un rând pe produs,
 în ordinea cerută de utilizator: Canal, Cod fiscal, Id comandă, Nr. crt, Nume client, Cod produs, Cantitate, Denumire produs, Telefon livrare,
-Nume companie, Nume delegat; Nr. crt rămâne normal (fără evidențiere, chiar dacă se repetă), iar doar cantitățile 2+ au etichetă turcoaz (fără fundal colorat pe rând, ca să nu se confunde cu verdele de la bife) (și la Picking; la printare sunt încadrate). Picking-ul e pe calupuri de 20 de comenzi, coloane în ordinea: (Cules) Nr. comandă, SKU, Cantitate, Denumire, Rând, Alveolă. Exportul se citește doar în browser.
+Nume companie, Nume delegat; Nr. crt rămâne normal (fără evidențiere, chiar dacă se repetă), iar doar cantitățile 2+ au etichetă turcoaz (fără fundal colorat pe rând, ca să nu se confunde cu verdele de la bife) (și la Picking; la printare sunt încadrate). Picking-ul (în meniu „Picking”, fost „Picking pe calupuri”) e pe calupuri de 20 de comenzi, coloane în ordinea: (Cules) Nr. comandă, SKU, Cantitate, Denumire, Rând, Alveolă. Exportul se citește doar în browser.
 
 ## Temă
 60% #1A1C21 (fundal, meniu) · 30% #ECE6DA (suprafețe: carduri, tabele, câmpuri, cu text închis) · 10% #00D8F2 (doar detalii mici: secțiunea activă,
@@ -57,7 +57,7 @@ Browserul întreabă întâi proxy-ul Apps Script din `src/vies.json` {"proxy":"
 - Pagina Claude: https://claude.ai/artifact/6BER2wjVDKSPE3H1NgV4kk (capabilități `db` + `downloads`; colecțiile de mai sus la rădăcina db).
 - GitHub Pages: https://igl3.github.io/comenzi-picking/ — fără `window.claude`; logare Firebase Auth cu email și parolă (cont nou cere numele,
   care devine displayName și apare la bife; emailul trebuie confirmat; sesiunea rămâne salvată în browser, iar fereastra de logare apare doar dacă nu ești conectat). Acces doar pentru emailurile din doc `echipa/membri` {emails:[], admini:[]};
-  primul cont confirmat poate crea echipa („Sunt administratorul: creează echipa”). Administratorii văd în „Setări” partea „Echipă” (bife de acces pe secțiuni pentru fiecare cont: Listă de verificare, Picking, Facturare, Ambalare, Locații, Retururi; salvate în `echipa/membri.acces[<email cu „.” înlocuit de „,”>]` = listă de chei verif/pick/fact/amb/loc/ret; fără listă = acces la toate; Dashboard și Setări le văd toți, administratorii văd tot; e o restricție de interfață, nu de bază de date; adaugă/scot emailuri,
+  primul cont confirmat poate crea echipa („Sunt administratorul: creează echipa”). Administratorii văd în „Setări” partea „Echipă” (bife de acces pe secțiuni pentru fiecare cont: Lista comenzi, Picking, Facturare, Ambalare, Locații, Retururi; salvate în `echipa/membri.acces[<email cu „.” înlocuit de „,”>]` = listă de chei verif/pick/fact/amb/loc/ret; fără listă = acces la toate; Dashboard și Setări le văd toți, administratorii văd tot; e o restricție de interfață, nu de bază de date; adaugă/scot emailuri,
   rol de administrator, mutarea datelor vechi de pe `teams/<cod>` din localStorage). Datele: `firma/quasar/<zi|bife|locatii>/<doc>`.
   Regulile Firestore sunt în `firebase/firestore.rules` (se copiază în consola Firebase → Firestore → Rules).
 

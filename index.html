@@ -275,8 +275,8 @@ tr.short td{background:#f4d9d4!important}
   <a class="brand" id="brand" href="#dashboard" title="Quasar &amp; Co. · deschide Dashboard"><span class="logo-wrap"><span class="logo" role="img" aria-label="Quasar &amp; Co."></span></span></a>
   <div class="lbl">Deschide</div>
   <button role="tab" id="t-dash" aria-selected="false">Dashboard<span class="cnt" id="c-dash"></span></button>
-  <button role="tab" id="t-verif" aria-selected="true">Listă de verificare<span class="cnt" id="c-verif"></span></button>
-  <button role="tab" id="t-pick" aria-selected="false">Picking pe calupuri<span class="cnt" id="c-pick"></span></button>
+  <button role="tab" id="t-verif" aria-selected="true">Lista comenzi<span class="cnt" id="c-verif"></span></button>
+  <button role="tab" id="t-pick" aria-selected="false">Picking<span class="cnt" id="c-pick"></span></button>
   <button role="tab" id="t-fact" aria-selected="false">Facturare<span class="cnt" id="c-fact"></span></button>
   <button role="tab" id="t-amb" aria-selected="false">Ambalare<span class="cnt" id="c-amb"></span></button>
   <button role="tab" id="t-loc" aria-selected="false">Locații produse<span class="cnt" id="c-loc"></span></button>
@@ -299,7 +299,7 @@ tr.short td{background:#f4d9d4!important}
   </section>
 
   <section id="p-verif">
-    <h2 class="ptitle">Listă de verificare</h2>
+    <h2 class="ptitle">Lista comenzi</h2>
     <div id="dayBlock">
   <div class="daybar">
     <div class="dnav"><button class="ghost" id="dPrev" aria-label="Ziua anterioară">‹</button><div class="dt"><b id="dTitle"></b><span id="dSub"></span></div><button class="ghost" id="dNext" aria-label="Ziua următoare">›</button></div>
@@ -324,7 +324,7 @@ tr.short td{background:#f4d9d4!important}
   </section>
 
   <section id="p-pick" class="hidden">
-    <h2 class="ptitle">Picking pe calupuri<span class="pday"></span></h2>
+    <h2 class="ptitle">Picking<span class="pday"></span></h2>
     <div class="bar">
       <label>Comenzi pe calup<input type="number" id="bsize" min="1" value="20" style="width:110px"></label>
       <label class="ck"><input type="checkbox" id="pHide"> Doar ce nu e cules</label>
@@ -1047,7 +1047,7 @@ function menu(o){$('side').classList.toggle('open',o);$('mback').classList.toggl
 {const cur=tabs.find(x=>$('t-'+x).getAttribute('aria-selected')==='true');if(cur)$('mTitle').textContent=$('t-'+cur).firstChild.textContent}
 $('menuBtn').onclick=()=>menu(!$('side').classList.contains('open'));$('mback').onclick=()=>menu(false);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')menu(false)});
-const ACC=[['verif','Listă de verificare'],['pick','Picking'],['fact','Facturare'],['amb','Ambalare'],['loc','Locații produse'],['ret','Retururi']];
+const ACC=[['verif','Lista comenzi'],['pick','Picking'],['fact','Facturare'],['amb','Ambalare'],['loc','Locații produse'],['ret','Retururi']];
 let isAdmin=true;
 let allowed=null; // null = toate; altfel Set cu secțiunile permise (Dashboard și Setări sunt mereu permise)
 const canSee=t=>t==='dash'||t==='setari'||!allowed||allowed.has(t);
@@ -1123,7 +1123,7 @@ document.addEventListener('click',e=>{
 });
 $('dlV').onclick=()=>{if(!orders.length)return;const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheet(verifAoa(),[14,14,24,7,28,12,9,60,16,26,24]),'Verificare');save(`verificare_${stamp()}.xlsx`,xbuf(wb))};
 $('dlP').onclick=()=>{if(!orders.length)return;const wb=XLSX.utils.book_new();for(const b of batches())XLSX.utils.book_append_sheet(wb,sheet(pickAoa(b),[12,12,10,70,8,9]),`${b.from}-${b.to}`);save(`picking_${stamp()}.xlsx`,xbuf(wb))};
-$('prV').onclick=()=>{if(!orders.length)return;printNow(`verificare_${stamp()}.html`,printDoc('Listă de verificare',`<h2>Listă de verificare · ${vis().length} comenzi · ${esc(meta?.file||'')}</h2>`+tbl(verifAoa(),[3,6],6)))};
+$('prV').onclick=()=>{if(!orders.length)return;printNow(`verificare_${stamp()}.html`,printDoc('Lista comenzi',`<h2>Lista comenzi · ${vis().length} comenzi · ${esc(meta?.file||'')}</h2>`+tbl(verifAoa(),[3,6],6)))};
 function printBatches(bs){if(!bs.length)return;printNow(`picking_${stamp()}.html`,printDoc('Picking',bs.map(b=>`<div class="pb"><h2>Calup ${b.idx} · comenzile ${b.from}–${b.to} · ${esc(dshort(curDay))}</h2>${tbl(pickAoa(b),[0,2,4,5],2)}</div>`).join('')))}
 $('prP').onclick=()=>{if(!orders.length)return;const bs=batches(),o=bs.filter(b=>bkey(b)===openB);printBatches(o.length?o:bs)};
 $('dlL').onclick=()=>{const all=new Map([...base].map(([s,l])=>[s,l]));for(const [s,l] of extra)all.set(s,l);const aoa=[['Cod','Culoar','Alveola'],...[...all].map(([s,l])=>[/^\d+$/.test(s)?Number(s):s,l.c,l.a])];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheet(aoa,[14,8,8]),'Locatii');save(`locatii_${stamp()}.xlsx`,xbuf(wb))};
