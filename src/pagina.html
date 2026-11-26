@@ -129,6 +129,14 @@ td.q.lock{cursor:default}
 .pc-name{font-size:18.5px;font-weight:600;line-height:1.4;margin-top:8px;color:#1A1C21}
 .pc-line{margin-top:10px;padding-top:10px;border-top:1px dashed #cfc6b5;line-height:1.4}.pc-line .pc-q{font-size:22px}.pc-line .pc-name{display:inline;margin:0}
 .pc-who{font-size:13px;color:#615d55;margin-top:6px}
+.logo-wrap{display:inline-grid;place-items:center;border-radius:50%;transition:background .2s}
+.logo{display:block;width:100%;height:100%;background:#ECE6DA;-webkit-mask:url(__LOGO__) center/contain no-repeat;mask:url(__LOGO__) center/contain no-repeat}
+.side a.brand{display:block;width:150px;margin:0 auto 8px;padding:0}.side a.brand .logo-wrap{width:150px;height:150px}
+.mlogo{display:block;flex:none}.mlogo .logo-wrap{width:48px;height:48px}
+/* tema browserului: pe deschis, logo-ul își păstrează albastrul original pe un disc bej; pe închis e bej pe fundalul închis */
+@media (prefers-color-scheme:light){.logo-wrap{background:#ECE6DA;padding:6px}.logo{background:#0D0B4A}}
+:root[data-theme=light] .logo-wrap{background:#ECE6DA;padding:6px}:root[data-theme=light] .logo{background:#0D0B4A}
+:root[data-theme=dark] .logo-wrap{background:transparent;padding:0}:root[data-theme=dark] .logo{background:#ECE6DA}
 .ptitle{font:800 30px/1.1 "Barlow Condensed",sans-serif;margin:0 0 14px}
 .mbar,.mback{display:none}
 @media(max-width:860px){
@@ -255,11 +263,11 @@ tr.short td{background:#f4d9d4!important}
   <div id="aWait" class="hidden"><p id="aWaitTxt"></p><div class="alinks"><button id="aCheck">Am confirmat</button><button class="ghost sm" id="aResend">Retrimite emailul</button><button class="ghost sm" id="aOut1">Ieși din cont</button></div></div>
   <div id="aNoAcc" class="hidden"><p id="aNoTxt"></p><div class="alinks"><button id="aRetry">Verifică din nou</button><button class="ghost sm" id="aBoot">Sunt administratorul: creează echipa</button><button class="ghost sm" id="aOut2">Ieși din cont</button></div></div>
 </div></div>
-<div class="mbar" id="mbar"><button id="menuBtn" aria-label="Deschide meniul" aria-expanded="false" aria-controls="side"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><div><b>Quasar Comex</b><small id="mTitle"></small></div></div>
+<div class="mbar" id="mbar"><button id="menuBtn" aria-label="Deschide meniul" aria-expanded="false" aria-controls="side"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><a class="mlogo" id="brand2" href="#dashboard" title="Quasar &amp; Co. · deschide Dashboard"><span class="logo-wrap"><span class="logo" role="img" aria-label="Quasar &amp; Co."></span></span></a><div><small id="mTitle" style="font-size:16px"></small></div></div>
 <div class="mback" id="mback"></div>
 <div class="shell">
 <aside class="side" id="side" role="tablist" aria-label="Secțiuni">
-  <a class="brand" id="brand" href="#dashboard" title="Deschide Dashboard">Quasar Comex</a>
+  <a class="brand" id="brand" href="#dashboard" title="Quasar &amp; Co. · deschide Dashboard"><span class="logo-wrap"><span class="logo" role="img" aria-label="Quasar &amp; Co."></span></span></a>
   <div class="lbl">Deschide</div>
   <button role="tab" id="t-dash" aria-selected="false">Dashboard<span class="cnt" id="c-dash"></span></button>
   <button role="tab" id="t-verif" aria-selected="true">Listă de verificare<span class="cnt" id="c-verif"></span></button>
@@ -892,7 +900,7 @@ function applyAccess(list){
 function show(t){if(!canSee(t))t='dash';placeDay(t);menu(false);const tb=$('t-'+t);if(tb)$('mTitle').textContent=tb.firstChild.textContent;for(const x of tabs){$('t-'+x).setAttribute('aria-selected',x===t);$('p-'+x).classList.toggle('hidden',x!==t)}ls.set('sectiune',t);const m=document.querySelector('main');if(window.scrollY>m.offsetTop)window.scrollTo({top:m.offsetTop})}
 for(const x of tabs)$('t-'+x).onclick=()=>show(x);
 if(ls.get('sectiune')==='echipa')ls.set('sectiune','setari');if(location.hash==='#dashboard')show('dash');else if(tabs.includes(ls.get('sectiune')))show(ls.get('sectiune'));
-$('brand').addEventListener('click',e=>{if(e.ctrlKey||e.metaKey||e.shiftKey||e.button!==0)return;e.preventDefault();show('dash')});
+for(const id of ['brand','brand2'])$(id).addEventListener('click',e=>{if(e.ctrlKey||e.metaKey||e.shiftKey||e.button!==0)return;e.preventDefault();show('dash')});
 $('bsize').oninput=()=>{renderStats();renderPick()};
 $('bsize').onchange=()=>{if(store&&meta)merge(store.col('zi').doc('meta'),{bsize:bsize()}).catch(()=>{})};
 $('vHide').onchange=renderVerif;$('pHide').onchange=renderPick;$('fHide').onchange=renderFact;
