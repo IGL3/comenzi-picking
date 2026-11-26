@@ -160,6 +160,52 @@ tr.short .ck input{accent-color:#c0261c}
 @media(max-width:600px){.drop{grid-template-columns:1fr}.locform{grid-template-columns:1fr 1fr}.locform label:first-child{grid-column:1/-1}table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;white-space:normal;color:var(--mut)}.stack td:empty{display:none}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
+<style id="tema">
+/* TEMA: 60% #1A1C21 (fundal, meniu) · 30% #ECE6DA (suprafețe: carduri, tabele, câmpuri) · 10% #00D8F2 (doar detalii mici) */
+:root,:root[data-theme=light],:root[data-theme=dark]{color-scheme:dark;--main:#1A1C21;--sec:#ECE6DA;--acc:#00D8F2;
+  --bg:#1A1C21;--ink:#ECE6DA;--card:#ECE6DA;--line:#33363d;--mut:#9a968d;--soft:#22252b;--yel:#00D8F2;--red:#ff6b5e;--ok:#3ec27a}
+body{background:var(--main)}
+/* suprafețele deschise (30%) — în interiorul lor textul e închis */
+.drop,.kpi:not(.main),.batch,.team,.locform,.empty,.cal,.flow,.acard,table,.st,#vBody,#fBody,#aBody,#locBody,#memBody{
+  --ink:#1A1C21;--mut:#615d55;--line:#d4ccbd;--bg:#E2DACB;--soft:#E2DACB;--card:#ECE6DA;--red:#c0261c;color:#1A1C21;color-scheme:light}
+input,select{color-scheme:light}
+table{background:#ECE6DA}th{background:#E2DACB!important;color:#615d55}
+input,select{background:#ECE6DA;color:#1A1C21;border-color:#c9c1b1}
+/* meniul (60%) */
+.side{background:#1A1C21;border-right:1px solid #2b2e35;color:#ECE6DA}
+.side .brand{color:#ECE6DA}
+.side button:hover{background:#23262d}
+.side button[aria-selected=true]{background:#262930;color:#ECE6DA;box-shadow:inset 3px 0 0 var(--acc)}
+.side button[aria-selected=true] .cnt{color:var(--acc);opacity:1}
+.side .cnt.warn,.side button[aria-selected=true] .cnt.warn{color:#ff8a7e}
+.side .foot{color:#8f8b83}
+/* detalii mici (10%) */
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--acc)}
+.ck input{accent-color:#00a9bd}
+.meter i,.kpi .meter i,.flow .meter i{background:var(--acc)!important}
+.team.live .dot{background:var(--acc);box-shadow:0 0 0 4px rgba(0,216,242,.22)}
+.tag{background:#1A1C21;color:var(--acc)}
+.qb{background:var(--acc);color:#1A1C21}
+.cal .d small{background:var(--acc);color:#1A1C21}
+.cal .d.sel{background:#1A1C21;color:var(--acc)}
+.chip.blue{background:#1A1C21;color:var(--acc)}
+.batch.sent .bhead{background:#dde8ea}
+.kpi.main{background:#23262d;border-color:#33363d;color:#ECE6DA}.kpi.main b{color:var(--acc)}
+.kpi.todo b{color:#1A1C21}.kpi.todo .meter i{background:var(--acc)!important}
+.kpi.bad b{color:#c0261c}
+.multi{background:var(--acc);color:#1A1C21}
+tr.mlt td{background:#E0EEEE}
+tr.done td{background:#dcebdc!important;color:#615d55}
+tr.short td{background:#f4d9d4!important}
+.confirm{background:#ECE6DA;color:#1A1C21;box-shadow:inset 4px 0 0 var(--acc)}
+.confirm button{background:#1A1C21;color:#ECE6DA;border-color:#1A1C21}.confirm button.ghost{background:transparent;color:#1A1C21}
+.ptitle,.dsub{color:#ECE6DA}.pday{color:#9a968d}
+.msg.ok{color:var(--acc)}
+.bhead{background:#E2DACB}
+.acard h2{color:#1A1C21}
+.hz{background:repeating-linear-gradient(135deg,var(--acc) 0 14px,#1A1C21 14px 28px)}
+.auth{background:rgba(26,28,33,.92)}
+</style>
 <script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
 </head>
 <body>
@@ -561,7 +607,7 @@ const verifRows=()=>vis().flatMap(o=>o.lines.map((l,k)=>({o,l,k})));
 function renderVerif(){
   if(!orders.length){$('vBody').innerHTML=EMPTY;$('vInfo').textContent='';return}
   const O=vis(),multi=O.filter(hl).length,hide=$('vHide').checked;
-  $('vInfo').textContent=`${(()=>{const v=$('part').value,tr=tranches();const f=v==='all'||!v?(tr.length>1?'toate listele':meta?.file):tr[+v]?.file;return f?(tr.length>1&&v==='all'?f:'„'+f+'”')+' · ':''})()}${O.length} comenzi sortate după canal`+(multi?` · ${multi} cu mai multe produse sau cantitate 2+ (fundal galben)`:'');
+  $('vInfo').textContent=`${(()=>{const v=$('part').value,tr=tranches();const f=v==='all'||!v?(tr.length>1?'toate listele':meta?.file):tr[+v]?.file;return f?(tr.length>1&&v==='all'?f:'„'+f+'”')+' · ':''})()}${O.length} comenzi sortate după canal`+(multi?` · ${multi} cu mai multe produse sau cantitate 2+ (fundal turcoaz deschis)`:'');
   const rows=verifRows().filter(r=>!hide||!isV(r.o.nr));
   $('vBody').innerHTML=rows.length?`<div class="scroll"><table class="stack"><thead><tr><th>Verificat</th>${VCOLS.map((h,i)=>`<th class="${i===3||i===6?'n':''}">${h}</th>`).join('')}</tr></thead><tbody>${rows.map(({o,l,k})=>`<tr class="${k===0&&o.nr>1?'grp':''}${hl(o)?' mlt':''}${isV(o.nr)?' done':''}"><td>${ck('v',o.nr,prog.v[o.nr],'Comanda '+o.nr+' verificată')}</td><td>${esc(o.canal)}</td><td>${cfCell(o)}</td><td>${esc(o.id)}</td><td class="nr n">${o.nr}</td><td>${esc(o.client)}</td><td>${esc(l.sku)}</td><td class="n">${l.qty>=2?`<span class="qb">${l.qty}</span>`:`<b>${l.qty}</b>`}</td><td class="prod">${esc(l.prod)}</td><td style="white-space:nowrap">${esc(o.tel)}</td><td>${esc(o.firma)}</td><td>${esc(o.deleg)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Toate comenzile sunt verificate.</div>';
 }
