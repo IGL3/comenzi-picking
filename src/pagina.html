@@ -100,6 +100,9 @@ td.q.lock{cursor:default}
 .acard form{display:grid;gap:12px;margin-top:14px}.acard input{width:100%}
 .acard form button{min-height:48px;font-size:17px}
 .alinks{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+#dayBlock{margin-bottom:22px}
+#dayBlock.compact .drop,#dayBlock.compact #repl,#dayBlock.compact #delBox,#dayBlock.compact #dDel{display:none!important}
+.pday{font-weight:600;color:var(--mut);font-size:.7em}
 .ptitle{font:800 30px/1.1 "Barlow Condensed",sans-serif;margin:0 0 14px}
 @media(max-width:860px){.shell{grid-template-columns:1fr}.side{height:auto;flex-direction:row;padding:8px;gap:6px;z-index:5;overflow-x:auto}.side .brand,.side .lbl,.side .foot{display:none}.side button{flex:1 0 auto;width:auto;min-height:48px;padding:8px 12px;font-size:18px}}
 .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
@@ -187,6 +190,25 @@ tr.short .ck input{accent-color:#c0261c}
 <header class="band"><div class="wrap">
   <h1>Comenzi → verificare și picking</h1>
   <p class="sub">Unul dintre voi încarcă exportul de comenzi, iar toată echipa vede aceeași listă de verificare și același picking pe calupuri și bifează în timp real ce a terminat.</p>
+  <div class="msg" id="msg"></div>
+  <div class="team" id="team"><span class="dot"></span><span id="teamTxt" class="grow">Se pornește…</span>
+    <label style="display:flex;gap:6px;align-items:center">Numele tău <input id="me" placeholder="ex. Ionuț" style="width:150px;min-height:38px"></label>
+    <span id="userBox" class="hidden" style="display:flex;gap:8px;align-items:center"><span id="userMail" style="color:var(--mut)"></span><button class="ghost sm" id="logout">Ieși din cont</button></span></div>
+  <div class="stats hidden" id="stats"></div>
+</div></header>
+
+<main class="band" style="padding-top:0"><div class="wrap">
+  <div class="bar hidden" id="partBar"><label>Arată<select id="part"></select></label><span class="grow" id="partInfo"></span></div>
+
+  <section id="p-dash" class="hidden">
+    <h2 class="ptitle" id="dashT">Dashboard</h2>
+    <div id="dashDay"></div>
+    <div id="dBody"></div>
+  </section>
+
+  <section id="p-verif">
+    <h2 class="ptitle">Listă de verificare</h2>
+    <div id="dayBlock">
   <div class="daybar">
     <div class="dnav"><button class="ghost" id="dPrev" aria-label="Ziua anterioară">‹</button><div class="dt"><b id="dTitle"></b><span id="dSub"></span></div><button class="ghost" id="dNext" aria-label="Ziua următoare">›</button></div>
     <button class="ghost sm" id="dToday">Azi</button>
@@ -201,23 +223,7 @@ tr.short .ck input{accent-color:#c0261c}
     <div><input type="file" id="file" accept=".xlsx,.xls,.csv" class="hidden"><button id="pick">Alege fișierul</button></div>
   </div>
   <div class="confirm hidden" id="repl"><span id="replTxt" style="flex-basis:100%"></span><button id="replAdd">Adaugă în continuare</button><button class="ghost" id="replYes">Înlocuiește lista</button><button class="ghost" id="replNo">Anulează</button></div>
-  <div class="msg" id="msg"></div>
-  <div class="team" id="team"><span class="dot"></span><span id="teamTxt" class="grow">Se pornește…</span>
-    <label style="display:flex;gap:6px;align-items:center">Numele tău <input id="me" placeholder="ex. Ionuț" style="width:150px;min-height:38px"></label>
-    <span id="userBox" class="hidden" style="display:flex;gap:8px;align-items:center"><span id="userMail" style="color:var(--mut)"></span><button class="ghost sm" id="logout">Ieși din cont</button></span></div>
-  <div class="stats hidden" id="stats"></div>
-</div></header>
-
-<main class="band" style="padding-top:0"><div class="wrap">
-  <div class="bar hidden" id="partBar"><label>Arată<select id="part"></select></label><span class="grow" id="partInfo"></span></div>
-
-  <section id="p-dash" class="hidden">
-    <h2 class="ptitle" id="dashT">Dashboard</h2>
-    <div id="dBody"></div>
-  </section>
-
-  <section id="p-verif">
-    <h2 class="ptitle">Listă de verificare</h2>
+    </div>
     <div class="bar"><span class="grow" id="vInfo"></span>
       <label class="ck"><input type="checkbox" id="vHide"> Doar ce nu e verificat</label>
       <button class="ghost dl" id="dlV">Descarcă Excel</button>
@@ -226,7 +232,7 @@ tr.short .ck input{accent-color:#c0261c}
   </section>
 
   <section id="p-pick" class="hidden">
-    <h2 class="ptitle">Picking pe calupuri</h2>
+    <h2 class="ptitle">Picking pe calupuri<span class="pday"></span></h2>
     <div class="bar">
       <label>Comenzi pe calup<input type="number" id="bsize" min="1" value="20" style="width:110px"></label>
       <label class="ck"><input type="checkbox" id="pHide"> Doar ce nu e cules</label>
@@ -239,7 +245,7 @@ tr.short .ck input{accent-color:#c0261c}
   </section>
 
   <section id="p-fact" class="hidden">
-    <h2 class="ptitle">Facturare</h2>
+    <h2 class="ptitle">Facturare<span class="pday"></span></h2>
     <div class="bar"><span class="grow" id="fInfo"></span>
       <label class="ck"><input type="checkbox" id="fHide"> Doar ce nu e facturat</label>
       <button class="ghost dl" id="dlF">Descarcă Excel</button></div>
@@ -247,7 +253,7 @@ tr.short .ck input{accent-color:#c0261c}
   </section>
 
   <section id="p-amb" class="hidden">
-    <h2 class="ptitle">Ambalare</h2>
+    <h2 class="ptitle">Ambalare<span class="pday"></span></h2>
     <p class="note" style="margin:0 0 12px">Aici apar comenzile bifate „Facturat”. După ce o comandă e ambalată, bifeaz-o „Trimis”.</p>
     <div class="bar"><span class="grow" id="aInfo"></span>
       <label class="ck"><input type="checkbox" id="aHide" checked> Doar ce nu e trimis</label></div>
@@ -397,6 +403,10 @@ async function append(list,name){
   try{await writeList(all,m,meta);wantPart=String(t);say($('msg'),msg,'ok')}catch(e){say($('msg'),'Comenzile noi nu au putut fi trimise: '+(e.message||e.code),'err')}
 }
 let wantPart=null;
+function placeDay(t){const b=$('dayBlock');
+  if(t==='verif'){$('p-verif').querySelector('.ptitle').after(b);b.classList.remove('compact','hidden')}
+  else if(t==='dash'){$('dashDay').append(b);b.classList.add('compact');b.classList.remove('hidden')}
+  else b.classList.add('hidden')}
 
 /* ---------- zile și calendar ---------- */
 function saveLocalDay(){if(store)return;if(orders.length)localDays[curDay]={orders,meta,prog};else delete localDays[curDay];dayIdx={};for(const [k,v] of Object.entries(localDays))dayIdx[k]={n:v.orders.length,tr:(v.meta?.tranches||[]).length}}
@@ -430,6 +440,7 @@ function renderDay(){
   if(orders.length){const m=meta||{},nt=(m.tranches||[]).length;$('dropT').textContent=nt>1?`${dshort(curDay)}: ${nt} liste, comenzile 1–${m.tranches[nt-1].to}`:`${dshort(curDay)}: ${m.file||'listă fără nume'}`;
     const lt=nt?m.tranches[nt-1]:m;$('dropS').textContent=`${nt>1?'ultima adăugată':'încărcată'}${lt.by?' de '+lt.by:''}${lt.at?' la '+hhmm(lt.at):''} · trage următorul fișier ca să-l adaugi în continuare`}
   else{$('dropT').textContent=`Trage aici exportul de comenzi pentru ${dshort(curDay)}`;$('dropS').textContent='sau apasă butonul ca să alegi fișierul (.xlsx)'}
+  document.querySelectorAll('.pday').forEach(e=>e.textContent=' · '+dshort(curDay));
   if(!$('cal').classList.contains('hidden'))renderCal();
 }
 function renderCal(){
@@ -697,7 +708,7 @@ $('replAdd').onclick=()=>{if(pending)append(pending.list,pending.name)};
 $('part').onchange=()=>{renderStats();renderVerif();renderPick()};
 $('replNo').onclick=()=>{pending=null;$('repl').classList.add('hidden')};
 const tabs=['dash','verif','pick','fact','amb','echipa','loc'];
-function show(t){for(const x of tabs){$('t-'+x).setAttribute('aria-selected',x===t);$('p-'+x).classList.toggle('hidden',x!==t)}ls.set('sectiune',t);const m=document.querySelector('main');if(window.scrollY>m.offsetTop)window.scrollTo({top:m.offsetTop})}
+function show(t){placeDay(t);for(const x of tabs){$('t-'+x).setAttribute('aria-selected',x===t);$('p-'+x).classList.toggle('hidden',x!==t)}ls.set('sectiune',t);const m=document.querySelector('main');if(window.scrollY>m.offsetTop)window.scrollTo({top:m.offsetTop})}
 for(const x of tabs)$('t-'+x).onclick=()=>show(x);
 if(tabs.includes(ls.get('sectiune')))show(ls.get('sectiune'));
 $('bsize').oninput=()=>{renderStats();renderPick()};

@@ -17,7 +17,7 @@ deschide un editor −/+ care permite doar scăderea (0 = lipsă); OK cu cantita
 („Redeschide calupul” îl deblochează). Secțiunea „Facturare” arată calupurile trimise, cu Comandat vs Cules și bifa „Facturat” pe comandă, plus Excel.
 Secțiunea „Ambalare” arată comenzile bifate „Facturat”; departamentul de ambalare le bifează „Trimis” după ce le ambalează. „Dashboard” (pe ziua aleasă): Total comenzi, De pickuit, Pickuite (toate liniile bifate),
 Facturate, De ambalat (facturate, netrimise), Ambalate și trimise, plus tabele pe canale și pe calupuri.
-Calendar: listele se salvează pe zile (YYYY-MM-DD). Bara de zi de sus (‹ › Azi, Calendar, Șterge) alege ziua pentru toate secțiunile;
+Calendar: listele se salvează pe zile (YYYY-MM-DD). Bara de zi (‹ › Azi, Calendar, Șterge) + zona de încărcare apar doar în Lista de verificare (în Dashboard doar navigarea pe zile; celelalte secțiuni arată data în titlu); ziua aleasă se aplică tuturor secțiunilor;
 calendarul marchează zilele cu liste (numărul de comenzi). Ștergere („Șterge liste”): o listă anume din zi (bifele ei se golesc, numerele celorlalte rămân), toată ziua sau toate listele din toate zilele (cu a doua confirmare; locațiile rămân).
 Date: colecțiile `zi` (doc `m_<zi>` {day,listId,file,at,by,n,parts,rev,bsize,tranches:[{from,to,at,by,file}]} + bucăți `p_<zi>_<i>` {day,listId,rev,orders}
 câte 150 de comenzi, citite cu where('day','=='); doc `index` {days:{<zi>:{n,tr}|null}} pentru calendar; fiecare comandă are `t` = indexul listei;
