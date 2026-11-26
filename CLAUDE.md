@@ -16,7 +16,7 @@ Picking: calupurile apar închise (acordeon), se deschid pe rând; liniile sunt 
 deschide un editor −/+ care permite doar scăderea (0 = lipsă); OK cu cantitate mai mică bifează automat linia și o colorează roșu (verde = cules complet). Când toate liniile sunt bifate, „Trimite la facturare” blochează calupul
 („Redeschide calupul” îl deblochează). Secțiunea „Facturare” arată calupurile trimise, cu Comandat vs Cules și bifa „Facturat” pe comandă, plus Excel.
 Secțiunea „Ambalare” arată comenzile bifate „Facturat”; departamentul de ambalare le bifează „Trimis” după ce le ambalează. „Dashboard” (pe ziua aleasă): Total comenzi, De pickuit, Pickuite (toate liniile bifate),
-Facturate, De ambalat (facturate, netrimise), Ambalate și trimise, plus tabele pe canale și pe calupuri.
+Facturate, De ambalat (facturate, netrimise), Ambalate și trimise, plus bara de progres (fără tabele pe canale/calupuri, la cererea utilizatorului).
 Calendar: listele se salvează pe zile (YYYY-MM-DD). Bara de zi (‹ › Azi, Calendar, Șterge) + zona de încărcare apar doar în Lista de verificare (în Dashboard doar navigarea pe zile; celelalte secțiuni arată data în titlu); ziua aleasă se aplică tuturor secțiunilor;
 calendarul marchează zilele cu liste (numărul de comenzi). Ștergere („Șterge liste”): o listă anume din zi (bifele ei se golesc, numerele celorlalte rămân), toată ziua sau toate listele din toate zilele (cu a doua confirmare; locațiile rămân).
 Date: colecțiile `zi` (doc `m_<zi>` {day,listId,file,at,by,n,parts,rev,bsize,tranches:[{from,to,at,by,file}]} + bucăți `p_<zi>_<i>` {day,listId,rev,orders}

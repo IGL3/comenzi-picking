@@ -597,12 +597,9 @@ function renderDash(){
   const K=[['main','Total comenzi',S.n,'în '+tranches().length+' '+(tranches().length>1?'liste':'listă')],['todo','De pickuit',S.dp,pc(S.dp)+'% din total'],['','Pickuite',S.pk,pc(S.pk)+'% din total',S.pk],['','Facturate',S.fc,pc(S.fc)+'% din total',S.fc],['todo','De ambalat',S.de,'facturate, încă neambalate'],['','Ambalate și trimise',S.am,pc(S.am)+'% din total',S.am]];
   const kp=K.map(k=>`<div class="kpi ${k[0]}"><span class="k">${k[1]}</span><b>${k[2]}</b><small>${k[3]}</small>${k[4]!=null?`<div class="meter"><i style="width:${pc(k[4])}%"></i></div>`:''}</div>`).join('');
   const fl=[['Picking',S.pk],['Facturare',S.fc],['Ambalare și trimitere',S.am]].map(x=>`<div><span class="t">${x[0]}</span> <span class="v">${x[1]}/${S.n} · ${pc(x[1])}%</span><div class="meter"><i style="width:${pc(x[1])}%"></i></div></div>`).join('');
-  const can=[...new Set(orders.map(o=>o.canal))].sort((a,b)=>a.localeCompare(b,'ro')).map(c=>{const x=dayStats(orders.filter(o=>o.canal===c));return `<tr><td><b>${esc(c||'—')}</b></td><td class="n">${x.n}</td><td class="n">${x.dp}</td><td class="n">${x.pk}</td><td class="n">${x.fc}</td><td class="n">${x.de}</td><td class="n">${x.am}</td></tr>`}).join('');
-  const bs=batches().map(b=>{const os=orders.filter(o=>o.nr>=b.from&&o.nr<=b.to),x=dayStats(os),sent=prog.s[bkey(b)];return `<tr><td><b>Calup ${b.idx}</b> <span style="color:var(--mut)">${b.from}–${b.to}</span></td><td class="n">${x.n}</td><td class="n">${x.pk}</td><td>${sent?`<span class="chip blue">trimis ${hhmm(sent.t)}</span>`:x.pk===x.n?'<span class="chip green">cules</span>':''}</td><td class="n">${x.fc}</td><td class="n">${x.am}</td></tr>`}).join('');
   $('dBody').innerHTML=`<div class="kpis">${kp}</div><div class="flow">${fl}</div>
   ${S.lips?`<p class="msg err" style="margin-top:-8px">${S.lips} ${S.lips>1?'produse culese':'produs cules'} cu cantitate mai mică decât comanda (lipsă).</p>`:''}
-  <h3 class="dsub">Pe canale</h3><div class="scroll" style="margin-bottom:22px"><table class="stack"><thead><tr><th>Canal</th><th class="n">Total</th><th class="n">De pickuit</th><th class="n">Pickuite</th><th class="n">Facturate</th><th class="n">De ambalat</th><th class="n">Trimise</th></tr></thead><tbody>${can}</tbody></table></div>
-  <h3 class="dsub">Pe calupuri</h3><div class="scroll"><table class="stack"><thead><tr><th>Calup</th><th class="n">Comenzi</th><th class="n">Pickuite</th><th>Stare picking</th><th class="n">Facturate</th><th class="n">Trimise</th></tr></thead><tbody>${bs}</tbody></table></div>`;
+`;
 }
 function renderAmb(){
   const all=orders.filter(isF),hide=$('aHide').checked,L=all.filter(o=>!hide||!isA(o)),na=all.filter(isA).length;
