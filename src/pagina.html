@@ -733,7 +733,10 @@ async function viesRun(){
   viesBusy=false;
 }
 document.addEventListener('click',e=>{const b=e.target.closest('button[data-vies]');if(b){delete viesSt[b.dataset.vies];renderVerif();renderFact();viesRun()}});
-const isPicked=o=>o.lines.every(l=>isP(o.nr,l.sku)),isF=o=>!!prog.f[o.nr],isA=o=>!!prog.a[o.nr];
+const isPicked=o=>o.lines.every(l=>isP(o.nr,l.sku));
+const inSent=nr=>Object.entries(prog.s).some(([k,v])=>{if(!v)return false;const [a,b]=k.split('-').map(Number);return nr>=a&&nr<=b});
+/* o comandă contează ca facturată/ambalată doar cât timp calupul ei e trimis la facturare și e culeasă complet */
+const isF=o=>!!prog.f[o.nr]&&inSent(o.nr)&&isPicked(o),isA=o=>!!prog.a[o.nr]&&isF(o);
 function dayStats(O){
   const n=O.length,pk=O.filter(isPicked).length,fc=O.filter(isF).length,am=O.filter(isA).length,de=O.filter(o=>isF(o)&&!isA(o)).length;
   return {n,pk,dp:n-pk,fc,de,am,ver:O.filter(o=>isV(o.nr)).length,lips:O.reduce((s,o)=>s+o.lines.filter(l=>pq(o.nr,l)<l.qty).length,0)};
@@ -812,6 +815,7 @@ async function setProg(upd){
 }
 async function tick(k,key,on,extra){
   const val=on?{n:me(),t:Date.now(),...(extra||{})}:null;
+  if(k==='p'&&!on){const nr=key.split('_')[0],upd={p:{[key]:null}};if(prog.f[nr])upd.f={[nr]:null};if(prog.a[nr])upd.a={[nr]:null};if(upd.f||upd.a)return setProg(upd)}
   prog={...prog,[k]:{...prog[k],[key]:val}};renderAll();
   if(!store||!meta)return;
   try{await merge(store.col('bife').doc(meta.listId),{[k]:{[key]:val}})}catch(e){say($('msg'),'Bifa nu s-a salvat: '+(e.message||e.code),'err')}
@@ -907,8 +911,8 @@ $('pBody').addEventListener('click',e=>{
   if(b.dataset.open){openB=openB===b.dataset.open?null:b.dataset.open;editQ=null;renderPick();return}
   if(b.dataset.print){printBatches(batches().filter(x=>bkey(x)===b.dataset.print));return}
   if(b.dataset.pall){if(!isAdmin)return;const bt=batches().find(x=>bkey(x)===b.dataset.pall);if(!bt)return;const on=b.dataset.on==='1',st={n:me(),t:Date.now()},p={};
-    for(const l of bt.lines){const k=l.nr+'_'+l.sku;if(on){if(!prog.p[k])p[k]=st}else if(prog.p[k])p[k]=null}
-    if(Object.keys(p).length)setProg({p});return}
+    const f={},a={};for(const l of bt.lines){const k=l.nr+'_'+l.sku;if(on){if(!prog.p[k])p[k]=st}else{if(prog.p[k])p[k]=null;if(prog.f[l.nr])f[l.nr]=null;if(prog.a[l.nr])a[l.nr]=null}}
+    const u={p};if(Object.keys(f).length)u.f=f;if(Object.keys(a).length)u.a=a;if(Object.keys(p).length)setProg(u);return}
   if(b.dataset.send){tick('s',b.dataset.send,true);return}
   if(b.dataset.reopen){tick('s',b.dataset.reopen,false);return}
   if(b.classList.contains('qm')){editV=Math.max(0,editV-1);renderPick();return}
