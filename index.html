@@ -132,6 +132,7 @@ tr.mlt td{background:var(--soft)}
 label{display:grid;gap:4px;font-size:14px;color:var(--mut)}
 .note{font-size:14px;color:var(--mut);margin:6px 0 0}
 .msg{min-height:22px;font-size:15px;margin:8px 0}
+.msg:empty{min-height:0;margin:0}
 .msg.err{color:var(--red)}.msg.ok{color:var(--ok)}
 .mrow input{width:84px;min-height:38px}
 .acct{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:15px;color:var(--mut);margin-top:6px}
@@ -186,16 +187,14 @@ tr.short .ck input{accent-color:#c0261c}
   <button role="tab" id="t-pick" aria-selected="false">Picking pe calupuri<span class="cnt" id="c-pick"></span></button>
   <button role="tab" id="t-fact" aria-selected="false">Facturare<span class="cnt" id="c-fact"></span></button>
   <button role="tab" id="t-amb" aria-selected="false">Ambalare<span class="cnt" id="c-amb"></span></button>
-  <button role="tab" id="t-echipa" aria-selected="false" class="hidden">Echipă<span class="cnt" id="c-echipa"></span></button>
   <button role="tab" id="t-loc" aria-selected="false">Locații produse<span class="cnt" id="c-loc"></span></button>
+  <button role="tab" id="t-echipa" aria-selected="false" class="hidden">Echipă<span class="cnt" id="c-echipa"></span></button>
+  <button role="tab" id="t-setari" aria-selected="false">Setări<span class="cnt" id="c-setari"></span></button>
   <div class="foot" id="sideFoot"></div>
 </aside>
 <div class="content">
-<header class="band"><div class="wrap">
+<header class="band" id="topband" style="padding-top:12px;padding-bottom:0"><div class="wrap">
   <div class="msg" id="msg"></div>
-  <div class="team" id="team"><span class="dot"></span><span id="teamTxt" class="grow">Se pornește…</span>
-    <label style="display:flex;gap:6px;align-items:center">Numele tău <input id="me" placeholder="ex. Ionuț" style="width:150px;min-height:38px"></label>
-    <span id="userBox" class="hidden" style="display:flex;gap:8px;align-items:center"><span id="userMail" style="color:var(--mut)"></span><button class="ghost sm" id="logout">Ieși din cont</button></span></div>
 </div></header>
 
 <main class="band" style="padding-top:0"><div class="wrap">
@@ -274,6 +273,13 @@ tr.short .ck input{accent-color:#c0261c}
     <div id="migBox"></div>
   </section>
 
+  <section id="p-setari" class="hidden">
+    <h2 class="ptitle">Setări</h2>
+  <div class="team" id="team"><span class="dot"></span><span id="teamTxt" class="grow">Se pornește…</span>
+    <label style="display:flex;gap:6px;align-items:center">Numele tău <input id="me" placeholder="ex. Ionuț" style="width:150px;min-height:38px"></label>
+    <span id="userBox" class="hidden" style="display:flex;gap:8px;align-items:center"><span id="userMail" style="color:var(--mut)"></span><button class="ghost sm" id="logout">Ieși din cont</button></span></div>
+  </section>
+
   <section id="p-loc" class="hidden">
     <h2 class="ptitle">Locații produse</h2>
     <form class="locform" id="locForm">
@@ -330,7 +336,7 @@ const docId=s=>{let d=s.replace(/[^A-Za-z0-9_\-.~:@+]/g,'_');return d==='.'||d==
 const say=(el,t,k)=>{el.textContent=t;el.className='msg'+(k?' '+k:'')};
 const me=()=>clean($('me').value);
 const hhmm=t=>t?new Date(t).toLocaleTimeString('ro-RO',{hour:'2-digit',minute:'2-digit'}):'';
-const team=(t,live)=>{$('teamTxt').textContent=t;$('team').classList.toggle('live',!!live);$('sideFoot').textContent=live?'● Conectat la echipă':''};
+const team=(t,live)=>{$('teamTxt').textContent=t;$('team').classList.toggle('live',!!live);$('sideFoot').textContent=live?`● Conectat${me()?' ca '+me():''}`:'● Neconectat';$('c-setari').textContent=live?'cont și conexiune':'neconectat'};
 async function merge(ref,obj){if(store.kind==='fb')return ref.set(obj,{merge:true});try{await ref.update(obj)}catch(e){await ref.set(obj)}}
 
 /* ---------- citire export ---------- */
@@ -742,7 +748,7 @@ $('delBox').onclick=e=>{const b=e.target.closest('button[data-del]');if(b)doDel(
 $('replAdd').onclick=()=>{if(pending)append(pending.list,pending.name)};
 $('part').onchange=()=>{renderStats();renderVerif();renderPick()};
 $('replNo').onclick=()=>{pending=null;$('repl').classList.add('hidden')};
-const tabs=['dash','verif','pick','fact','amb','echipa','loc'];
+const tabs=['dash','verif','pick','fact','amb','loc','echipa','setari'];
 function show(t){placeDay(t);for(const x of tabs){$('t-'+x).setAttribute('aria-selected',x===t);$('p-'+x).classList.toggle('hidden',x!==t)}ls.set('sectiune',t);const m=document.querySelector('main');if(window.scrollY>m.offsetTop)window.scrollTo({top:m.offsetTop})}
 for(const x of tabs)$('t-'+x).onclick=()=>show(x);
 if(tabs.includes(ls.get('sectiune')))show(ls.get('sectiune'));
@@ -775,7 +781,7 @@ $('dlF').onclick=()=>{const L=sentList();if(!L.length)return;const aoa=[['Calup'
   for(const x of L)for(const o of x.os)for(const l of o.lines)aoa.push([`${x.from}-${x.to}`,o.nr,o.canal,o.id,o.client,o.cf,l.sku,l.prod,l.qty,pq(o.nr,l),prog.f[o.nr]?'da':'']);
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheet(aoa,[9,6,14,24,28,14,12,60,10,8,9]),'Facturare');save(`facturare_${curDay}.xlsx`,xbuf(wb))};
 $('lq').oninput=renderLoc;
-$('me').value=ls.get('nume')||'';$('me').oninput=()=>ls.set('nume',me());$('me').onchange=()=>{if(window.__setName)window.__setName(me())};
+$('me').value=ls.get('nume')||'';$('me').oninput=()=>{ls.set('nume',me());if($('team').classList.contains('live'))$('sideFoot').textContent=`● Conectat${me()?' ca '+me():''}`};$('me').onchange=()=>{if(window.__setName)window.__setName(me())};
 document.addEventListener('change',e=>{const c=e.target;if(c.matches('input[data-k]'))tick(c.dataset.k,c.dataset.key,c.checked)});
 $('locForm').onsubmit=e=>{e.preventDefault();const s=$('lSku').value;act(()=>putLoc(s,$('lC').value,$('lA').value),'Locație salvată pentru '+clean(s)+'.');$('lSku').value=$('lC').value=$('lA').value='';$('lSku').focus()};
 document.addEventListener('click',e=>{
