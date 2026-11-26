@@ -89,8 +89,9 @@ td.q.lock{cursor:default}
 .kpi .meter{height:10px;margin-top:10px}
 .kpi.todo b{color:light-dark(#b8580b,#ffb066)}.kpi.todo .meter i{background:#e08a1e}
 .kpi.bad b{color:var(--red)}
-.kpi .warn-tri{position:absolute;right:14px;top:50%;transform:translateY(-50%);width:clamp(70px,32%,120px);height:auto;opacity:.95;pointer-events:none}
-.kpi.old .k,.kpi.old b,.kpi.old small{position:relative;z-index:1}.kpi.old small{max-width:62%;display:block}.kpi.go{cursor:pointer}.kpi.go:hover{border-color:var(--ink)}
+.kpi .warn-tri{position:absolute;inset:6px 8px;width:calc(100% - 16px);height:calc(100% - 12px);opacity:.38;pointer-events:none}
+.kpi.old .k,.kpi.old b,.kpi.old small{position:relative;z-index:1}
+.kpi.old{border-color:#e0a800}.kpi.go{cursor:pointer}.kpi.go:hover{border-color:var(--ink)}
 .kpi.main{background:#17160f;color:#f1eee4;border-color:#17160f}.kpi.main .k,.kpi.main small{color:#c9c3b2}
 .flow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:22px}
 .flow div{padding:14px 16px;border-right:1px solid var(--line)}.flow div:last-child{border-right:0}
@@ -712,7 +713,7 @@ function dayStats(O){
 function renderDash(){
   const dt=pdate(curDay);$('dashT').textContent=`Dashboard · ${dt.getDate()} ${LUNI[dt.getMonth()]} ${dt.getFullYear()}`;
   const AM=allMissing(),lim=dkey(new Date(Date.now()-7*864e5)),vechi=AM.filter(x=>x.day&&x.day<lim).length;
-  const tri='<svg class="warn-tri" viewBox="0 0 100 90" aria-hidden="true"><path d="M50 4 97 86H3z" fill="#FFC21A" stroke="#1A1C21" stroke-width="4" stroke-linejoin="round"/><rect x="45" y="30" width="10" height="32" rx="4" fill="#1A1C21"/><circle cx="50" cy="73" r="6" fill="#1A1C21"/></svg>';
+  const tri='<svg class="warn-tri" viewBox="0 0 100 90" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M50 4 97 86H3z" fill="#FFC21A" stroke="#E0A000" stroke-width="4" stroke-linejoin="round"/><rect x="45" y="30" width="10" height="32" rx="4" fill="#8A6200"/><circle cx="50" cy="73" r="6" fill="#8A6200"/></svg>';
   const missCard=`<div class="kpi go${AM.length?' bad':''}${vechi?' old':''}" role="button" tabindex="0" data-go="loc">${vechi?tri:''}<span class="k">SKU fără locație</span><b>${AM.length}</b><small>${AM.length?(vechi?`${vechi} de peste o săptămână · `:'')+'din toate listele · apasă ca să le adaugi':'toate produsele au locație'}</small></div>`;
   if(!orders.length){$('dBody').innerHTML=`<div class="kpis">${missCard}</div><div class="empty">Ziua asta nu are comenzi. Alege altă zi din bara de sus sau din calendar.</div>`;$('c-dash').textContent='';return}
   const S={...dayStats(orders),miss:missing().length},pc=x=>S.n?Math.round(x/S.n*100):0;
