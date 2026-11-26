@@ -133,7 +133,7 @@ tr.done .tag{opacity:.55}
     <button class="ghost sm" id="dToday">Azi</button>
     <button class="ghost sm" id="dCal" aria-expanded="false">Calendar</button>
     <span class="grow"></span>
-    <button class="ghost sm" id="dDel">Șterge liste din ziua asta</button>
+    <button class="ghost sm" id="dDel">Șterge liste</button>
   </div>
   <div class="cal hidden" id="cal"></div>
   <div class="confirm hidden" id="delBox"></div>
@@ -333,7 +333,7 @@ function renderDay(){
   const dt=pdate(curDay),td=dkey(new Date()),info=dayIdx[curDay];
   $('dTitle').textContent=`${ZILE[dt.getDay()].replace(/^./,c=>c.toUpperCase())}, ${dt.getDate()} ${LUNI[dt.getMonth()]} ${dt.getFullYear()}`;
   $('dSub').textContent=(curDay===td?'azi · ':'')+(orders.length?`${orders.length} comenzi în ${tranches().length} ${tranches().length>1?'liste':'listă'}`:'nicio listă încărcată');
-  $('dToday').disabled=curDay===td;$('dDel').classList.toggle('hidden',!orders.length);
+  $('dToday').disabled=curDay===td;$('dDel').classList.toggle('hidden',!orders.length&&!Object.keys(dayIdx).length);
   if(orders.length){const m=meta||{},nt=(m.tranches||[]).length;$('dropT').textContent=nt>1?`${dshort(curDay)}: ${nt} liste, comenzile 1–${m.tranches[nt-1].to}`:`${dshort(curDay)}: ${m.file||'listă fără nume'}`;
     const lt=nt?m.tranches[nt-1]:m;$('dropS').textContent=`${nt>1?'ultima adăugată':'încărcată'}${lt.by?' de '+lt.by:''}${lt.at?' la '+hhmm(lt.at):''} · trage următorul fișier ca să-l adaugi în continuare`}
   else{$('dropT').textContent=`Trage aici exportul de comenzi pentru ${dshort(curDay)}`;$('dropS').textContent='sau apasă butonul ca să alegi fișierul (.xlsx)'}
@@ -347,20 +347,41 @@ function renderCal(){
   $('cal').innerHTML=`<div class="ch"><button class="ghost sm" id="cPrev" aria-label="Luna anterioară">‹</button><b>${LUNI[mo].replace(/^./,c=>c.toUpperCase())} ${y}</b><button class="ghost sm" id="cNext" aria-label="Luna următoare">›</button></div><div class="g">${['L','Ma','Mi','J','V','S','D'].map(x=>`<span class="wd">${x}</span>`).join('')}${cells}</div><p class="note">${nDays?`${nDays} ${nDays>1?'zile':'zi'} cu liste în luna asta (numărul = câte comenzi).`:'Nicio listă salvată în luna asta.'}</p>`;
 }
 function openDel(){
-  const tr=tranches();
-  $('delBox').innerHTML=`<span style="flex-basis:100%">Ce ștergi din ${esc(dshort(curDay))}? Se șterg și bifele comenzilor respective; numerele celorlalte comenzi rămân la fel.</span>`+(tr.length>1?tr.map((x,i)=>`<button data-del="${i}">Lista ${i+1} (${x.from}–${x.to})</button>`).join(''):'')+`<button data-del="all">${tr.length>1?'Toată ziua':'Lista zilei'}</button><button class="ghost" data-del="no">Anulează</button>`;
+  const tr=tranches(),zile=Object.keys(dayIdx).filter(k=>dayIdx[k]);let h='';
+  if(orders.length)h+=`<span style="flex-basis:100%">Ce ștergi? Se șterg și bifele comenzilor respective; numerele celorlalte comenzi rămân la fel.</span>`+(tr.length>1?tr.map((x,i)=>`<button data-del="${i}">Lista ${i+1} din ${dshort(curDay)} (${x.from}–${x.to})</button>`).join(''):'')+`<button data-del="all">${tr.length>1?'Toate listele din '+dshort(curDay):'Lista din '+dshort(curDay)}</button>`;
+  else h+=`<span style="flex-basis:100%">Ziua ${dshort(curDay)} nu are liste.</span>`;
+  if(zile.length)h+=`<button data-del="every">Toate listele din toate zilele (${zile.length} ${zile.length>1?'zile':'zi'})</button>`;
+  $('delBox').innerHTML=h+'<button class="ghost" data-del="no">Anulează</button>';
   $('delBox').classList.remove('hidden');
 }
+function askEvery(){
+  const zile=Object.keys(dayIdx).filter(k=>dayIdx[k]).sort();
+  $('delBox').innerHTML=`<span style="flex-basis:100%">Sigur ștergi toate listele din ${zile.length} ${zile.length>1?'zile':'zi'} (${dshort(zile[0])} – ${dshort(zile[zile.length-1])}), pentru toată echipa? Nu se mai pot recupera. Locațiile produselor rămân.</span><button data-del="every!">Da, șterge tot</button><button class="ghost" data-del="no">Anulează</button>`;
+}
+async function delDay(day){
+  const zi=store.col('zi'),m=await zi.doc('m_'+day).get();const old=m.exists?m.data():null;
+  await zi.doc('m_'+day).delete();for(let i=0;i<(old?.parts||0);i++)await zi.doc(`p_${day}_${i}`).delete().catch(()=>{});
+  if(old?.listId)await store.col('bife').doc(old.listId).delete().catch(()=>{});
+  await merge(zi.doc('index'),{days:{[day]:null}}).catch(()=>{});
+}
 async function doDel(k){
+  if(k==='every')return askEvery();
   $('delBox').classList.add('hidden');if(k==='no')return;
+  if(k==='every!'){
+    const zile=Object.keys(dayIdx).filter(x=>dayIdx[x]);
+    try{if(!store){localDays={};orders=[];meta=null;prog={v:{},p:{}};dayIdx={};renderAll()}
+      else{say($('msg'),'Șterg listele…','');for(const d of zile)await delDay(d);await store.col('zi').doc('index').set({days:{}})}
+      say($('msg'),`Am șters toate listele din ${zile.length} ${zile.length>1?'zile':'zi'}.`,'ok');
+    }catch(e){say($('msg'),'Nu am putut șterge: '+(e.message||e.code),'err')}
+    return;
+  }
   const tr=tranches(),all=k==='all'||tr.length<2;
   const rm=all?orders:orders.filter(o=>(o.t||0)===+k);
   const clr={v:{},p:{}};for(const o of rm){clr.v[o.nr]=null;for(const l of o.lines)clr.p[o.nr+'_'+l.sku]=null}
   try{
     if(all){
       if(!store){orders=[];meta=null;prog={v:{},p:{}};saveLocalDay();renderAll()}
-      else{const zi=store.col('zi'),old=meta;await zi.doc('m_'+curDay).delete();for(let i=0;i<(old?.parts||0);i++)await zi.doc(`p_${curDay}_${i}`).delete().catch(()=>{});
-        if(old?.listId)await store.col('bife').doc(old.listId).delete().catch(()=>{});await merge(zi.doc('index'),{days:{[curDay]:null}}).catch(()=>{})}
+      else await delDay(curDay);
       say($('msg'),`Am șters listele din ${dshort(curDay)}.`,'ok');return;
     }
     const keep=orders.filter(o=>(o.t||0)!==+k).map(o=>({...o,t:(o.t||0)>+k?o.t-1:(o.t||0)}));

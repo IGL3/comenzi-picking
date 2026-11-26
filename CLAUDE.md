@@ -13,7 +13,7 @@ sortarea după canal se face doar în lista nouă, iar fiecare listă are calupu
 Filtrul „Arată” alege toate listele sau doar una; Excelul și printarea folosesc filtrul.
 Bife în timp real: „Verificat” pe comandă (lista de verificare) și „Cules” pe linie (picking), cu numele celui care a bifat („Numele tău”, ținut în localStorage).
 Calendar: listele se salvează pe zile (YYYY-MM-DD). Bara de zi de sus (‹ › Azi, Calendar, Șterge) alege ziua pentru toate secțiunile;
-calendarul marchează zilele cu liste (numărul de comenzi). Ștergere: o listă anume din zi (bifele ei se golesc, numerele celorlalte rămân) sau toată ziua.
+calendarul marchează zilele cu liste (numărul de comenzi). Ștergere („Șterge liste”): o listă anume din zi (bifele ei se golesc, numerele celorlalte rămân), toată ziua sau toate listele din toate zilele (cu a doua confirmare; locațiile rămân).
 Date: colecțiile `zi` (doc `m_<zi>` {day,listId,file,at,by,n,parts,rev,bsize,tranches:[{from,to,at,by,file}]} + bucăți `p_<zi>_<i>` {day,listId,rev,orders}
 câte 150 de comenzi, citite cu where('day','=='); doc `index` {days:{<zi>:{n,tr}|null}} pentru calendar; fiecare comandă are `t` = indexul listei;
 vechiul doc `meta`/`p0..` e mutat automat pe ziua lui), `bife/<listId>` {v:{nr:{n,t}|null}, p:{"nr_sku":{n,t}|null}}, `locatii/<sku>` {sku,c,a,t,n}.
