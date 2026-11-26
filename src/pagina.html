@@ -147,7 +147,6 @@ label{display:grid;gap:4px;font-size:14px;color:var(--mut)}
 .ck small{font-size:13px;color:var(--mut);max-width:9em;overflow:hidden;text-overflow:ellipsis}
 tr.done td{background:light-dark(#e9f4e4,#17261a)!important;color:var(--mut)}
 tr.done .tag{opacity:.55}
-.nrb{font-size:20px;padding:2px 8px}
 .qb{display:inline-block;min-width:2.2ch;text-align:center;background:var(--yel);color:#17160f;font-weight:800;border-radius:6px;padding:1px 7px}
 tr.short td{background:light-dark(#fbe1dd,#3b1c18)!important}
 tr.short .qx s{color:inherit}
@@ -605,10 +604,10 @@ const hl=o=>o.lines.length>1||o.lines.some(l=>l.qty>=2);
 const verifRows=()=>vis().flatMap(o=>o.lines.map((l,k)=>({o,l,k})));
 function renderVerif(){
   if(!orders.length){$('vBody').innerHTML=EMPTY;$('vInfo').textContent='';return}
-  const O=vis(),multi=O.filter(hl).length,hide=$('vHide').checked;
-  $('vInfo').textContent=`${(()=>{const v=$('part').value,tr=tranches();const f=v==='all'||!v?(tr.length>1?'toate listele':meta?.file):tr[+v]?.file;return f?(tr.length>1&&v==='all'?f:'„'+f+'”')+' · ':''})()}${O.length} comenzi sortate după canal`+(multi?` · ${multi} cu mai multe produse sau cantitate 2+ (numărul comenzii sau cantitatea evidențiate cu turcoaz)`:'');
+  const O=vis(),multi=O.filter(o=>o.lines.some(l=>l.qty>=2)).length,hide=$('vHide').checked;
+  $('vInfo').textContent=`${(()=>{const v=$('part').value,tr=tranches();const f=v==='all'||!v?(tr.length>1?'toate listele':meta?.file):tr[+v]?.file;return f?(tr.length>1&&v==='all'?f:'„'+f+'”')+' · ':''})()}${O.length} comenzi sortate după canal`+(multi?` · ${multi} cu cantitate 2+ (evidențiată cu turcoaz)`:'');
   const rows=verifRows().filter(r=>!hide||!isV(r.o.nr));
-  $('vBody').innerHTML=rows.length?`<div class="scroll"><table class="stack"><thead><tr><th>Verificat</th>${VCOLS.map((h,i)=>`<th class="${i===3||i===6?'n':''}">${h}</th>`).join('')}</tr></thead><tbody>${rows.map(({o,l,k})=>`<tr class="${k===0&&o.nr>1?'grp':''}${hl(o)?' mlt':''}${isV(o.nr)?' done':''}"><td>${ck('v',o.nr,prog.v[o.nr],'Comanda '+o.nr+' verificată')}</td><td>${esc(o.canal)}</td><td>${cfCell(o)}</td><td>${esc(o.id)}</td><td class="nr n">${o.lines.length>1?`<span class="qb nrb">${o.nr}</span>`:o.nr}</td><td>${esc(o.client)}</td><td>${esc(l.sku)}</td><td class="n">${l.qty>=2?`<span class="qb">${l.qty}</span>`:`<b>${l.qty}</b>`}</td><td class="prod">${esc(l.prod)}</td><td style="white-space:nowrap">${esc(o.tel)}</td><td>${esc(o.firma)}</td><td>${esc(o.deleg)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Toate comenzile sunt verificate.</div>';
+  $('vBody').innerHTML=rows.length?`<div class="scroll"><table class="stack"><thead><tr><th>Verificat</th>${VCOLS.map((h,i)=>`<th class="${i===3||i===6?'n':''}">${h}</th>`).join('')}</tr></thead><tbody>${rows.map(({o,l,k})=>`<tr class="${k===0&&o.nr>1?'grp':''}${hl(o)?' mlt':''}${isV(o.nr)?' done':''}"><td>${ck('v',o.nr,prog.v[o.nr],'Comanda '+o.nr+' verificată')}</td><td>${esc(o.canal)}</td><td>${cfCell(o)}</td><td>${esc(o.id)}</td><td class="nr n">${o.nr}</td><td>${esc(o.client)}</td><td>${esc(l.sku)}</td><td class="n">${l.qty>=2?`<span class="qb">${l.qty}</span>`:`<b>${l.qty}</b>`}</td><td class="prod">${esc(l.prod)}</td><td style="white-space:nowrap">${esc(o.tel)}</td><td>${esc(o.firma)}</td><td>${esc(o.deleg)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Toate comenzile sunt verificate.</div>';
 }
 const bkey=b=>`${b.from}-${b.to}`;
 const pq=(nr,l)=>{const x=prog.q[nr+'_'+l.sku];return x&&x.q!=null?x.q:l.qty};
