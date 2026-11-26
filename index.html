@@ -112,6 +112,20 @@ td.q.lock{cursor:default}
 .vat.vok{background:#2f8f3a;color:#fff}.vat.vno{background:#c0261c;color:#fff}.vat.vwait{background:var(--line)}.vat.verr{outline:2px dashed var(--mut);outline-offset:-2px}
 .vnote{display:block;font-size:12px;color:var(--mut);white-space:nowrap;margin-top:2px}
 .vnote button{min-height:0;padding:0 6px;font-size:12px;border-width:1px}
+.pcards{display:grid;gap:10px;padding:10px;background:#E2DACB}
+.pcard{background:#ECE6DA;color:#1A1C21;border:2px solid #cfc6b5;border-radius:12px;padding:12px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+.pcard:active{transform:scale(.99)}
+.pcard.done{background:#dcebdc;border-color:#3e9a52}
+.pcard.short{background:#f4d9d4;border-color:#c0261c}
+.pcard.lock{cursor:default}
+.pc-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.pc-nr{font:800 26px/1 "Barlow Condensed",sans-serif;min-width:2ch}
+.pc-loc{font-size:18px}
+.pc-sku{font-size:19px;font-weight:700;letter-spacing:.02em;font-variant-numeric:tabular-nums}
+.pc-q{margin-left:auto;font-size:22px;padding:4px 6px;touch-action:manipulation}
+.pc-q .qb{font-size:20px;padding:2px 10px}
+.pc-name{font-size:17px;line-height:1.4;margin-top:8px;color:#1A1C21}
+.pc-who{font-size:13px;color:#615d55;margin-top:6px}
 .ptitle{font:800 30px/1.1 "Barlow Condensed",sans-serif;margin:0 0 14px}
 .mbar,.mback{display:none}
 @media(max-width:860px){
@@ -650,6 +664,17 @@ function qcell(l,lock){
   if(editQ===key&&!lock)return `<td class="n"><span class="qed"><button class="ghost qm" aria-label="Mai puțin" ${editV<=0?'disabled':''}>−</button><b>${editV}</b><button class="ghost qp" aria-label="Mai mult" ${editV>=l.qty?'disabled':''}>+</button><button class="sm qok">OK</button><button class="ghost sm qno">Renunță</button></span></td>`;
   return `<td class="n q${lock?' lock':''}" data-q="${esc(key)}" data-max="${l.qty}" title="${lock?'':'Ține apăsat ca să micșorezi cantitatea'}">${q<l.qty?`<span class="qx">${q} <s>${l.qty}</s>${q===0?' · lipsă':''}</span>`:l.qty>=2?`<span class="qb">${l.qty}</span>`:`<b>${l.qty}</b>`}</td>`;
 }
+const isPhone=()=>window.matchMedia('(max-width:700px)').matches;
+function pcard(l,sent){
+  const key=l.nr+'_'+l.sku,q=pq(l.nr,l),done=isP(l.nr,l.sku),short=q<l.qty,val=prog.p[key];
+  const locH=l.loc?`<span class="tag pc-loc">R${esc(l.loc.c)} A${esc(l.loc.a)}</span>`:`<span class="miss">fără locație</span> <button class="ghost sm addl" data-sku="${esc(l.sku)}">Adaugă</button>`;
+  let qH;
+  if(editQ===key&&!sent)qH=`<span class="qed"><button class="ghost qm" aria-label="Mai puțin" ${editV<=0?'disabled':''}>−</button><b>${editV}</b><button class="ghost qp" aria-label="Mai mult" ${editV>=l.qty?'disabled':''}>+</button><button class="sm qok">OK</button><button class="ghost sm qno">Renunță</button></span>`;
+  else qH=`<span class="q pc-q${sent?' lock':''}" data-q="${esc(key)}" data-max="${l.qty}">${short?`<span class="qx">${q} <s>${l.qty}</s>${q===0?' · lipsă':''}</span>`:l.qty>=2?`<span class="qb">${l.qty}</span>`:`<b>${l.qty}</b>`}</span>`;
+  return `<div class="pcard${short?' short':done?' done':''}${sent?' lock':''}" ${sent?'':`data-tick="${esc(key)}" role="button" tabindex="0" aria-pressed="${done}"`}>
+    <div class="pc-row"><span class="pc-nr">${l.nr}</span>${locH}<span class="pc-sku">${esc(l.sku)}</span>${qH}</div>
+    <div class="pc-name">${esc(l.prod)}</div>${val?`<div class="pc-who">✓ ${esc(val.n||'cineva')} · ${hhmm(val.t)}</div>`:''}</div>`;
+}
 function renderPick(){
   const ob=orders.length?batches().find(b=>bkey(b)===openB):null;$('prP').textContent=ob?`Printează calupul ${ob.idx}`:'Printează toate calupurile';
   if(!orders.length){$('pBody').innerHTML=EMPTY;return}
@@ -661,7 +686,7 @@ function renderPick(){
     let body='';
     if(open){
       const ls=b.lines.filter(l=>!hide||!isP(l.nr,l.sku));
-      body=`<div class="scroll"><table class="stack"><thead><tr><th>Cules</th><th class="n">Nr. comandă</th><th>SKU</th><th class="n">Cantitate</th><th>Denumire</th><th>Rând</th><th>Alveolă</th></tr></thead><tbody>${ls.map(l=>{const key=l.nr+'_'+l.sku;return `<tr class="${pq(l.nr,l)<l.qty?'short':isP(l.nr,l.sku)?'done':''}"><td>${sent?(isP(l.nr,l.sku)?'✓':''):ck('p',key,prog.p[key],'Cules')}</td><td class="nr n">${l.nr}</td><td>${esc(l.sku)}</td>${qcell(l,!!sent)}<td class="prod">${esc(l.prod)}</td>${l.loc?`<td><span class="tag">R ${esc(l.loc.c)}</span></td><td><span class="tag">A ${esc(l.loc.a)}</span></td>`:`<td colspan="2"><span class="miss">fără locație</span> <button class="ghost sm addl" data-sku="${esc(l.sku)}">Adaugă</button></td>`}</tr>`}).join('')}</tbody></table></div>
+      body=isPhone()?`<div class="pcards">${ls.map(l=>pcard(l,!!sent)).join('')}</div>`:`<div class="scroll"><table class="stack"><thead><tr><th>Cules</th><th class="n">Nr. comandă</th><th>SKU</th><th class="n">Cantitate</th><th>Denumire</th><th>Rând</th><th>Alveolă</th></tr></thead><tbody>${ls.map(l=>{const key=l.nr+'_'+l.sku;return `<tr class="${pq(l.nr,l)<l.qty?'short':isP(l.nr,l.sku)?'done':''}"><td>${sent?(isP(l.nr,l.sku)?'✓':''):ck('p',key,prog.p[key],'Cules')}</td><td class="nr n">${l.nr}</td><td>${esc(l.sku)}</td>${qcell(l,!!sent)}<td class="prod">${esc(l.prod)}</td>${l.loc?`<td><span class="tag">R ${esc(l.loc.c)}</span></td><td><span class="tag">A ${esc(l.loc.a)}</span></td>`:`<td colspan="2"><span class="miss">fără locație</span> <button class="ghost sm addl" data-sku="${esc(l.sku)}">Adaugă</button></td>`}</tr>`}).join('')}</tbody></table></div>
       <div class="bfoot"><button class="ghost sm" data-print="${k}">Printează calupul</button>${sent?`<span class="grow">Calupul e la facturare. Dacă trebuie corectat ceva, redeschide-l.</span><button class="ghost sm" data-reopen="${k}">Redeschide calupul</button>`:`<span class="grow">${full?`Totul e cules${lips?` · ${lips} ${lips>1?'linii au':'linie are'} cantitate mai mică`:''}. Trimite calupul la facturare.`:`Mai ai ${b.lines.length-dn} ${b.lines.length-dn>1?'linii':'linie'} de bifat.`}</span><button data-send="${k}" data-from="${b.from}" data-to="${b.to}" ${full?'':'disabled'}>Trimite la facturare</button>`}</div>`;
     }
     return `<div class="batch${open?' open':''}${sent?' sent':''}"><button class="bhead" data-open="${k}" aria-expanded="${open}"><span class="arr">›</span><h2>Calup ${b.idx}</h2><span>comenzile ${b.from}–${b.to} · ${b.lines.length} linii · ${buc} bucăți</span><span class="bp">${st}</span></button>${body}</div>`;
@@ -873,13 +898,22 @@ $('pBody').addEventListener('click',e=>{
 });
 let qMax=0;
 let px=0,py=0;
-const startPress=e=>{const c=e.target.closest('td.q:not(.lock)');if(!c)return;px=e.clientX;py=e.clientY;clearTimeout(pressT);pressT=setTimeout(()=>{const k=c.dataset.q;qMax=+c.dataset.max;const x=prog.q[k];editV=x&&x.q!=null?x.q:qMax;editQ=k;renderPick();if(navigator.vibrate)try{navigator.vibrate(30)}catch(_){}},550)};
+let pressFired=0;
+const startPress=e=>{pressFired=0;const c=e.target.closest('.q:not(.lock)');if(!c)return;px=e.clientX;py=e.clientY;clearTimeout(pressT);pressT=setTimeout(()=>{pressFired=Date.now();const k=c.dataset.q;qMax=+c.dataset.max;const x=prog.q[k];editV=x&&x.q!=null?x.q:qMax;editQ=k;renderPick();if(navigator.vibrate)try{navigator.vibrate(30)}catch(_){}},550)};
 const endPress=()=>clearTimeout(pressT);
 $('pBody').addEventListener('pointerdown',startPress);
 ['pointerup','pointercancel'].forEach(t=>$('pBody').addEventListener(t,endPress));
 $('pBody').addEventListener('pointermove',e=>{if(Math.hypot(e.clientX-px,e.clientY-py)>12)endPress()});
 window.addEventListener('scroll',endPress,{passive:true});
-$('pBody').addEventListener('contextmenu',e=>{if(e.target.closest('td.q'))e.preventDefault()});
+$('pBody').addEventListener('contextmenu',e=>{if(e.target.closest('.q'))e.preventDefault()});
+$('pBody').addEventListener('click',e=>{
+  if(pressFired&&Date.now()-pressFired<1500&&!e.target.closest('.qed')){pressFired=0;e.stopPropagation();return}
+  if(e.target.closest('button,a,input,.qed'))return;
+  const c=e.target.closest('.pcard[data-tick]');if(!c)return;const k=c.dataset.tick;
+  tick('p',k,!prog.p[k]);
+},true);
+$('pBody').addEventListener('keydown',e=>{const c=e.target.closest&&e.target.closest('.pcard[data-tick]');if(c&&(e.key==='Enter'||e.key===' ')){e.preventDefault();tick('p',c.dataset.tick,!prog.p[c.dataset.tick])}});
+{let wasPhone=isPhone();window.addEventListener('resize',()=>{if(isPhone()!==wasPhone){wasPhone=isPhone();renderPick()}})}
 $('dlF').onclick=()=>{const L=sentList();if(!L.length)return;const idx=new Map(batches().map(b=>[bkey(b),b.idx]));const aoa=[['Calup','Nr.','Canal','Id comandă','Nume client','SKU','Comandat','Cules','Denumire produs','Facturat']];
   for(const x of L)for(const o of x.os)for(const l of o.lines)aoa.push([`${idx.get(x.k)||''} (${x.from}-${x.to})`,o.nr,o.canal,o.id,o.client,l.sku,l.qty,pq(o.nr,l),l.prod,prog.f[o.nr]?'da':'']);
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheet(aoa,[12,6,14,24,28,12,10,8,60,9]),'Facturare');save(`facturare_${curDay}.xlsx`,xbuf(wb))};
