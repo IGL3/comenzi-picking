@@ -162,7 +162,6 @@ tr.short .ck input{accent-color:#c0261c}
 <script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
 </head>
 <body>
-<div class="hz"></div>
 <div class="auth hidden" id="auth" role="dialog" aria-modal="true" aria-labelledby="authT"><div class="acard">
   <div class="hz" style="border-radius:10px 10px 0 0;margin:-28px -28px 22px"></div>
   <h2 id="authT">Intră în cont</h2>
@@ -180,7 +179,7 @@ tr.short .ck input{accent-color:#c0261c}
 </div></div>
 <div class="shell">
 <aside class="side" role="tablist" aria-label="Secțiuni">
-  <div class="brand">Comenzi și picking<small>Quasar Comex</small></div>
+  <div class="brand">Quasar Comex</div>
   <div class="lbl">Deschide</div>
   <button role="tab" id="t-dash" aria-selected="false">Dashboard<span class="cnt" id="c-dash"></span></button>
   <button role="tab" id="t-verif" aria-selected="true">Listă de verificare<span class="cnt" id="c-verif"></span></button>
@@ -193,8 +192,6 @@ tr.short .ck input{accent-color:#c0261c}
 </aside>
 <div class="content">
 <header class="band"><div class="wrap">
-  <h1>Comenzi → verificare și picking</h1>
-  <p class="sub">Unul dintre voi încarcă exportul de comenzi, iar toată echipa vede aceeași listă de verificare și același picking pe calupuri și bifează în timp real ce a terminat.</p>
   <div class="msg" id="msg"></div>
   <div class="team" id="team"><span class="dot"></span><span id="teamTxt" class="grow">Se pornește…</span>
     <label style="display:flex;gap:6px;align-items:center">Numele tău <input id="me" placeholder="ex. Ionuț" style="width:150px;min-height:38px"></label>
