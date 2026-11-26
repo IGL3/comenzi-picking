@@ -7,9 +7,12 @@ Nume companie, Nume delegat. Picking-ul e pe calupuri de 20 de comenzi
 (Nr. comandă, SKU, Cantitate, Denumire produs, Rând, Alveolă). Exportul se citește doar în browser.
 
 ## Lucru în echipă
-Unul încarcă exportul → lista devine comună pentru toți (înlocuirea cere confirmare și șterge bifele vechi).
+Unul încarcă exportul → lista devine comună pentru toți. Dacă există deja o listă, încărcarea întreabă:
+„Adaugă în continuare” (ex. lista de la prânz: comenzile noi primesc numerele de după ultima, ID-urile deja existente sunt sărite,
+sortarea după canal se face doar în lista nouă, iar fiecare listă are calupurile ei) sau „Înlocuiește lista” (de la 1, șterge bifele).
+Filtrul „Arată” alege toate listele sau doar una; Excelul și printarea folosesc filtrul.
 Bife în timp real: „Verificat” pe comandă (lista de verificare) și „Cules” pe linie (picking), cu numele celui care a bifat („Numele tău”, ținut în localStorage).
-Date: colecțiile `zi` (doc `meta` {listId,file,at,by,n,parts,bsize} + bucăți `p0..pN` câte 150 de comenzi), `bife/<listId>` {v:{nr:{n,t}|null}, p:{"nr_sku":{n,t}|null}}, `locatii/<sku>` {sku,c,a,t,n}.
+Date: colecțiile `zi` (doc `meta` {listId,file,at,by,n,parts,rev,bsize,tranches:[{from,to,at,by,file}]} + bucăți `p0..pN` {listId,rev,orders} câte 150 de comenzi; fiecare comandă are `t` = indexul listei), `bife/<listId>` {v:{nr:{n,t}|null}, p:{"nr_sku":{n,t}|null}}, `locatii/<sku>` {sku,c,a,t,n}.
 
 ## Fișiere
 - `src/pagina.html` — sursa; `src/locatii.json` — lista de bază de locații `[[sku, rand, alveola], ...]` (din locatii_aplicatie_comenzi.xlsx).
