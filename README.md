@@ -8,4 +8,4 @@ Aplicație în browser pentru Quasar Comex: încarci exportul de comenzi (.xlsx)
 
 Exportul de comenzi se citește doar în browser, nu se trimite nicăieri.
 
-Lucru în echipă: unul încarcă exportul, toți văd aceeași listă și bifează în timp real ce au verificat și cules. Pe GitHub Pages datele comune stau în Firebase (configurația în `src/firebase.json`), sub un cod de echipă care nu e scris în repo.
+Lucru în echipă: fiecare coleg intră cu email și parolă (contul trebuie adăugat de un administrator în secțiunea Echipă). Toți văd aceeași listă și bifează în timp real; la fiecare bifă apare numele celui care a bifat. Regulile Firestore sunt în `firebase/firestore.rules`.

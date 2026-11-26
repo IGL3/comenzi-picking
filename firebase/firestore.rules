@@ -1,0 +1,34 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function verificat() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+    function echipa() {
+      return get(/databases/$(database)/documents/echipa/membri).data;
+    }
+    function membru() {
+      return verificat() && request.auth.token.email.lower() in echipa().emails;
+    }
+    function admin() {
+      return verificat() && request.auth.token.email.lower() in echipa().admini;
+    }
+    // Lista echipei: o citesc membrii, o schimbă administratorii.
+    // Primul cont confirmat o poate crea o singură dată (devine administrator).
+    match /echipa/membri {
+      allow get: if membru();
+      allow create: if verificat()
+        && request.resource.data.emails == [request.auth.token.email.lower()]
+        && request.resource.data.admini == [request.auth.token.email.lower()];
+      allow update: if admin();
+    }
+    // Datele aplicației: doar membrii echipei.
+    match /firma/quasar/{col}/{doc} {
+      allow read, write: if membru() && col in ['zi', 'bife', 'locatii'];
+    }
+    // Datele vechi (cu cod de echipă): doar citire, pentru mutare. Se poate șterge după mutare.
+    match /teams/{cod}/{col}/{doc} {
+      allow read: if cod.size() >= 10 && col in ['zi', 'bife', 'locatii'];
+    }
+  }
+}

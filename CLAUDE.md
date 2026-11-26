@@ -30,9 +30,11 @@ vechiul doc `meta`/`p0..` e mutat automat pe ziua lui), `bife/<listId>` {v:{nr:{
 
 ## Două publicări, aceeași sursă
 - Pagina Claude: https://claude.ai/artifact/6BER2wjVDKSPE3H1NgV4kk (capabilități `db` + `downloads`; colecțiile de mai sus la rădăcina db).
-- GitHub Pages: https://igl3.github.io/comenzi-picking/ — fără `window.claude`; Firebase Firestore fără logare, sub `teams/<cod echipă>/<colecție>`.
-  Codul echipei NU e în repo (repo-ul e public): se introduce o dată pe fiecare calculator sau vine din link `…/comenzi-picking/#<cod>` și se ține în localStorage.
-  Regulile Firestore permit citire/scriere doar pe `teams/{cod}/{zi|bife|locatii}/{doc}` cu cod de minim 10 caractere (fără listarea echipelor).
+- GitHub Pages: https://igl3.github.io/comenzi-picking/ — fără `window.claude`; logare Firebase Auth cu email și parolă (cont nou cere numele,
+  care devine displayName și apare la bife; emailul trebuie confirmat). Acces doar pentru emailurile din doc `echipa/membri` {emails:[], admini:[]};
+  primul cont confirmat poate crea echipa („Sunt administratorul: creează echipa”). Administratorii au secțiunea „Echipă” (adaugă/scot emailuri,
+  rol de administrator, mutarea datelor vechi de pe `teams/<cod>` din localStorage). Datele: `firma/quasar/<zi|bife|locatii>/<doc>`.
+  Regulile Firestore sunt în `firebase/firestore.rules` (se copiază în consola Firebase → Firestore → Rules).
 
 ## La orice modificare
 1. Editează `src/pagina.html` (sau actualizează `src/locatii.json`).
