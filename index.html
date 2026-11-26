@@ -110,7 +110,19 @@ td.q.lock{cursor:default}
 .vnote{display:block;font-size:12px;color:var(--mut);white-space:nowrap;margin-top:2px}
 .vnote button{min-height:0;padding:0 6px;font-size:12px;border-width:1px}
 .ptitle{font:800 30px/1.1 "Barlow Condensed",sans-serif;margin:0 0 14px}
-@media(max-width:860px){.shell{grid-template-columns:1fr}.side{height:auto;flex-direction:row;padding:8px;gap:6px;z-index:5;overflow-x:auto}.side .brand,.side .lbl,.side .foot{display:none}.side button{flex:1 0 auto;width:auto;min-height:48px;padding:8px 12px;font-size:18px}}
+.mbar,.mback{display:none}
+@media(max-width:860px){
+  .shell{grid-template-columns:1fr}
+  .mbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:30;background:#1A1C21;border-bottom:1px solid #2b2e35;padding:8px 12px;color:#ECE6DA}
+  .mbar button{background:transparent;border:1px solid #3a3d45;color:#ECE6DA;min-width:48px;min-height:44px;padding:0;display:grid;place-items:center;border-radius:10px}
+  .mbar button svg{width:24px;height:24px}
+  .mbar b{font:800 20px/1.1 "Barlow Condensed",sans-serif}.mbar small{display:block;font-size:13px;color:#00D8F2}
+  .side{position:fixed;top:0;left:0;bottom:0;height:100vh;width:min(84vw,320px);z-index:45;transform:translateX(-105%);transition:transform .2s ease;box-shadow:0 0 40px rgba(0,0,0,.5)}
+  .side.open{transform:none}
+  .mback{position:fixed;inset:0;z-index:44;background:rgba(0,0,0,.55)}.mback.open{display:block}
+  .side button{min-height:56px}
+  .bar>span.grow{flex:1 1 100%}
+}
 .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
 .bar .grow{flex:1}
 table{width:100%;border-collapse:collapse;background:var(--card);font-size:15px}
@@ -223,8 +235,10 @@ tr.short td{background:#f4d9d4!important}
   <div id="aWait" class="hidden"><p id="aWaitTxt"></p><div class="alinks"><button id="aCheck">Am confirmat</button><button class="ghost sm" id="aResend">Retrimite emailul</button><button class="ghost sm" id="aOut1">Ieși din cont</button></div></div>
   <div id="aNoAcc" class="hidden"><p id="aNoTxt"></p><div class="alinks"><button id="aRetry">Verifică din nou</button><button class="ghost sm" id="aBoot">Sunt administratorul: creează echipa</button><button class="ghost sm" id="aOut2">Ieși din cont</button></div></div>
 </div></div>
+<div class="mbar" id="mbar"><button id="menuBtn" aria-label="Deschide meniul" aria-expanded="false" aria-controls="side"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><div><b>Quasar Comex</b><small id="mTitle"></small></div></div>
+<div class="mback" id="mback"></div>
 <div class="shell">
-<aside class="side" role="tablist" aria-label="Secțiuni">
+<aside class="side" id="side" role="tablist" aria-label="Secțiuni">
   <a class="brand" id="brand" href="#dashboard" title="Deschide Dashboard">Quasar Comex</a>
   <div class="lbl">Deschide</div>
   <button role="tab" id="t-dash" aria-selected="false">Dashboard<span class="cnt" id="c-dash"></span></button>
@@ -819,7 +833,11 @@ $('replAdd').onclick=()=>{if(pending)append(pending.list,pending.name)};
 $('part').onchange=()=>{renderStats();renderVerif();renderPick()};
 $('replNo').onclick=()=>{pending=null;$('repl').classList.add('hidden')};
 const tabs=['dash','verif','pick','fact','amb','loc','setari'];
-function show(t){placeDay(t);for(const x of tabs){$('t-'+x).setAttribute('aria-selected',x===t);$('p-'+x).classList.toggle('hidden',x!==t)}ls.set('sectiune',t);const m=document.querySelector('main');if(window.scrollY>m.offsetTop)window.scrollTo({top:m.offsetTop})}
+function menu(o){$('side').classList.toggle('open',o);$('mback').classList.toggle('open',o);$('menuBtn').setAttribute('aria-expanded',o)}
+{const cur=tabs.find(x=>$('t-'+x).getAttribute('aria-selected')==='true');if(cur)$('mTitle').textContent=$('t-'+cur).firstChild.textContent}
+$('menuBtn').onclick=()=>menu(!$('side').classList.contains('open'));$('mback').onclick=()=>menu(false);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')menu(false)});
+function show(t){placeDay(t);menu(false);const tb=$('t-'+t);if(tb)$('mTitle').textContent=tb.firstChild.textContent;for(const x of tabs){$('t-'+x).setAttribute('aria-selected',x===t);$('p-'+x).classList.toggle('hidden',x!==t)}ls.set('sectiune',t);const m=document.querySelector('main');if(window.scrollY>m.offsetTop)window.scrollTo({top:m.offsetTop})}
 for(const x of tabs)$('t-'+x).onclick=()=>show(x);
 if(ls.get('sectiune')==='echipa')ls.set('sectiune','setari');if(location.hash==='#dashboard')show('dash');else if(tabs.includes(ls.get('sectiune')))show(ls.get('sectiune'));
 $('brand').addEventListener('click',e=>{if(e.ctrlKey||e.metaKey||e.shiftKey||e.button!==0)return;e.preventDefault();show('dash')});
