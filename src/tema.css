@@ -18,7 +18,7 @@ input,select{background:#ECE6DA;color:#1A1C21;border-color:#c9c1b1}
 .side .foot{color:#8f8b83}
 /* detalii mici (10%) */
 button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--acc)}
-.ck input{accent-color:#00a9bd}
+.ck input{accent-color:#2f8f3a}
 .meter i,.kpi .meter i,.flow .meter i{background:var(--acc)!important}
 .team.live .dot{background:var(--acc);box-shadow:0 0 0 4px rgba(0,216,242,.22)}
 .tag{background:#1A1C21;color:var(--acc)}
@@ -31,7 +31,6 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .kpi.todo b{color:#1A1C21}.kpi.todo .meter i{background:var(--acc)!important}
 .kpi.bad b{color:#c0261c}
 .multi{background:var(--acc);color:#1A1C21}
-tr.mlt td{background:#E0EEEE}
 tr.done td{background:#dcebdc!important;color:#615d55}
 tr.short td{background:#f4d9d4!important}
 .confirm{background:#ECE6DA;color:#1A1C21;box-shadow:inset 4px 0 0 var(--acc)}

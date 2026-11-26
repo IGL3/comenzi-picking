@@ -3,7 +3,7 @@
 Aplicație într-o singură pagină (UI în română): încarci exportul de comenzi (.xlsx); comenzile se sortează alfabetic după canal
 și primesc Nr. crt 1, 2, 3… în această ordine (același număr pentru toate produsele unei comenzi). Lista de verificare are câte un rând pe produs,
 în ordinea cerută de utilizator: Canal, Cod fiscal, Id comandă, Nr. crt, Nume client, Cod produs, Cantitate, Denumire produs, Telefon livrare,
-Nume companie, Nume delegat; comenzile cu mai multe produse distincte sau cu cantitate 2+ au fundal turcoaz deschis, iar cantitățile 2+ au etichetă turcoaz (și la Picking; la printare sunt încadrate). Picking-ul e pe calupuri de 20 de comenzi, coloane în ordinea: (Cules) Nr. comandă, SKU, Cantitate, Denumire, Rând, Alveolă. Exportul se citește doar în browser.
+Nume companie, Nume delegat; comenzile cu mai multe produse distincte au Nr. crt pe etichetă turcoaz, iar cantitățile 2+ au etichetă turcoaz (fără fundal colorat pe rând, ca să nu se confunde cu verdele de la bife) (și la Picking; la printare sunt încadrate). Picking-ul e pe calupuri de 20 de comenzi, coloane în ordinea: (Cules) Nr. comandă, SKU, Cantitate, Denumire, Rând, Alveolă. Exportul se citește doar în browser.
 
 ## Temă
 60% #1A1C21 (fundal, meniu) · 30% #ECE6DA (suprafețe: carduri, tabele, câmpuri, cu text închis) · 10% #00D8F2 (doar detalii mici: secțiunea activă,
