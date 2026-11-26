@@ -36,7 +36,7 @@ PLATFORMA, DATA COM, DATA RETUR, NR DE COMANDA, CLIENT, MOTIVUL, STATUSUL COM, O
 (platforma din listă, date cu calendar, motivul cu sugestii din cele folosite, „S-a întors azi” pune data de azi în STATUSUL COM; gol = „în așteptare”),
 căutare, filtru pe platformă și status, „Importă din Excel” (caută foaia cu capul de tabel; rândurile identice se sar doar câte există deja) și
 „Descarcă Excel” (aceleași coloane, datele ca date Excel dd.mm.yyyy). Platformele se normalizează (eMAG RO/BG/HU, Trendyol RO/BG/GR, Fashion Days RO/BG,
-Altex, Pepita HU, Skroutz); datele scrise greșit în centralizator rămân text și apar roșu punctat. Ordinea: cele introduse ultimele sus.
+Altex, Pepita HU, Skroutz); datele scrise greșit se corectează automat (`fixRet`, și pentru STATUSUL COM când e doar o dată: an „202”/„226”/„20026”, „0” în plus, cifre lipite, an greșit în viitor sau cu ani în urmă — după cealaltă dată sau data din STATUSUL COM; la import și o dată la încărcare); ce nu se poate deduce rămâne text roșu punctat. Ordinea: cele introduse ultimele sus.
 Date: `zi/ret_<an>` {tip:'retururi', items:{<id>:{p,dc,dr,nr,c,m,s,o,k,t,n}|null}} (în colecția `zi`, ca să meargă cu regulile Firestore existente),
 citite cu where('tip','=='). Datele clienților nu se pun în repo (e public): centralizatorul se importă din aplicație.
 

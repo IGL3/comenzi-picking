@@ -902,6 +902,32 @@ function parseD(v){ // -> 'YYYY-MM-DD' sau textul original dacă nu e o dată
   return s;
 }
 const isIso=x=>/^\d{4}-\d{2}-\d{2}$/.test(x||'');
+// corectează datele scrise greșit, folosind cealaltă dată a returului (sau data din STATUSUL COM) ca reper
+const ddays=(a,b)=>Math.abs(pdate(a)-pdate(b))/864e5;
+function fixD(v,ref){
+  const ok=c=>isIso(c)&&+c.slice(0,4)>=2020&&(!isIso(ref)||ddays(c,ref)<=150);
+  if(isIso(v)){
+    if(!isIso(ref)||pdate(ref)>Date.now()+864e5)return v;
+    const fut=pdate(v)>Date.now()+864e5,old=+v.slice(0,4)<+ref.slice(0,4)&&ddays(v,ref)>180;
+    if(fut||old){const c=ref.slice(0,4)+v.slice(4);if(isIso(c)&&ddays(c,ref)<=90)return c}
+    return v;
+  }
+  if(!v)return v;
+  const t=nbs(v);let m=/^(\d{1,2})\D+(\d{1,2})\D+(\d{3}|200\d\d)$/.exec(t); // an scris „202”, „226” sau „20026”
+  if(m){const ys=m[3],y=ys==='202'?(isIso(ref)?+ref.slice(0,4):new Date().getFullYear()):ys.length===3?+('20'+ys.slice(1)):+('20'+ys.slice(3));
+    if(isoOk(y,+m[2],+m[1])){const c=`${y}-${pad(+m[2])}-${pad(+m[1])}`;if(ok(c))return c}}
+  const p=t.split(/\D+/).filter(Boolean); // „18.0.08.2026” -> 18.08.2026
+  if(p.length===4&&p[1]==='0'){const c=parseD(`${p[0]}.${p[2]}.${p[3]}`);if(ok(c))return c}
+  const dg=t.replace(/\D/g,''); // „20.0.82026”, „18 0 8 2026”, „0711 2026” -> zzllaaaa
+  if(dg.length===8){const c=parseD(`${dg.slice(0,2)}.${dg.slice(2,4)}.${dg.slice(4)}`);if(ok(c))return c}
+  return v;
+}
+function fixRet(r){
+  const st=parseD(r.s),ref=o=>isIso(o)&&pdate(o)<=Date.now()+864e5?o:(isIso(st)?st:'');
+  let dr=fixD(r.dr,ref(r.dc));const dc=fixD(r.dc,ref(dr));dr=fixD(dr,ref(dc));
+  let s_=r.s||'';if(s_&&!/^\d{2}\.\d{2}\.\d{4}$/.test(s_)&&/^[\d\s.,\/\-]+$/.test(s_)){const f=fixD(s_,isIso(dr)?dr:dc);if(isIso(f))s_=dshort(f)} // STATUSUL COM care e doar o dată
+  return {dc,dr,s:s_};
+}
 const fmtD=x=>isIso(x)?dshort(x):(x||'');
 const normSt=v=>{const d=parseD(v);return isIso(d)?dshort(d):nbs(v)};
 const rkey=r=>[r.p,r.dc,r.dr,String(r.nr),r.c,r.m,r.s,r.o].join('|').toLowerCase();
@@ -916,6 +942,13 @@ async function putRets(list){ // list: [[id,val]]
 async function delRet(id){const d=rets[id]?._d;delete rets[id];renderRet();if(store&&d)await merge(store.col('zi').doc(d),{items:{[id]:null}});else saveRetLocal()}
 const rid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 function fillOpts(sel,vals,first){const cur=sel.value,h=(first?`<option value="">${first}</option>`:'')+vals.map(v=>`<option>${esc(v)}</option>`).join('');if(sel.dataset.h!==h){sel.innerHTML=h;sel.dataset.h=h;sel.value=cur}}
+let retFixing=false;
+async function autoFixRets(){ // o dată la încărcare: repară datele scrise greșit din centralizator
+  if(retFixing)return;const list=[];
+  for(const [id,r] of Object.entries(rets)){const f=fixRet(r);if(f.dc!==(r.dc||'')||f.dr!==(r.dr||'')||f.s!==(r.s||'')){const {_d,...v}=r;list.push([id,{...v,...f,t:Date.now()}])}}
+  if(!list.length)return;retFixing=true;
+  try{await putRets(list);say($('retMsg'),`Am corectat datele scrise greșit la ${list.length} ${list.length===1?'retur':'de retururi'}.`,'ok')}catch(e){}finally{retFixing=false}
+}
 function renderRet(){
   const all=Object.entries(rets).map(([id,v])=>({id,...v})),w=all.filter(r=>!r.s).length;
   $('c-ret').textContent=all.length?`${w} în așteptare`:'';
@@ -981,6 +1014,7 @@ $('rImpFile').onchange=async e=>{
       const g=k=>C[k]<0?'':r[C[k]];
       const v={p:normPlat(g('p')),dc:parseD(g('dc')),dr:parseD(g('dr')),nr:nbs(g('nr')),c:nbs(g('c')),m:nbs(g('m')),s:normSt(g('s')),o:nbs(g('o'))};
       if(!v.nr&&!v.c)return;
+      Object.assign(v,fixRet(v));
       const k=rkey(v);if(have.get(k)>0){have.set(k,have.get(k)-1);skip++;return}
       list.push([rid()+i.toString(36),{...v,k:t0+i,t:t0,n:me()}]);
     });
@@ -1144,7 +1178,7 @@ $('impFile').onchange=async e=>{
 };
 
 /* ---------- sincronizare ---------- */
-function goLocal(t){store=null;try{extra=new Map(JSON.parse(ls.get('locatii_extra')||'[]'))}catch(e){}try{rets=JSON.parse(ls.get('retururi')||'{}')}catch(e){rets={}}renderRet();team(t,false);renderAll()}
+function goLocal(t){store=null;try{extra=new Map(JSON.parse(ls.get('locatii_extra')||'[]'))}catch(e){}try{rets=JSON.parse(ls.get('retururi')||'{}')}catch(e){rets={}}renderRet();autoFixRets();team(t,false);renderAll()}
 function connect(st,label){
   store=st;team('Se conectează la lista echipei…',false);
   const timer=setTimeout(()=>team('Lista echipei nu răspunde încă. Verifică internetul.',false),10000);
@@ -1157,7 +1191,7 @@ function connect(st,label){
       const up=l0.filter(([k])=>!m.has(k));if(up.length)(async()=>{for(const [k,v] of up){try{await putLoc(k,v.c,v.a)}catch(e){}}ls.set('locatii_extra',null)})()}
     renderAll();
   },fail);
-  store.col('zi').where('tip','==','retururi').onSnapshot(s=>{const r={};for(const d of s.docs){const x=d.data()||{};for(const [id,v] of Object.entries(x.items||{}))if(v)r[id]={...v,_d:d.id}}rets=r;renderRet()},()=>{});
+  store.col('zi').where('tip','==','retururi').onSnapshot(s=>{const r={};for(const d of s.docs){const x=d.data()||{};for(const [id,v] of Object.entries(x.items||{}))if(v)r[id]={...v,_d:d.id}}rets=r;renderRet();if(!s.metadata||!s.metadata.fromCache)autoFixRets()},()=>{});
   let bfDone=false;
   store.col('zi').doc('faraloc').onSnapshot(d=>{const x=d.exists?d.data():{};farLoc=x.items||{};if(!x.bf&&!bfDone){bfDone=true;backfillMissing()}renderStats();renderMiss()},()=>{});
   store.col('zi').doc('index').onSnapshot(s=>{
