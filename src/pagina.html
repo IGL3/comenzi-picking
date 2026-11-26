@@ -80,13 +80,14 @@ td.q.lock{cursor:default}
 .qed button{min-width:40px;min-height:40px;padding:0;font-size:22px}
 .qed b{min-width:2ch;text-align:center;font-size:20px}
 .fo td{border-top:2px solid var(--ink)}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:12px;margin-bottom:22px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:12px;margin-bottom:22px}
 .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;position:relative;overflow:hidden}
 .kpi .k{font-size:15px;color:var(--mut)}
 .kpi b{display:block;font:800 clamp(40px,5vw,56px)/1 "Barlow Condensed",sans-serif;margin:6px 0 4px;font-variant-numeric:tabular-nums}
 .kpi small{font-size:14px;color:var(--mut)}
 .kpi .meter{height:10px;margin-top:10px}
 .kpi.todo b{color:light-dark(#b8580b,#ffb066)}.kpi.todo .meter i{background:#e08a1e}
+.kpi.bad b{color:var(--red)}.kpi.go{cursor:pointer}.kpi.go:hover{border-color:var(--ink)}
 .kpi.main{background:#17160f;color:#f1eee4;border-color:#17160f}.kpi.main .k,.kpi.main small{color:#c9c3b2}
 .flow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:22px}
 .flow div{padding:14px 16px;border-right:1px solid var(--line)}.flow div:last-child{border-right:0}
@@ -198,7 +199,6 @@ tr.short .ck input{accent-color:#c0261c}
   <div class="team" id="team"><span class="dot"></span><span id="teamTxt" class="grow">Se pornește…</span>
     <label style="display:flex;gap:6px;align-items:center">Numele tău <input id="me" placeholder="ex. Ionuț" style="width:150px;min-height:38px"></label>
     <span id="userBox" class="hidden" style="display:flex;gap:8px;align-items:center"><span id="userMail" style="color:var(--mut)"></span><button class="ghost sm" id="logout">Ieși din cont</button></span></div>
-  <div class="stats hidden" id="stats"></div>
 </div></header>
 
 <main class="band" style="padding-top:0"><div class="wrap">
@@ -546,12 +546,9 @@ function ck(k,key,val,label){const w=val?`${val.n||'cineva'}${val.t?' · '+hhmm(
 
 /* ---------- afișare ---------- */
 function renderStats(){
-  const O=vis();if(!O.length){$('stats').classList.add('hidden');for(const x of ['verif','pick','loc'])$('c-'+x).textContent='';return}
+  const O=vis();if(!O.length){for(const x of ['verif','pick','loc'])$('c-'+x).textContent='';return}
   const L=O.reduce((s,o)=>s+o.lines.length,0),miss=missing().length;
   const vd=O.filter(o=>isV(o.nr)).length,pd=O.reduce((s,o)=>s+o.lines.filter(l=>isP(o.nr,l.sku)).length,0);
-  const st=[[O.length,'comenzi'],[`${vd}/${O.length}`,'verificate',vd/O.length],[`${pd}/${L}`,'linii culese',pd/L],[batches().length,'calupuri de '+bsize()],[miss,'SKU fără locație',null,miss?'warn':'']];
-  $('stats').innerHTML=st.map(s=>`<div class="st ${s[3]||''}"><b>${s[0]}</b><small>${s[1]}</small>${s[2]!=null?`<div class="meter"><i style="width:${Math.round(s[2]*100)}%"></i></div>`:''}</div>`).join('');
-  $('stats').classList.remove('hidden');
   $('c-verif').textContent=`${vd}/${O.length} verificate`;$('c-pick').textContent=`${pd}/${L} linii culese`;
   $('c-loc').textContent=miss?`${miss} SKU fără locație`:'toate au locație';$('c-loc').classList.toggle('warn',!!miss);
 }
@@ -636,10 +633,10 @@ function dayStats(O){
 function renderDash(){
   const dt=pdate(curDay);$('dashT').textContent=`Dashboard · ${dt.getDate()} ${LUNI[dt.getMonth()]} ${dt.getFullYear()}`;
   if(!orders.length){$('dBody').innerHTML='<div class="empty">Ziua asta nu are comenzi. Alege altă zi din bara de sus sau din calendar.</div>';$('c-dash').textContent='';return}
-  const S=dayStats(orders),pc=x=>S.n?Math.round(x/S.n*100):0;
+  const S={...dayStats(orders),miss:missing().length},pc=x=>S.n?Math.round(x/S.n*100):0;
   $('c-dash').textContent=`${S.am}/${S.n} trimise`;
-  const K=[['main','Total comenzi',S.n,'în '+tranches().length+' '+(tranches().length>1?'liste':'listă')],['todo','De pickuit',S.dp,pc(S.dp)+'% din total'],['','Pickuite',S.pk,pc(S.pk)+'% din total',S.pk],['','Facturate',S.fc,pc(S.fc)+'% din total',S.fc],['todo','De ambalat',S.de,'facturate, încă neambalate'],['','Ambalate și trimise',S.am,pc(S.am)+'% din total',S.am]];
-  const kp=K.map(k=>`<div class="kpi ${k[0]}"><span class="k">${k[1]}</span><b>${k[2]}</b><small>${k[3]}</small>${k[4]!=null?`<div class="meter"><i style="width:${pc(k[4])}%"></i></div>`:''}</div>`).join('');
+  const K=[['main','Total comenzi',S.n,'în '+tranches().length+' '+(tranches().length>1?'liste':'listă')],['todo','De pickuit',S.dp,pc(S.dp)+'% din total'],['','Pickuite',S.pk,pc(S.pk)+'% din total',S.pk],['','Facturate',S.fc,pc(S.fc)+'% din total',S.fc],['todo','De ambalat',S.de,'facturate, încă neambalate'],['','Ambalate și trimise',S.am,pc(S.am)+'% din total',S.am],[S.miss?'bad go':'go','SKU fără locație',S.miss,S.miss?'apasă ca să le adaugi locația':'toate produsele au locație']];
+  const kp=K.map(k=>`<div class="kpi ${k[0]}"${k[0].includes('go')?' role="button" tabindex="0" data-go="loc"':''}><span class="k">${k[1]}</span><b>${k[2]}</b><small>${k[3]}</small>${k[4]!=null?`<div class="meter"><i style="width:${pc(k[4])}%"></i></div>`:''}</div>`).join('');
   const fl=[['Picking',S.pk],['Facturare',S.fc],['Ambalare și trimitere',S.am]].map(x=>`<div><span class="t">${x[0]}</span> <span class="v">${x[1]}/${S.n} · ${pc(x[1])}%</span><div class="meter"><i style="width:${pc(x[1])}%"></i></div></div>`).join('');
   $('dBody').innerHTML=`<div class="kpis">${kp}</div><div class="flow">${fl}</div>
   ${S.lips?`<p class="msg err" style="margin-top:-8px">${S.lips} ${S.lips>1?'produse culese':'produs cules'} cu cantitate mai mică decât comanda (lipsă).</p>`:''}
@@ -754,7 +751,9 @@ for(const x of tabs)$('t-'+x).onclick=()=>show(x);
 if(tabs.includes(ls.get('sectiune')))show(ls.get('sectiune'));
 $('bsize').oninput=()=>{renderStats();renderPick()};
 $('bsize').onchange=()=>{if(store&&meta)merge(store.col('zi').doc('meta'),{bsize:bsize()}).catch(()=>{})};
-$('vHide').onchange=renderVerif;$('pHide').onchange=renderPick;$('fHide').onchange=renderFact;$('aHide').onchange=renderAmb;
+$('vHide').onchange=renderVerif;$('pHide').onchange=renderPick;$('fHide').onchange=renderFact;
+$('dBody').addEventListener('click',e=>{if(e.target.closest('[data-go]'))show('loc')});
+$('dBody').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.closest('[data-go]'))show('loc')});$('aHide').onchange=renderAmb;
 $('pBody').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
   if(b.dataset.open){openB=openB===b.dataset.open?null:b.dataset.open;editQ=null;renderPick();return}
