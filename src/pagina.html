@@ -806,12 +806,13 @@ if(window.claude){
     $('authT').textContent={in:'Intră în cont',up:'Creează cont',reset:'Resetează parola'}[m];$('aGo').textContent={in:'Intră',up:'Creează contul',reset:'Trimite emailul de resetare'}[m];
     $('aSwitch').textContent=m==='in'?'Nu ai cont? Creează unul':'Ai deja cont? Intră';$('aPass').autocomplete=m==='up'?'new-password':'current-password';aMsg('')}
   $('aSwitch').onclick=()=>setMode(mode==='in'?'up':'in');$('aForgot').onclick=()=>setMode('reset');
-  goLocal('Intră în cont ca să vezi lista echipei.');panel('authForm');setMode('in');
+  goLocal('Se verifică contul…');setMode('in');
   (async()=>{
     try{await ld(`https://www.gstatic.com/firebasejs/${V}/firebase-app-compat.js`);await Promise.all([ld(`https://www.gstatic.com/firebasejs/${V}/firebase-auth-compat.js`),ld(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore-compat.js`)])}
-    catch(e){aMsg('Nu am putut încărca logarea. Verifică internetul și reîncarcă pagina.','err');return}
+    catch(e){panel('authForm');aMsg('Nu am putut încărca logarea. Verifică internetul și reîncarcă pagina.','err');return}
     const app=firebase.apps[0]||firebase.initializeApp(FIREBASE_CONFIG);auth=app.auth();fs=app.firestore();
     auth.languageCode='ro';
+    try{await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)}catch(e){}
     window.__setName=async n=>{const u=auth.currentUser;if(u&&n&&n!==u.displayName){try{await u.updateProfile({displayName:n});team(`Conectat ca ${n}`,true)}catch(e){}}};
     $('authForm').onsubmit=async e=>{e.preventDefault();const mail=clean($('aMail').value).toLowerCase(),pw=$('aPass').value;$('aGo').disabled=true;
       try{
