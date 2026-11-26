@@ -40,6 +40,7 @@ input,select{font:16px Barlow,sans-serif;min-height:44px;padding:0 12px;border:2
 .st.warn b{color:var(--red)}
 .shell{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:100vh}
 .side{background:#17160f;color:#f1eee4;position:sticky;top:0;height:100vh;padding:22px 12px;display:flex;flex-direction:column;gap:6px;overflow-y:auto}
+.side a.brand{text-decoration:none;display:block;border-radius:8px;padding:2px 0}.side a.brand:hover{opacity:.85}.side a.brand:focus-visible{outline:2px solid #00D8F2}
 .side .brand{font:800 24px/1.05 "Barlow Condensed",sans-serif;color:var(--yel);margin:0 10px 6px}
 .side .brand small{display:block;font:500 14px Barlow,sans-serif;color:#aaa492;margin-top:4px}
 .side .lbl{font-size:13px;color:#aaa492;margin:18px 12px 4px}
@@ -224,7 +225,7 @@ tr.short td{background:#f4d9d4!important}
 </div></div>
 <div class="shell">
 <aside class="side" role="tablist" aria-label="Secțiuni">
-  <div class="brand">Quasar Comex</div>
+  <a class="brand" id="brand" href="#dashboard" title="Deschide Dashboard">Quasar Comex</a>
   <div class="lbl">Deschide</div>
   <button role="tab" id="t-dash" aria-selected="false">Dashboard<span class="cnt" id="c-dash"></span></button>
   <button role="tab" id="t-verif" aria-selected="true">Listă de verificare<span class="cnt" id="c-verif"></span></button>
@@ -820,7 +821,8 @@ $('replNo').onclick=()=>{pending=null;$('repl').classList.add('hidden')};
 const tabs=['dash','verif','pick','fact','amb','loc','setari'];
 function show(t){placeDay(t);for(const x of tabs){$('t-'+x).setAttribute('aria-selected',x===t);$('p-'+x).classList.toggle('hidden',x!==t)}ls.set('sectiune',t);const m=document.querySelector('main');if(window.scrollY>m.offsetTop)window.scrollTo({top:m.offsetTop})}
 for(const x of tabs)$('t-'+x).onclick=()=>show(x);
-if(ls.get('sectiune')==='echipa')ls.set('sectiune','setari');if(tabs.includes(ls.get('sectiune')))show(ls.get('sectiune'));
+if(ls.get('sectiune')==='echipa')ls.set('sectiune','setari');if(location.hash==='#dashboard')show('dash');else if(tabs.includes(ls.get('sectiune')))show(ls.get('sectiune'));
+$('brand').addEventListener('click',e=>{if(e.ctrlKey||e.metaKey||e.shiftKey||e.button!==0)return;e.preventDefault();show('dash')});
 $('bsize').oninput=()=>{renderStats();renderPick()};
 $('bsize').onchange=()=>{if(store&&meta)merge(store.col('zi').doc('meta'),{bsize:bsize()}).catch(()=>{})};
 $('vHide').onchange=renderVerif;$('pHide').onchange=renderPick;$('fHide').onchange=renderFact;
