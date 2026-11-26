@@ -49,6 +49,21 @@ input,select{font:16px Barlow,sans-serif;min-height:44px;padding:0 12px;border:2
 .side .cnt{font:500 14px Barlow,sans-serif;opacity:.85}
 .side .cnt.warn{color:#ff8577}.side button[aria-selected=true] .cnt.warn{color:#b8241b}
 .side .foot{margin-top:auto;font-size:13px;color:#aaa492;padding:0 12px}
+.daybar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.daybar .dnav{display:flex;align-items:center;gap:6px}
+.daybar .dnav button{min-width:44px;padding:0 10px;font-size:22px;line-height:1}
+.daybar .dt b{display:block;font:800 26px/1.1 "Barlow Condensed",sans-serif}
+.daybar .dt span{font-size:14px;color:var(--mut)}
+.cal{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px;max-width:420px}
+.cal .ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.cal .ch b{font:800 22px "Barlow Condensed",sans-serif}
+.cal .g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.cal .wd{font-size:12px;color:var(--mut);text-align:center;padding:2px 0}
+.cal .d{min-height:48px;padding:4px 0;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--ink);font:600 16px Barlow,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.cal .d small{font-size:11px;font-weight:600;color:#17160f;background:var(--yel);border-radius:4px;padding:0 4px}
+.cal .d.today{border-color:var(--ink)}
+.cal .d.sel{background:var(--ink);color:var(--bg)}
+.cal .d:hover{border-color:var(--mut)}
 .ptitle{font:800 30px/1.1 "Barlow Condensed",sans-serif;margin:0 0 14px}
 @media(max-width:860px){.shell{grid-template-columns:1fr}.side{height:auto;flex-direction:row;padding:8px;gap:6px;z-index:5;overflow-x:auto}.side .brand,.side .lbl,.side .foot{display:none}.side button{flex:1 0 auto;width:auto;min-height:48px;padding:8px 12px;font-size:18px}}
 .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
@@ -113,6 +128,15 @@ tr.done .tag{opacity:.55}
 <header class="band"><div class="wrap">
   <h1>Comenzi → verificare și picking</h1>
   <p class="sub">Unul dintre voi încarcă exportul de comenzi, iar toată echipa vede aceeași listă de verificare și același picking pe calupuri și bifează în timp real ce a terminat.</p>
+  <div class="daybar">
+    <div class="dnav"><button class="ghost" id="dPrev" aria-label="Ziua anterioară">‹</button><div class="dt"><b id="dTitle"></b><span id="dSub"></span></div><button class="ghost" id="dNext" aria-label="Ziua următoare">›</button></div>
+    <button class="ghost sm" id="dToday">Azi</button>
+    <button class="ghost sm" id="dCal" aria-expanded="false">Calendar</button>
+    <span class="grow"></span>
+    <button class="ghost sm" id="dDel">Șterge liste din ziua asta</button>
+  </div>
+  <div class="cal hidden" id="cal"></div>
+  <div class="confirm hidden" id="delBox"></div>
   <div class="drop" id="drop">
     <div><b id="dropT">Trage aici exportul de comenzi (.xlsx)</b><span id="dropS">sau apasă butonul ca să alegi fișierul</span></div>
     <div><input type="file" id="file" accept=".xlsx,.xls,.csv" class="hidden"><button id="pick">Alege fișierul</button></div>
@@ -190,6 +214,13 @@ let meta=null;                // {listId,file,at,by,n,parts,bsize}
 let prog={v:{},p:{}};         // bife: v[nr] = verificat, p["nr_sku"] = cules; valoare {n,t} sau null
 let store=null;               // {kind:'claude'|'fb', col(name)}
 let dl=null,pending=null,bifeOff=null;
+const pad=n=>String(n).padStart(2,'0');
+const dkey=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const pdate=k=>{const [y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
+const dshort=k=>k.split('-').reverse().join('.');
+const LUNI=['ianuarie','februarie','martie','aprilie','mai','iunie','iulie','august','septembrie','octombrie','noiembrie','decembrie'];
+const ZILE=['duminică','luni','marți','miercuri','joi','vineri','sâmbătă'];
+let curDay=dkey(new Date()),dayIdx={},localDays={},dayOff=null,calMonth=null;
 
 const loc=sku=>extra.get(sku)||base.get(sku)||null;
 const tag=l=>l?`<span class="tag">R ${esc(l.c)} · A ${esc(l.a)}</span>`:'<span class="miss">fără locație</span>';
@@ -242,21 +273,22 @@ async function load(file){
 const maxNr=()=>orders.reduce((m,o)=>Math.max(m,o.nr),0);
 const tranches=()=>meta?.tranches?.length?meta.tranches:(orders.length?[{from:1,to:maxNr(),at:meta?.at,by:meta?.by,file:meta?.file}]:[]);
 async function writeList(list,m,old){
-  const zi=store.col('zi'),CH=150,parts=Math.ceil(list.length/CH),rev=Date.now().toString(36);
-  for(let i=0;i<parts;i++)await zi.doc('p'+i).set({listId:m.listId,rev,i,orders:list.slice(i*CH,(i+1)*CH)});
-  await zi.doc('meta').set({...m,n:list.length,parts,rev});
-  if(old)for(let i=parts;i<(old.parts||0);i++)await zi.doc('p'+i).delete().catch(()=>{});
+  const zi=store.col('zi'),day=m.day,CH=150,parts=Math.ceil(list.length/CH),rev=Date.now().toString(36);
+  for(let i=0;i<parts;i++)await zi.doc(`p_${day}_${i}`).set({day,listId:m.listId,rev,i,orders:list.slice(i*CH,(i+1)*CH)});
+  await zi.doc('m_'+day).set({...m,day,n:list.length,parts,rev});
+  if(old)for(let i=parts;i<(old.parts||0);i++)await zi.doc(`p_${day}_${i}`).delete().catch(()=>{});
+  await merge(zi.doc('index'),{days:{[day]:{n:list.length,tr:(m.tranches||[]).length}}}).catch(()=>{});
 }
 async function publish(list,name){
   $('repl').classList.add('hidden');pending=null;
-  const at=Date.now(),m={listId:at.toString(36),file:name,at,by:me(),bsize:bsize(),tranches:[{from:1,to:list.length,at,by:me(),file:name}]};
+  const at=Date.now(),m={day:curDay,listId:at.toString(36),file:name,at,by:me(),bsize:bsize(),tranches:[{from:1,to:list.length,at,by:me(),file:name}]};
   list.forEach(o=>o.t=0);$('part').value='all';
   if(!store){orders=list;meta=m;prog={v:{},p:{}};renderAll();return}
-  say($('msg'),'Trimit lista către toată echipa…','');
+  say($('msg'),'Salvez lista pentru '+dshort(curDay)+'…','');
   try{
     const old=meta;await writeList(list,m,old);
     if(old?.listId)await store.col('bife').doc(old.listId).delete().catch(()=>{});
-    say($('msg'),`Lista „${name}” e acum la toată echipa.`,'ok');
+    say($('msg'),`Lista „${name}” e salvată pe ${dshort(curDay)} și o vede toată echipa.`,'ok');
   }catch(e){say($('msg'),'Lista nu a putut fi trimisă: '+(e.message||e.code),'err')}
 }
 async function append(list,name){
@@ -265,13 +297,86 @@ async function append(list,name){
   const nou=list.filter(o=>!ids.has(o.id)).map((o,i)=>({...o,nr:start+i+1,t}));
   if(!nou.length){say($('msg'),'Toate comenzile din fișier sunt deja în listă.','ok');return}
   const all=orders.map(o=>({...o,t:o.t||0})).concat(nou);
-  const m={...(meta||{listId:at.toString(36),file:name,at,by:me(),bsize:bsize()}),tranches:[...tr,{from:start+1,to:start+nou.length,at,by:me(),file:name}]};
+  const m={...(meta||{day:curDay,listId:at.toString(36),file:name,at,by:me(),bsize:bsize()}),day:curDay,tranches:[...tr,{from:start+1,to:start+nou.length,at,by:me(),file:name}]};
   const msg=`Am adăugat ${nou.length} comenzi noi, numerotate ${start+1}–${start+nou.length}`+(list.length>nou.length?`; ${list.length-nou.length} erau deja în listă și au fost sărite.`:'.');
   if(!store){orders=all;meta=m;$('part').value=String(t);renderAll();say($('msg'),msg,'ok');return}
   say($('msg'),'Adaug comenzile noi pentru toată echipa…','');
   try{await writeList(all,m,meta);wantPart=String(t);say($('msg'),msg,'ok')}catch(e){say($('msg'),'Comenzile noi nu au putut fi trimise: '+(e.message||e.code),'err')}
 }
 let wantPart=null;
+
+/* ---------- zile și calendar ---------- */
+function saveLocalDay(){if(store)return;if(orders.length)localDays[curDay]={orders,meta,prog};else delete localDays[curDay];dayIdx={};for(const [k,v] of Object.entries(localDays))dayIdx[k]={n:v.orders.length,tr:(v.meta?.tranches||[]).length}}
+function applyDay(m,list){
+  const changed=(meta?.listId||null)!==(m?.listId||null);
+  meta=m||null;orders=list||[];
+  if(changed){if(bifeOff){bifeOff();bifeOff=null}prog={v:{},p:{}};
+    if(store&&m)bifeOff=store.col('bife').doc(m.listId).onSnapshot(b=>{const x=b.exists?b.data():{};prog={v:x.v||{},p:x.p||{}};renderAll()},()=>{})}
+  if(m?.bsize&&document.activeElement!==$('bsize'))$('bsize').value=m.bsize;
+  renderAll();
+}
+function setDay(d){
+  if(d===curDay&&(store?dayOff:true))return renderDay();
+  saveLocalDay();curDay=d;pending=null;$('repl').classList.add('hidden');$('delBox').classList.add('hidden');$('part').value='all';
+  if(!store){const x=localDays[d];meta=null;applyDay(x?.meta,x?.orders);if(x)prog=x.prog;renderAll();return}
+  if(dayOff)dayOff();
+  orders=[];applyDay(null,[]);
+  dayOff=store.col('zi').where('day','==',d).onSnapshot(s=>{
+    if(d!==curDay)return;
+    const docs=new Map(s.docs.map(x=>[x.id,x.data()]));const m=docs.get('m_'+d);
+    if(!m)return applyDay(null,[]);
+    const parts=[];for(let i=0;i<m.parts;i++){const p=docs.get(`p_${d}_${i}`);if(!p||p.listId!==m.listId||p.rev!==m.rev)return;parts.push(...p.orders)}
+    applyDay(m,parts);
+  },e=>say($('msg'),'Nu pot citi lista zilei: '+(e.code||e.message),'err'));
+}
+function renderDay(){
+  const dt=pdate(curDay),td=dkey(new Date()),info=dayIdx[curDay];
+  $('dTitle').textContent=`${ZILE[dt.getDay()].replace(/^./,c=>c.toUpperCase())}, ${dt.getDate()} ${LUNI[dt.getMonth()]} ${dt.getFullYear()}`;
+  $('dSub').textContent=(curDay===td?'azi · ':'')+(orders.length?`${orders.length} comenzi în ${tranches().length} ${tranches().length>1?'liste':'listă'}`:'nicio listă încărcată');
+  $('dToday').disabled=curDay===td;$('dDel').classList.toggle('hidden',!orders.length);
+  if(orders.length){const m=meta||{},nt=(m.tranches||[]).length;$('dropT').textContent=nt>1?`${dshort(curDay)}: ${nt} liste, comenzile 1–${m.tranches[nt-1].to}`:`${dshort(curDay)}: ${m.file||'listă fără nume'}`;
+    const lt=nt?m.tranches[nt-1]:m;$('dropS').textContent=`${nt>1?'ultima adăugată':'încărcată'}${lt.by?' de '+lt.by:''}${lt.at?' la '+hhmm(lt.at):''} · trage următorul fișier ca să-l adaugi în continuare`}
+  else{$('dropT').textContent=`Trage aici exportul de comenzi pentru ${dshort(curDay)}`;$('dropS').textContent='sau apasă butonul ca să alegi fișierul (.xlsx)'}
+  if(!$('cal').classList.contains('hidden'))renderCal();
+}
+function renderCal(){
+  const c=calMonth||pdate(curDay),y=c.getFullYear(),mo=c.getMonth(),first=new Date(y,mo,1),off=(first.getDay()+6)%7,dim=new Date(y,mo+1,0).getDate(),td=dkey(new Date());
+  let cells='';for(let i=0;i<off;i++)cells+='<span></span>';
+  for(let d=1;d<=dim;d++){const k=`${y}-${pad(mo+1)}-${pad(d)}`,x=dayIdx[k];cells+=`<button class="d${k===td?' today':''}${k===curDay?' sel':''}" data-day="${k}" aria-label="${d} ${LUNI[mo]}${x?', '+x.n+' comenzi':''}">${d}${x?`<small>${x.n}</small>`:''}</button>`}
+  const nDays=Object.keys(dayIdx).filter(k=>k.startsWith(`${y}-${pad(mo+1)}`)).length;
+  $('cal').innerHTML=`<div class="ch"><button class="ghost sm" id="cPrev" aria-label="Luna anterioară">‹</button><b>${LUNI[mo].replace(/^./,c=>c.toUpperCase())} ${y}</b><button class="ghost sm" id="cNext" aria-label="Luna următoare">›</button></div><div class="g">${['L','Ma','Mi','J','V','S','D'].map(x=>`<span class="wd">${x}</span>`).join('')}${cells}</div><p class="note">${nDays?`${nDays} ${nDays>1?'zile':'zi'} cu liste în luna asta (numărul = câte comenzi).`:'Nicio listă salvată în luna asta.'}</p>`;
+}
+function openDel(){
+  const tr=tranches();
+  $('delBox').innerHTML=`<span style="flex-basis:100%">Ce ștergi din ${esc(dshort(curDay))}? Se șterg și bifele comenzilor respective; numerele celorlalte comenzi rămân la fel.</span>`+(tr.length>1?tr.map((x,i)=>`<button data-del="${i}">Lista ${i+1} (${x.from}–${x.to})</button>`).join(''):'')+`<button data-del="all">${tr.length>1?'Toată ziua':'Lista zilei'}</button><button class="ghost" data-del="no">Anulează</button>`;
+  $('delBox').classList.remove('hidden');
+}
+async function doDel(k){
+  $('delBox').classList.add('hidden');if(k==='no')return;
+  const tr=tranches(),all=k==='all'||tr.length<2;
+  const rm=all?orders:orders.filter(o=>(o.t||0)===+k);
+  const clr={v:{},p:{}};for(const o of rm){clr.v[o.nr]=null;for(const l of o.lines)clr.p[o.nr+'_'+l.sku]=null}
+  try{
+    if(all){
+      if(!store){orders=[];meta=null;prog={v:{},p:{}};saveLocalDay();renderAll()}
+      else{const zi=store.col('zi'),old=meta;await zi.doc('m_'+curDay).delete();for(let i=0;i<(old?.parts||0);i++)await zi.doc(`p_${curDay}_${i}`).delete().catch(()=>{});
+        if(old?.listId)await store.col('bife').doc(old.listId).delete().catch(()=>{});await merge(zi.doc('index'),{days:{[curDay]:null}}).catch(()=>{})}
+      say($('msg'),`Am șters listele din ${dshort(curDay)}.`,'ok');return;
+    }
+    const keep=orders.filter(o=>(o.t||0)!==+k).map(o=>({...o,t:(o.t||0)>+k?o.t-1:(o.t||0)}));
+    const m={...meta,tranches:tr.filter((_,i)=>i!==+k)};$('part').value='all';
+    if(!store){orders=keep;meta=m;for(const x in clr.v)delete prog.v[x];for(const x in clr.p)delete prog.p[x];saveLocalDay();renderAll()}
+    else{await writeList(keep,m,meta);await merge(store.col('bife').doc(meta.listId),clr).catch(()=>{})}
+    say($('msg'),`Am șters Lista ${+k+1} (${tr[+k].from}–${tr[+k].to}) din ${dshort(curDay)}.`,'ok');
+  }catch(e){say($('msg'),'Nu am putut șterge: '+(e.message||e.code),'err')}
+}
+async function migrateOld(){ // lista salvată înainte de calendar (doc „meta”) trece pe ziua ei
+  try{const zi=store.col('zi'),o=await zi.doc('meta').get();if(!o.exists)return;const m=o.data(),list=[];
+    for(let i=0;i<(m.parts||0);i++){const p=await zi.doc('p'+i).get();if(p.exists)list.push(...p.data().orders)}
+    const day=dkey(new Date(m.at||Date.now()));if(list.length)await writeList(list,{...m,day},null);
+    await zi.doc('meta').delete();for(let i=0;i<(m.parts||0);i++)await zi.doc('p'+i).delete().catch(()=>{});
+  }catch(e){}
+}
 
 /* ---------- calcule ---------- */
 const bsize=()=>Math.max(1,parseInt($('bsize').value)||20);
@@ -352,7 +457,7 @@ function renderLoc(){
   $('locInfo').textContent=`${base.size} locații din fișierul inițial · ${extra.size} adăugate sau modificate`;
   $('locBody').innerHTML=list.length?`<table class="stack"><thead><tr><th>SKU</th><th>Locație</th><th>Sursă</th><th></th></tr></thead><tbody>${list.map(x=>`<tr><td><b>${esc(x.s)}</b></td><td>${tag(x)}</td><td>${x.added?(base.has(x.s)?'modificată':'adăugată')+(x.n?' de '+esc(x.n):''):'fișierul inițial'}</td><td style="white-space:nowrap"><button class="ghost sm edl" data-sku="${esc(x.s)}">Modifică</button>${x.added?` <button class="ghost sm dell" data-sku="${esc(x.s)}">Șterge</button>`:''}</td></tr>`).join('')}</tbody></table>`:`<div class="empty">${q?'Niciun SKU găsit.':'Încă nu s-au adăugat locații. Cele noi apar aici.'}</div>`;
 }
-function renderAll(){renderParts();renderStats();renderVerif();renderPick();renderMiss();renderLoc()}
+function renderAll(){saveLocalDay();renderDay();renderParts();renderStats();renderVerif();renderPick();renderMiss();renderLoc()}
 
 /* ---------- bife ---------- */
 async function tick(k,key,on){
@@ -395,6 +500,14 @@ $('file').onchange=e=>{if(e.target.files[0])load(e.target.files[0]);e.target.val
 ['dragleave','drop'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.remove('on')}));
 drop.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f)load(f)});
 $('replYes').onclick=()=>{if(pending)publish(pending.list,pending.name)};
+$('dPrev').onclick=()=>{const d=pdate(curDay);d.setDate(d.getDate()-1);setDay(dkey(d))};
+$('dNext').onclick=()=>{const d=pdate(curDay);d.setDate(d.getDate()+1);setDay(dkey(d))};
+$('dToday').onclick=()=>setDay(dkey(new Date()));
+$('dCal').onclick=()=>{const h=$('cal').classList.toggle('hidden');$('dCal').setAttribute('aria-expanded',!h);calMonth=null;if(!h)renderCal()};
+$('cal').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.day){setDay(b.dataset.day);$('cal').classList.add('hidden');$('dCal').setAttribute('aria-expanded','false');return}
+  const c=calMonth||pdate(curDay);calMonth=new Date(c.getFullYear(),c.getMonth()+(b.id==='cNext'?1:-1),1);renderCal()};
+$('dDel').onclick=openDel;
+$('delBox').onclick=e=>{const b=e.target.closest('button[data-del]');if(b)doDel(b.dataset.del)};
 $('replAdd').onclick=()=>{if(pending)append(pending.list,pending.name)};
 $('part').onchange=()=>{renderStats();renderVerif();renderPick()};
 $('replNo').onclick=()=>{pending=null;$('repl').classList.add('hidden')};
@@ -452,20 +565,11 @@ function connect(st,label){
       const up=l0.filter(([k])=>!m.has(k));if(up.length)(async()=>{for(const [k,v] of up){try{await putLoc(k,v.c,v.a)}catch(e){}}ls.set('locatii_extra',null)})()}
     renderAll();
   },fail);
-  store.col('zi').onSnapshot(s=>{
-    const d=new Map(s.docs.map(x=>[x.id,x.data()]));const m=d.get('meta');
+  store.col('zi').doc('index').onSnapshot(s=>{
     if(!s.metadata.fromCache){clearTimeout(timer);team(label,true)}
-    if(!m){orders=[];meta=null;renderAll();return}
-    const parts=[];for(let i=0;i<m.parts;i++){const p=d.get('p'+i);if(!p||p.listId!==m.listId||p.rev!==m.rev)return;parts.push(...p.orders)}
-    const changed=!meta||meta.listId!==m.listId;
-    meta=m;orders=parts;
-    if(m.bsize&&document.activeElement!==$('bsize'))$('bsize').value=m.bsize;
-    const nt=(m.tranches||[]).length;$('dropT').textContent=nt>1?`Lista comună: ${nt} liste, comenzile 1–${m.tranches[nt-1].to}`:`Lista comună: ${m.file||'fără nume'}`;
-    const lt=nt?m.tranches[nt-1]:m;$('dropS').textContent=`${nt>1?'ultima adăugată':'încărcată'}${lt.by?' de '+lt.by:''} la ${hhmm(lt.at)} · trage următorul fișier ca să-l adaugi în continuare`;
-    if(changed){if(bifeOff)bifeOff();prog={v:{},p:{}};
-      bifeOff=store.col('bife').doc(m.listId).onSnapshot(b=>{const x=b.exists?b.data():{};prog={v:x.v||{},p:x.p||{}};renderAll()},()=>{})}
-    renderAll();
+    const x=s.exists?(s.data().days||{}):{};dayIdx={};for(const k in x)if(x[k])dayIdx[k]=x[k];renderDay();
   },fail);
+  migrateOld().then(()=>{dayOff=null;const d=curDay;curDay='';setDay(d)});
 }
 renderAll();
 if(window.claude){
