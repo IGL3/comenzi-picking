@@ -13,7 +13,7 @@ sortarea după canal se face doar în lista nouă, iar fiecare listă are calupu
 Filtrul „Arată” alege toate listele sau doar una; Excelul și printarea folosesc filtrul.
 Bife în timp real: „Verificat” pe comandă (lista de verificare) și „Cules” pe linie (picking), cu numele celui care a bifat („Numele tău”, ținut în localStorage).
 Picking: calupurile apar închise (acordeon), se deschid pe rând; liniile sunt ordonate după rând și alveolă. Ținut apăsat pe cantitate (550 ms)
-deschide un editor −/+ care permite doar scăderea (0 = lipsă). Când toate liniile sunt bifate, „Trimite la facturare” blochează calupul
+deschide un editor −/+ care permite doar scăderea (0 = lipsă); OK cu cantitate mai mică bifează automat linia și o colorează roșu (verde = cules complet). Când toate liniile sunt bifate, „Trimite la facturare” blochează calupul
 („Redeschide calupul” îl deblochează). Secțiunea „Facturare” arată calupurile trimise, cu Comandat vs Cules și bifa „Facturat” pe comandă, plus Excel.
 Calendar: listele se salvează pe zile (YYYY-MM-DD). Bara de zi de sus (‹ › Azi, Calendar, Șterge) alege ziua pentru toate secțiunile;
 calendarul marchează zilele cu liste (numărul de comenzi). Ștergere („Șterge liste”): o listă anume din zi (bifele ei se golesc, numerele celorlalte rămân), toată ziua sau toate listele din toate zilele (cu a doua confirmare; locațiile rămân).

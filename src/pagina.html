@@ -119,6 +119,9 @@ label{display:grid;gap:4px;font-size:14px;color:var(--mut)}
 .ck small{font-size:13px;color:var(--mut);max-width:9em;overflow:hidden;text-overflow:ellipsis}
 tr.done td{background:light-dark(#e9f4e4,#17261a)!important;color:var(--mut)}
 tr.done .tag{opacity:.55}
+tr.short td{background:light-dark(#fbe1dd,#3b1c18)!important}
+tr.short .qx s{color:inherit}
+tr.short .ck input{accent-color:#c0261c}
 .meter{height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:6px}.meter i{display:block;height:100%;background:#2f8f3a}
 .batch.done .bh{background:light-dark(#dff0d8,#1d3320)}
 .bh .bp{margin-left:auto;font-weight:600;color:var(--ink)}
@@ -188,7 +191,7 @@ tr.done .tag{opacity:.55}
       <button class="ghost dl" id="dlP">Descarcă Excel</button>
       <button class="ghost dl" id="prP">Pentru printare (.html)</button>
     </div>
-    <p class="note" style="margin:0 0 12px">Produsele din fiecare calup sunt ordonate după rând și alveolă. Dacă lipsește un produs, ține apăsat pe cantitate ca s-o micșorezi.</p>
+    <p class="note" style="margin:0 0 12px">Produsele din fiecare calup sunt ordonate după rând și alveolă. Dacă lipsește un produs, ține apăsat pe cantitate ca s-o micșorezi: rândul se bifează singur și se face roșu.</p>
     <div id="pBody"></div>
   </section>
 
@@ -498,7 +501,7 @@ function renderPick(){
     let body='';
     if(open){
       const ls=b.lines.filter(l=>!hide||!isP(l.nr,l.sku));
-      body=`<div class="scroll"><table class="stack"><thead><tr><th>Cules</th><th>Rând</th><th>Alveolă</th><th class="n">Nr. comandă</th><th>SKU</th><th class="n">Cantitate</th><th>Denumire</th></tr></thead><tbody>${ls.map(l=>{const key=l.nr+'_'+l.sku;return `<tr class="${isP(l.nr,l.sku)?'done':''}"><td>${sent?(isP(l.nr,l.sku)?'✓':''):ck('p',key,prog.p[key],'Cules')}</td>${l.loc?`<td><span class="tag">R ${esc(l.loc.c)}</span></td><td><span class="tag">A ${esc(l.loc.a)}</span></td>`:`<td colspan="2"><span class="miss">fără locație</span> <button class="ghost sm addl" data-sku="${esc(l.sku)}">Adaugă</button></td>`}<td class="nr n">${l.nr}</td><td>${esc(l.sku)}</td>${qcell(l,!!sent)}<td class="prod">${esc(l.prod)}</td></tr>`}).join('')}</tbody></table></div>
+      body=`<div class="scroll"><table class="stack"><thead><tr><th>Cules</th><th>Rând</th><th>Alveolă</th><th class="n">Nr. comandă</th><th>SKU</th><th class="n">Cantitate</th><th>Denumire</th></tr></thead><tbody>${ls.map(l=>{const key=l.nr+'_'+l.sku;return `<tr class="${pq(l.nr,l)<l.qty?'short':isP(l.nr,l.sku)?'done':''}"><td>${sent?(isP(l.nr,l.sku)?'✓':''):ck('p',key,prog.p[key],'Cules')}</td>${l.loc?`<td><span class="tag">R ${esc(l.loc.c)}</span></td><td><span class="tag">A ${esc(l.loc.a)}</span></td>`:`<td colspan="2"><span class="miss">fără locație</span> <button class="ghost sm addl" data-sku="${esc(l.sku)}">Adaugă</button></td>`}<td class="nr n">${l.nr}</td><td>${esc(l.sku)}</td>${qcell(l,!!sent)}<td class="prod">${esc(l.prod)}</td></tr>`}).join('')}</tbody></table></div>
       <div class="bfoot">${sent?`<span class="grow">Calupul e la facturare. Dacă trebuie corectat ceva, redeschide-l.</span><button class="ghost sm" data-reopen="${k}">Redeschide calupul</button>`:`<span class="grow">${full?`Totul e cules${lips?` · ${lips} ${lips>1?'linii au':'linie are'} cantitate mai mică`:''}. Trimite calupul la facturare.`:`Mai ai ${b.lines.length-dn} ${b.lines.length-dn>1?'linii':'linie'} de bifat.`}</span><button data-send="${k}" data-from="${b.from}" data-to="${b.to}" ${full?'':'disabled'}>Trimite la facturare</button>`}</div>`;
     }
     return `<div class="batch${open?' open':''}${sent?' sent':''}"><button class="bhead" data-open="${k}" aria-expanded="${open}"><span class="arr">›</span><h2>Calup ${b.idx}</h2><span>comenzile ${b.from}–${b.to} · ${b.lines.length} linii · ${buc} bucăți</span><span class="bp">${st}</span></button>${body}</div>`;
@@ -514,7 +517,7 @@ function renderFact(){
   $('fBody').innerHTML=L.map(x=>{
     const os=x.os.filter(o=>!hide||!prog.f[o.nr]);if(!os.length)return '';
     const fd=x.os.filter(o=>prog.f[o.nr]).length;
-    return `<div class="batch open"><div class="bhead" style="cursor:default"><h2>Comenzile ${x.from}–${x.to}</h2><span>trimis${x.n?' de '+esc(x.n):''} la ${hhmm(x.t)}</span><span class="bp">${fd===x.os.length?'<span class="chip green">Facturat complet</span>':`<span class="chip">${fd}/${x.os.length} facturate</span>`}</span></div><div class="scroll"><table class="stack"><thead><tr><th>Facturat</th><th class="n">Nr.</th><th>Canal</th><th>Id comandă</th><th>Nume client</th><th>Cod fiscal</th><th>SKU</th><th>Denumire produs</th><th class="n">Comandat</th><th class="n">Cules</th></tr></thead><tbody>${os.map(o=>o.lines.map((l,i)=>{const q=pq(o.nr,l);return `<tr class="${i===0?'fo':''}${prog.f[o.nr]?' done':''}"><td>${i===0?ck('f',o.nr,prog.f[o.nr],'Comanda '+o.nr+' facturată'):''}</td><td class="nr n">${i===0?o.nr:''}</td><td>${i===0?esc(o.canal):''}</td><td>${i===0?esc(o.id):''}</td><td>${i===0?esc(o.client):''}</td><td>${i===0?esc(o.cf):''}</td><td>${esc(l.sku)}</td><td class="prod">${esc(l.prod)}</td><td class="n">${l.qty}</td><td class="n">${q<l.qty?`<span class="qx">${q}${q===0?' · lipsă':''}</span>`:`<b>${q}</b>`}</td></tr>`}).join('')).join('')}</tbody></table></div></div>`;
+    return `<div class="batch open"><div class="bhead" style="cursor:default"><h2>Comenzile ${x.from}–${x.to}</h2><span>trimis${x.n?' de '+esc(x.n):''} la ${hhmm(x.t)}</span><span class="bp">${fd===x.os.length?'<span class="chip green">Facturat complet</span>':`<span class="chip">${fd}/${x.os.length} facturate</span>`}</span></div><div class="scroll"><table class="stack"><thead><tr><th>Facturat</th><th class="n">Nr.</th><th>Canal</th><th>Id comandă</th><th>Nume client</th><th>Cod fiscal</th><th>SKU</th><th>Denumire produs</th><th class="n">Comandat</th><th class="n">Cules</th></tr></thead><tbody>${os.map(o=>o.lines.map((l,i)=>{const q=pq(o.nr,l);return `<tr class="${i===0?'fo':''}${q<l.qty?' short':prog.f[o.nr]?' done':''}"><td>${i===0?ck('f',o.nr,prog.f[o.nr],'Comanda '+o.nr+' facturată'):''}</td><td class="nr n">${i===0?o.nr:''}</td><td>${i===0?esc(o.canal):''}</td><td>${i===0?esc(o.id):''}</td><td>${i===0?esc(o.client):''}</td><td>${i===0?esc(o.cf):''}</td><td>${esc(l.sku)}</td><td class="prod">${esc(l.prod)}</td><td class="n">${l.qty}</td><td class="n">${q<l.qty?`<span class="qx">${q}${q===0?' · lipsă':''}</span>`:`<b>${q}</b>`}</td></tr>`}).join('')).join('')}</tbody></table></div></div>`;
   }).join('')||'<div class="empty">Totul e facturat.</div>';
 }
 function renderMiss(){
@@ -534,6 +537,11 @@ function renderLoc(){
 function renderAll(){saveLocalDay();renderDay();renderParts();renderStats();renderVerif();renderPick();renderFact();renderMiss();renderLoc()}
 
 /* ---------- bife ---------- */
+async function setProg(upd){
+  const np={...prog};for(const g in upd)np[g]={...prog[g],...upd[g]};prog=np;renderAll();
+  if(!store||!meta)return;
+  try{await merge(store.col('bife').doc(meta.listId),upd)}catch(e){say($('msg'),'Nu s-a salvat: '+(e.message||e.code),'err')}
+}
 async function tick(k,key,on,extra){
   const val=on?{n:me(),t:Date.now(),...(extra||{})}:null;
   prog={...prog,[k]:{...prog[k],[key]:val}};renderAll();
@@ -600,7 +608,7 @@ $('pBody').addEventListener('click',e=>{
   if(b.classList.contains('qm')){editV=Math.max(0,editV-1);renderPick();return}
   if(b.classList.contains('qp')){editV=Math.min(qMax,editV+1);renderPick();return}
   if(b.classList.contains('qno')){editQ=null;renderPick();return}
-  if(b.classList.contains('qok')){const k=editQ,mx=qMax;editQ=null;tick('q',k,editV<mx,{q:editV});return}
+  if(b.classList.contains('qok')){const k=editQ,mx=qMax,st={n:me(),t:Date.now()};editQ=null;setProg(editV<mx?{q:{[k]:{...st,q:editV}},p:{[k]:st}}:{q:{[k]:null}});return}
 });
 let qMax=0;
 let px=0,py=0;
