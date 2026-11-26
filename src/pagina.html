@@ -94,7 +94,7 @@ td.nr{font:800 20px/1 "Barlow Condensed",sans-serif;white-space:nowrap}
 .multi{display:inline-block;background:var(--yel);color:#17160f;font-size:13px;font-weight:600;border-radius:5px;padding:1px 7px;white-space:nowrap}
 tr.grp td{border-top:2px solid var(--ink)}
 tr.mlt td{background:var(--soft)}
-@media(min-width:601px){#fBody table{min-width:1250px}#fBody .prod{min-width:320px}#vBody table{min-width:1400px}#vBody .prod{min-width:360px}#vBody td:nth-child(3){white-space:nowrap}}
+@media(min-width:601px){#fBody table{min-width:1250px}#fBody .prod{min-width:320px}#vBody table{min-width:1400px}#vBody .prod{min-width:360px}#vBody td:nth-child(4){white-space:nowrap}}
 .batch{margin-bottom:26px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .bh{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;padding:12px 14px;background:var(--soft);border-bottom:2px solid var(--ink)}
 .bh span{color:var(--mut)}
@@ -119,6 +119,7 @@ label{display:grid;gap:4px;font-size:14px;color:var(--mut)}
 .ck small{font-size:13px;color:var(--mut);max-width:9em;overflow:hidden;text-overflow:ellipsis}
 tr.done td{background:light-dark(#e9f4e4,#17261a)!important;color:var(--mut)}
 tr.done .tag{opacity:.55}
+.qb{display:inline-block;min-width:2.2ch;text-align:center;background:var(--yel);color:#17160f;font-weight:800;border-radius:6px;padding:1px 7px}
 tr.short td{background:light-dark(#fbe1dd,#3b1c18)!important}
 tr.short .qx s{color:inherit}
 tr.short .ck input{accent-color:#c0261c}
@@ -476,20 +477,21 @@ function renderStats(){
 }
 const EMPTY='<div class="empty">Încă nu e încărcată nicio listă. Încarcă exportul de comenzi ca să apară pentru toată echipa.</div>';
 const VCOLS=['Canal','Cod fiscal','Id comandă','Nr. crt','Nume client','Cod produs','Cantitate','Denumire produs','Telefon livrare','Nume companie','Nume delegat'];
+const hl=o=>o.lines.length>1||o.lines.some(l=>l.qty>=2);
 const verifRows=()=>vis().flatMap(o=>o.lines.map((l,k)=>({o,l,k})));
 function renderVerif(){
   if(!orders.length){$('vBody').innerHTML=EMPTY;$('vInfo').textContent='';return}
-  const O=vis(),multi=O.filter(o=>o.lines.length>1).length,hide=$('vHide').checked;
-  $('vInfo').textContent=`${(()=>{const v=$('part').value,tr=tranches();const f=v==='all'||!v?(tr.length>1?'toate listele':meta?.file):tr[+v]?.file;return f?(tr.length>1&&v==='all'?f:'„'+f+'”')+' · ':''})()}${O.length} comenzi sortate după canal`+(multi?` · ${multi} cu mai multe produse (fundal galben)`:'');
+  const O=vis(),multi=O.filter(hl).length,hide=$('vHide').checked;
+  $('vInfo').textContent=`${(()=>{const v=$('part').value,tr=tranches();const f=v==='all'||!v?(tr.length>1?'toate listele':meta?.file):tr[+v]?.file;return f?(tr.length>1&&v==='all'?f:'„'+f+'”')+' · ':''})()}${O.length} comenzi sortate după canal`+(multi?` · ${multi} cu mai multe produse sau cantitate 2+ (fundal galben)`:'');
   const rows=verifRows().filter(r=>!hide||!isV(r.o.nr));
-  $('vBody').innerHTML=rows.length?`<div class="scroll"><table class="stack"><thead><tr><th>Verificat</th>${VCOLS.map((h,i)=>`<th class="${i===3||i===6?'n':''}">${h}</th>`).join('')}</tr></thead><tbody>${rows.map(({o,l,k})=>`<tr class="${k===0&&o.nr>1?'grp':''}${o.lines.length>1?' mlt':''}${isV(o.nr)?' done':''}"><td>${ck('v',o.nr,prog.v[o.nr],'Comanda '+o.nr+' verificată')}</td><td>${esc(o.canal)}</td><td>${esc(o.cf)}</td><td>${esc(o.id)}</td><td class="nr n">${o.nr}</td><td>${esc(o.client)}</td><td>${esc(l.sku)}</td><td class="n"><b>${l.qty}</b></td><td class="prod">${esc(l.prod)}</td><td style="white-space:nowrap">${esc(o.tel)}</td><td>${esc(o.firma)}</td><td>${esc(o.deleg)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Toate comenzile sunt verificate.</div>';
+  $('vBody').innerHTML=rows.length?`<div class="scroll"><table class="stack"><thead><tr><th>Verificat</th>${VCOLS.map((h,i)=>`<th class="${i===3||i===6?'n':''}">${h}</th>`).join('')}</tr></thead><tbody>${rows.map(({o,l,k})=>`<tr class="${k===0&&o.nr>1?'grp':''}${hl(o)?' mlt':''}${isV(o.nr)?' done':''}"><td>${ck('v',o.nr,prog.v[o.nr],'Comanda '+o.nr+' verificată')}</td><td>${esc(o.canal)}</td><td>${esc(o.cf)}</td><td>${esc(o.id)}</td><td class="nr n">${o.nr}</td><td>${esc(o.client)}</td><td>${esc(l.sku)}</td><td class="n">${l.qty>=2?`<span class="qb">${l.qty}</span>`:`<b>${l.qty}</b>`}</td><td class="prod">${esc(l.prod)}</td><td style="white-space:nowrap">${esc(o.tel)}</td><td>${esc(o.firma)}</td><td>${esc(o.deleg)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Toate comenzile sunt verificate.</div>';
 }
 const bkey=b=>`${b.from}-${b.to}`;
 const pq=(nr,l)=>{const x=prog.q[nr+'_'+l.sku];return x&&x.q!=null?x.q:l.qty};
 function qcell(l,lock){
   const key=l.nr+'_'+l.sku,q=pq(l.nr,l);
   if(editQ===key&&!lock)return `<td class="n"><span class="qed"><button class="ghost qm" aria-label="Mai puțin" ${editV<=0?'disabled':''}>−</button><b>${editV}</b><button class="ghost qp" aria-label="Mai mult" ${editV>=l.qty?'disabled':''}>+</button><button class="sm qok">OK</button><button class="ghost sm qno">Renunță</button></span></td>`;
-  return `<td class="n q${lock?' lock':''}" data-q="${esc(key)}" data-max="${l.qty}" title="${lock?'':'Ține apăsat ca să micșorezi cantitatea'}">${q<l.qty?`<span class="qx">${q} <s>${l.qty}</s>${q===0?' · lipsă':''}</span>`:`<b>${l.qty}</b>`}</td>`;
+  return `<td class="n q${lock?' lock':''}" data-q="${esc(key)}" data-max="${l.qty}" title="${lock?'':'Ține apăsat ca să micșorezi cantitatea'}">${q<l.qty?`<span class="qx">${q} <s>${l.qty}</s>${q===0?' · lipsă':''}</span>`:l.qty>=2?`<span class="qb">${l.qty}</span>`:`<b>${l.qty}</b>`}</td>`;
 }
 function renderPick(){
   const ob=orders.length?batches().find(b=>bkey(b)===openB):null;$('prP').textContent=ob?`Printează calupul ${ob.idx}`:'Printează toate calupurile';
@@ -582,8 +584,8 @@ function printNow(name,html){
   const d=f.contentWindow.document;d.open();d.write(html.replace(/<script>window\.onload[^<]*<\/script>/,''));d.close();
   setTimeout(()=>{try{f.contentWindow.focus();f.contentWindow.print()}catch(e){save(name,html)}},250);
 }
-function printDoc(title,body){return `<!DOCTYPE html><html lang="ro"><head><meta charset="utf-8"><title>${esc(title)}</title><style>body{font:12px Arial,sans-serif;margin:12mm}h2{font-size:16px;margin:0 0 6px}table{border-collapse:collapse;width:100%;margin-bottom:10px}th,td{border:1px solid #444;padding:4px 6px;text-align:left;vertical-align:top}th{background:#eee}.n{text-align:right}.b{font-weight:bold;font-size:14px}.pb{page-break-after:always}.pb:last-child{page-break-after:auto}@page{margin:10mm;size:landscape}</style></head><body>${body}<script>window.onload=()=>window.print()<\/script></body></html>`}
-function tbl(aoa,nums){return `<table><thead><tr>${aoa[0].map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${aoa.slice(1).map(r=>`<tr>${r.map((c,i)=>`<td class="${nums.includes(i)?'n b':''}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`}
+function printDoc(title,body){return `<!DOCTYPE html><html lang="ro"><head><meta charset="utf-8"><title>${esc(title)}</title><style>body{font:12px Arial,sans-serif;margin:12mm}h2{font-size:16px;margin:0 0 6px}table{border-collapse:collapse;width:100%;margin-bottom:10px}th,td{border:1px solid #444;padding:4px 6px;text-align:left;vertical-align:top}th{background:#eee}.n{text-align:right}.b{font-weight:bold;font-size:14px}.x2{font-size:16px;outline:2px solid #000;outline-offset:-3px}.pb{page-break-after:always}.pb:last-child{page-break-after:auto}@page{margin:10mm;size:landscape}</style></head><body>${body}<script>window.onload=()=>window.print()<\/script></body></html>`}
+function tbl(aoa,nums,qcol){return `<table><thead><tr>${aoa[0].map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${aoa.slice(1).map(r=>`<tr>${r.map((c,i)=>`<td class="${nums.includes(i)?'n b':''}${i===qcol&&+c>=2?' x2':''}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`}
 
 /* ---------- evenimente ---------- */
 const drop=$('drop');
@@ -647,8 +649,8 @@ document.addEventListener('click',e=>{
 });
 $('dlV').onclick=()=>{if(!orders.length)return;const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheet(verifAoa(),[14,14,24,7,28,12,9,60,16,26,24]),'Verificare');save(`verificare_${stamp()}.xlsx`,xbuf(wb))};
 $('dlP').onclick=()=>{if(!orders.length)return;const wb=XLSX.utils.book_new();for(const b of batches())XLSX.utils.book_append_sheet(wb,sheet(pickAoa(b),[12,12,10,70,8,9]),`${b.from}-${b.to}`);save(`picking_${stamp()}.xlsx`,xbuf(wb))};
-$('prV').onclick=()=>{if(!orders.length)return;printNow(`verificare_${stamp()}.html`,printDoc('Listă de verificare',`<h2>Listă de verificare · ${vis().length} comenzi · ${esc(meta?.file||'')}</h2>`+tbl(verifAoa(),[3,6])))};
-function printBatches(bs){if(!bs.length)return;printNow(`picking_${stamp()}.html`,printDoc('Picking',bs.map(b=>`<div class="pb"><h2>Calup ${b.idx} · comenzile ${b.from}–${b.to} · ${esc(dshort(curDay))}</h2>${tbl(pickAoa(b),[0,2,4,5])}</div>`).join('')))}
+$('prV').onclick=()=>{if(!orders.length)return;printNow(`verificare_${stamp()}.html`,printDoc('Listă de verificare',`<h2>Listă de verificare · ${vis().length} comenzi · ${esc(meta?.file||'')}</h2>`+tbl(verifAoa(),[3,6],6)))};
+function printBatches(bs){if(!bs.length)return;printNow(`picking_${stamp()}.html`,printDoc('Picking',bs.map(b=>`<div class="pb"><h2>Calup ${b.idx} · comenzile ${b.from}–${b.to} · ${esc(dshort(curDay))}</h2>${tbl(pickAoa(b),[0,2,4,5],2)}</div>`).join('')))}
 $('prP').onclick=()=>{if(!orders.length)return;const bs=batches(),o=bs.filter(b=>bkey(b)===openB);printBatches(o.length?o:bs)};
 $('dlL').onclick=()=>{const all=new Map([...base].map(([s,l])=>[s,l]));for(const [s,l] of extra)all.set(s,l);const aoa=[['Cod','Culoar','Alveola'],...[...all].map(([s,l])=>[/^\d+$/.test(s)?Number(s):s,l.c,l.a])];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheet(aoa,[14,8,8]),'Locatii');save(`locatii_${stamp()}.xlsx`,xbuf(wb))};
 $('impBtn').onclick=()=>$('impFile').click();
