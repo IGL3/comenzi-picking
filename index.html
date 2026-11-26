@@ -305,7 +305,7 @@ const BASE=[["43026169",1,1],["43026138",1,1],["43026189",1,1],["43026185",1,1],
 /* Proiectul Firebase al aplicației (doar pe GitHub Pages). null = fără sincronizare. */
 const FIREBASE_CONFIG={"apiKey":"AIzaSyDtH7lyohX3nJFpaY1q9El6GAu7vK98sg4","authDomain":"comenzi-picking.firebaseapp.com","projectId":"comenzi-picking","storageBucket":"comenzi-picking.firebasestorage.app","messagingSenderId":"854580888316","appId":"1:854580888316:web:a641ae6ae0859449e28d79"};
 /* Adresa proxy-ului VIES (Google Apps Script), dacă e configurat. null = încearcă direct VIES. */
-const VIES_PROXY=null;
+const VIES_PROXY="https://script.google.com/macros/s/AKfycby9BSk9xA6KyZWMtvZnJW7e1qIjKkp4DNzDRPOcDubZg07mkrQCnmdasKfsunptguof/exec";
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm=s=>String(s??'').normalize('NFD').replace(/[̀-ͯ]/g,'').trim().toLowerCase();
