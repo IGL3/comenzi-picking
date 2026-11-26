@@ -690,7 +690,7 @@ function renderPick(){
     if(open){
       const ls=b.lines.filter(l=>!hide||!isP(l.nr,l.sku));
       body=(isPhone()?`<div class="pcards">${ls.map(l=>pcard(l,!!sent)).join('')}</div>`:`<div class="scroll"><table class="stack"><thead><tr><th>Cules</th><th class="n">Nr. comandă</th><th>SKU</th><th class="n">Cantitate</th><th>Denumire</th><th>Rând</th><th>Alveolă</th></tr></thead><tbody>${ls.map(l=>{const key=l.nr+'_'+l.sku;return `<tr class="${pq(l.nr,l)<l.qty?'short':isP(l.nr,l.sku)?'done':''}"><td>${sent?(isP(l.nr,l.sku)?'✓':''):ck('p',key,prog.p[key],'Cules')}</td><td class="nr n">${l.nr}</td><td>${esc(l.sku)}</td>${qcell(l,!!sent)}<td class="prod">${esc(l.prod)}</td>${l.loc?`<td><span class="tag">R ${esc(l.loc.c)}</span></td><td><span class="tag">A ${esc(l.loc.a)}</span></td>`:`<td colspan="2"><span class="miss">fără locație</span> <button class="ghost sm addl" data-sku="${esc(l.sku)}">Adaugă</button></td>`}</tr>`}).join('')}</tbody></table></div>`)+`
-      <div class="bfoot"><button class="ghost sm" data-print="${k}">Printează calupul</button>${sent?`<span class="grow">Calupul e la facturare. Dacă trebuie corectat ceva, redeschide-l.</span><button class="ghost sm" data-reopen="${k}">Redeschide calupul</button>`:`<span class="grow">${full?`Totul e cules${lips?` · ${lips} ${lips>1?'linii au':'linie are'} cantitate mai mică`:''}. Trimite calupul la facturare.`:`Mai ai ${b.lines.length-dn} ${b.lines.length-dn>1?'linii':'linie'} de bifat.`}</span><button data-send="${k}" data-from="${b.from}" data-to="${b.to}" ${full?'':'disabled'}>Trimite la facturare</button>`}</div>`;
+      <div class="bfoot"><button class="ghost sm" data-print="${k}">Printează calupul</button>${isAdmin&&!sent?`<button class="ghost sm" data-pall="${k}" data-on="${full?0:1}">${full?'Debifează tot calupul':'Bifează tot calupul'}</button>`:''}${sent?`<span class="grow">Calupul e la facturare. Dacă trebuie corectat ceva, redeschide-l.</span><button class="ghost sm" data-reopen="${k}">Redeschide calupul</button>`:`<span class="grow">${full?`Totul e cules${lips?` · ${lips} ${lips>1?'linii au':'linie are'} cantitate mai mică`:''}. Trimite calupul la facturare.`:`Mai ai ${b.lines.length-dn} ${b.lines.length-dn>1?'linii':'linie'} de bifat.`}</span><button data-send="${k}" data-from="${b.from}" data-to="${b.to}" ${full?'':'disabled'}>Trimite la facturare</button>`}</div>`;
     }
     return `<div class="batch${open?' open':''}${sent?' sent':''}"><button class="bhead" data-open="${k}" aria-expanded="${open}"><span class="arr">›</span><h2>Calup ${b.idx}</h2><span>comenzile ${b.from}–${b.to} · ${b.lines.length} linii · ${buc} bucăți</span><span class="bp">${st}</span></button>${body}</div>`;
   }).join('');
@@ -757,7 +757,7 @@ function renderAmb(){
   const all=orders.filter(isF),hide=$('aHide').checked,L=all.filter(o=>!hide||!isA(o)),na=all.filter(isA).length;
   $('aInfo').textContent=all.length?`${all.length} comenzi facturate · ${na} trimise · ${all.length-na} de ambalat`:'';
   $('c-amb').textContent=all.length?`${all.length-na} de ambalat`:'';
-  $('aAll').classList.toggle('hidden',!all.length);$('aAll').textContent=all.length&&na===all.length?'Deselectează toate comenzile':'Selectează toate comenzile (trimise)';
+  $('aAll').classList.toggle('hidden',!all.length||!isAdmin);$('aAll').textContent=all.length&&na===all.length?'Deselectează toate comenzile':'Selectează toate comenzile (trimise)';
   if(!L.length){$('aBody').innerHTML=`<div class="empty">${all.length?'Toate comenzile facturate sunt ambalate și trimise.':'Încă nu e nicio comandă facturată în ziua asta.'}</div>`;return}
   const allOn=L.every(isA);
   if(isPhone()){$('aBody').innerHTML=`<div class="pcards">${L.map(o=>{const d=isA(o),v=prog.a[o.nr],sh=o.lines.some(l=>pq(o.nr,l)<l.qty);return `<div class="pcard${d?' done':''}" data-amb="${o.nr}" role="button" tabindex="0" aria-pressed="${d}">
@@ -765,7 +765,7 @@ function renderAmb(){
     <div class="pc-name" style="margin-top:4px">${esc(o.client)}</div>
     ${o.lines.map(l=>{const q=pq(o.nr,l);return `<div class="pc-line"><span class="pc-q">${q<l.qty?`<span class="qx">${q} <s>${l.qty}</s></span>`:q>=2?`<span class="qb">${q}</span>`:`<b>${q}</b>`}</span><span class="pc-x"> × </span><span class="pc-sku">${esc(l.sku)}</span> <span class="pc-name">${esc(l.prod)}</span></div>`}).join('')}
     ${sh?'<div class="pc-who" style="color:#c0261c">Atenție: are produse lipsă</div>':''}${v?`<div class="pc-who">✓ Ambalată de ${esc(v.n||'cineva')} · ${hhmm(v.t)}</div>`:''}</div>`}).join('')}</div>`;return}
-  $('aBody').innerHTML=`<div class="scroll"><table class="stack"><thead><tr><th><label class="ck" title="Bifează toate comenzile din listă"><input type="checkbox" id="aAllCk" ${allOn?'checked':''} aria-label="Toate comenzile trimise"> Toate</label></th><th class="n">Nr.</th><th>Id comandă</th><th>Nume client</th><th>Produse</th><th>Denumire produse</th></tr></thead><tbody>${L.map(o=>`<tr class="fo${isA(o)?' done':''}"><td>${ck('a',o.nr,prog.a[o.nr],'Comanda '+o.nr+' ambalată și trimisă')}</td><td class="nr n">${o.nr}</td><td style="white-space:nowrap">${esc(o.id)}</td><td>${esc(o.client)}</td><td style="white-space:nowrap">${o.lines.map(l=>{const q=pq(o.nr,l);return `<div>${q>=2?`<span class="qb">${q}</span>`:`<b>${q}</b>`} × ${esc(l.sku)}${q<l.qty?` <span class="qx">(din ${l.qty}${q===0?', lipsă':''})</span>`:''}</div>`}).join('')}</td><td class="prod">${o.lines.map(l=>`<div>${esc(l.prod)}</div>`).join('')}</td></tr>`).join('')}</tbody></table></div>`;
+  $('aBody').innerHTML=`<div class="scroll"><table class="stack"><thead><tr><th>${isAdmin?`<label class="ck" title="Bifează toate comenzile din listă"><input type="checkbox" id="aAllCk" ${allOn?'checked':''} aria-label="Toate comenzile trimise"> Toate</label>`:'Trimis'}</th><th class="n">Nr.</th><th>Id comandă</th><th>Nume client</th><th>Produse</th><th>Denumire produse</th></tr></thead><tbody>${L.map(o=>`<tr class="fo${isA(o)?' done':''}"><td>${ck('a',o.nr,prog.a[o.nr],'Comanda '+o.nr+' ambalată și trimisă')}</td><td class="nr n">${o.nr}</td><td style="white-space:nowrap">${esc(o.id)}</td><td>${esc(o.client)}</td><td style="white-space:nowrap">${o.lines.map(l=>{const q=pq(o.nr,l);return `<div>${q>=2?`<span class="qb">${q}</span>`:`<b>${q}</b>`} × ${esc(l.sku)}${q<l.qty?` <span class="qx">(din ${l.qty}${q===0?', lipsă':''})</span>`:''}</div>`}).join('')}</td><td class="prod">${o.lines.map(l=>`<div>${esc(l.prod)}</div>`).join('')}</td></tr>`).join('')}</tbody></table></div>`;
 }
 function sentList(){return Object.entries(prog.s).filter(([,v])=>v).map(([k,v])=>{const [from,to]=k.split('-').map(Number);return {k,from,to,...v,os:orders.filter(o=>o.nr>=from&&o.nr<=to)}}).filter(x=>x.os.length).sort((a,b)=>a.from-b.from)}
 let openF=null;
@@ -877,6 +877,7 @@ function menu(o){$('side').classList.toggle('open',o);$('mback').classList.toggl
 $('menuBtn').onclick=()=>menu(!$('side').classList.contains('open'));$('mback').onclick=()=>menu(false);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')menu(false)});
 const ACC=[['verif','Listă de verificare'],['pick','Picking'],['fact','Facturare'],['amb','Ambalare'],['loc','Locații produse']];
+let isAdmin=true;
 let allowed=null; // null = toate; altfel Set cu secțiunile permise (Dashboard și Setări sunt mereu permise)
 const canSee=t=>t==='dash'||t==='setari'||!allowed||allowed.has(t);
 function applyAccess(list){
@@ -899,12 +900,15 @@ $('fBody').addEventListener('change',e=>{const c=e.target.closest('input[data-fa
 $('dBody').addEventListener('click',e=>{if(e.target.closest('[data-go]')&&canSee('loc'))show('loc')});
 $('dBody').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.closest('[data-go]'))show('loc')});$('aHide').onchange=renderAmb;
 function ambAll(on,list){const st={n:me(),t:Date.now()},a={};for(const o of list){if(on){if(!isA(o))a[o.nr]=st}else if(isA(o))a[o.nr]=null}if(Object.keys(a).length)setProg({a})}
-$('aAll').onclick=()=>{const all=orders.filter(isF);ambAll(all.some(o=>!isA(o)),all)};
+$('aAll').onclick=()=>{if(!isAdmin)return;const all=orders.filter(isF);ambAll(all.some(o=>!isA(o)),all)};
 $('aBody').addEventListener('change',e=>{if(e.target.id!=='aAllCk')return;e.stopPropagation();const all=orders.filter(isF),L=$('aHide').checked?all.filter(o=>!isA(o)):all;ambAll(e.target.checked,L)},true);
 $('pBody').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
   if(b.dataset.open){openB=openB===b.dataset.open?null:b.dataset.open;editQ=null;renderPick();return}
   if(b.dataset.print){printBatches(batches().filter(x=>bkey(x)===b.dataset.print));return}
+  if(b.dataset.pall){if(!isAdmin)return;const bt=batches().find(x=>bkey(x)===b.dataset.pall);if(!bt)return;const on=b.dataset.on==='1',st={n:me(),t:Date.now()},p={};
+    for(const l of bt.lines){const k=l.nr+'_'+l.sku;if(on){if(!prog.p[k])p[k]=st}else if(prog.p[k])p[k]=null}
+    if(Object.keys(p).length)setProg({p});return}
   if(b.dataset.send){tick('s',b.dataset.send,true);return}
   if(b.dataset.reopen){tick('s',b.dataset.reopen,false);return}
   if(b.classList.contains('qm')){editV=Math.max(0,editV-1);renderPick();return}
@@ -1043,7 +1047,7 @@ if(window.claude){
         members=d.data()||{emails:[],admini:[]};const mail=u.email.toLowerCase();
         if(!members.emails.includes(mail)){$('aNoTxt').textContent=`Contul ${u.email} nu e încă în echipă. Cere-i administratorului să te adauge.`;panel('aNoAcc');return}
         $('auth').classList.add('hidden');
-        const isAdm=members.admini.includes(mail);$('p-echipa').classList.toggle('hidden',!isAdm);renderTeam(isAdm);applyAccess(isAdm?null:accOf(mail));
+        const isAdm=members.admini.includes(mail);$('p-echipa').classList.toggle('hidden',!isAdm);renderTeam(isAdm);isAdmin=isAdm;applyAccess(isAdm?null:accOf(mail));renderPick();renderAmb();
         if(!started){started=true;connect({kind:'fb',col:n=>fs.collection(`${ROOT}/${n}`)},`Conectat ca ${nume||u.email}: toată echipa vede aceeași listă și aceleași bife.`)}
       },()=>{$('aNoTxt').textContent=`Contul ${u.email} nu are acces încă. Cere-i administratorului să te adauge. Dacă ești primul care intră (administratorul), creează echipa.`;panel('aNoAcc')});
     }
