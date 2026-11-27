@@ -792,7 +792,7 @@ function renderDash(){
   if(!orders.length){$('dBody').innerHTML=`<div class="kpis">${missCard}</div><div class="empty">Ziua asta nu are comenzi. Alege altă zi din bara de sus sau din calendar.</div>`;$('c-dash').textContent='';return}
   const S={...dayStats(orders),miss:missing().length},pc=x=>S.n?Math.round(x/S.n*100):0;
   $('c-dash').textContent=`${S.am}/${S.n} trimise`;
-  const K=[['main','Total comenzi',S.n,'în '+tranches().length+' '+(tranches().length>1?'liste':'listă')],['todo','De pickuit',S.dp,pc(S.dp)+'% din total'],['','Pickuite',S.pk,pc(S.pk)+'% din total',S.pk],['','Facturate',S.fc,pc(S.fc)+'% din total',S.fc],['todo','De ambalat',S.de,'facturate, încă neambalate'],['','Ambalate și trimise',S.am,pc(S.am)+'% din total',S.am]];
+  const K=[['main','Total comenzi',S.n,'în '+tranches().length+' '+(tranches().length>1?'liste':'listă')],['todo','De pickuit',S.dp,pc(S.dp)+'% din total'],['','De facturat',S.pk,pc(S.pk)+'% din total',S.pk],['','Facturate',S.fc,pc(S.fc)+'% din total',S.fc],['todo','De ambalat',S.de,'facturate, încă neambalate'],['','Ambalate și trimise',S.am,pc(S.am)+'% din total',S.am]];
   // comenzi pickuite cu cantități mai mici (cel puțin o linie cu lipsă)
   const PB=orders.filter(o=>o.lines.some(l=>pq(o.nr,l)<l.qty)).sort((a,b)=>a.nr-b.nr);
   const probCard=`<div class="kpi go${PB.length?' bad':''}" role="button" tabindex="0" data-go="prob" title="Du-mă la comanda cu probleme"><span class="k">Comenzi cu probleme</span><b>${PB.length}</b><small>${PB.length?`${PB.length===1?'comandă pickuită':'comenzi pickuite'} cu cantități mai mici`:'nicio comandă cu cantități lipsă'}</small></div>`;
