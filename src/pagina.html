@@ -790,10 +790,13 @@ function renderDash(){
   const S={...dayStats(orders),miss:missing().length},pc=x=>S.n?Math.round(x/S.n*100):0;
   $('c-dash').textContent=`${S.am}/${S.n} trimise`;
   const K=[['main','Total comenzi',S.n,'în '+tranches().length+' '+(tranches().length>1?'liste':'listă')],['todo','De pickuit',S.dp,pc(S.dp)+'% din total'],['','Pickuite',S.pk,pc(S.pk)+'% din total',S.pk],['','Facturate',S.fc,pc(S.fc)+'% din total',S.fc],['todo','De ambalat',S.de,'facturate, încă neambalate'],['','Ambalate și trimise',S.am,pc(S.am)+'% din total',S.am]];
-  const kp=missCard+K.map(k=>`<div class="kpi ${k[0]}"><span class="k">${k[1]}</span><b>${k[2]}</b><small>${k[3]}</small>${k[4]!=null?`<div class="meter"><i style="width:${pc(k[4])}%"></i></div>`:''}</div>`).join('');
+  // comenzi pickuite cu cantități mai mici (cel puțin o linie cu lipsă)
+  const PB=orders.filter(o=>o.lines.some(l=>pq(o.nr,l)<l.qty)).sort((a,b)=>a.nr-b.nr);
+  const probCard=`<div class="kpi go${PB.length?' bad':''}" role="button" tabindex="0" data-go="pick" title="Deschide Picking"><span class="k">Comenzi cu probleme</span><b>${PB.length}</b><small>${PB.length?`${PB.length===1?'comandă pickuită':'comenzi pickuite'} cu cantități mai mici · Nr. ${PB.slice(0,12).map(o=>o.nr).join(', ')}${PB.length>12?'…':''}`:'nicio comandă cu cantități lipsă'}</small></div>`;
+  K.splice(3,0,null);
+  const kp=missCard+K.map(k=>!k?probCard:`<div class="kpi ${k[0]}"><span class="k">${k[1]}</span><b>${k[2]}</b><small>${k[3]}</small>${k[4]!=null?`<div class="meter"><i style="width:${pc(k[4])}%"></i></div>`:''}</div>`).join('');
   const fl=[['Picking',S.pk],['Facturare',S.fc],['Ambalare și trimitere',S.am]].map(x=>`<div><span class="t">${x[0]}</span> <span class="v">${x[1]}/${S.n} · ${pc(x[1])}%</span><div class="meter"><i style="width:${pc(x[1])}%"></i></div></div>`).join('');
   $('dBody').innerHTML=`<div class="kpis">${kp}</div><div class="flow">${fl}</div>
-  ${S.lips?`<p class="msg err" style="margin-top:-8px">${S.lips} ${S.lips>1?'produse culese':'produs cules'} cu cantitate mai mică decât comanda (lipsă).</p>`:''}
 `;
 }
 function renderAmb(){
@@ -1102,8 +1105,9 @@ $('fBody').addEventListener('change',e=>{const c=e.target.closest('input[data-fa
   const x=sentList().find(y=>y.k===c.dataset.fall);if(!x)return;const st={n:me(),t:Date.now()},f={};
   for(const o of x.os){if(c.checked){if(!prog.f[o.nr])f[o.nr]=st}else f[o.nr]=null}
   setProg({f})},true);
-$('dBody').addEventListener('click',e=>{if(e.target.closest('[data-go]')&&canSee('loc'))show('loc')});
-$('dBody').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.closest('[data-go]'))show('loc')});$('aHide').onchange=renderAmb;
+const goDash=e=>{const g=e.target.closest('[data-go]');if(g&&canSee(g.dataset.go))show(g.dataset.go)};
+$('dBody').addEventListener('click',goDash);
+$('dBody').addEventListener('keydown',e=>{if(e.key==='Enter')goDash(e)});$('aHide').onchange=renderAmb;
 function ambAll(on,list){const st={n:me(),t:Date.now()},a={};for(const o of list){if(on){if(!isA(o))a[o.nr]=st}else if(isA(o))a[o.nr]=null}if(Object.keys(a).length)setProg({a})}
 $('aAll').onclick=()=>{if(!isAdmin)return;const all=orders.filter(isF);ambAll(all.some(o=>!isA(o)),all)};
 $('aBody').addEventListener('change',e=>{if(e.target.id!=='aAllCk')return;e.stopPropagation();const all=orders.filter(isF),L=$('aHide').checked?all.filter(o=>!isA(o)):all;ambAll(e.target.checked,L)},true);
