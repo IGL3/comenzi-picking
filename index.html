@@ -788,7 +788,11 @@ function renderDash(){
   const dt=pdate(curDay);$('dashT').textContent=`Dashboard · ${dt.getDate()} ${LUNI[dt.getMonth()]} ${dt.getFullYear()}`;
   const AM=allMissing(),lim=dkey(new Date(Date.now()-7*864e5)),vechi=AM.filter(x=>x.day&&x.day<lim).length;
   const tri='<svg class="warn-tri" viewBox="0 0 100 90" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M50 4 97 86H3z" fill="#FFC21A" stroke="#E0A000" stroke-width="4" stroke-linejoin="round"/><rect x="45" y="30" width="10" height="32" rx="4" fill="#8A6200"/><circle cx="50" cy="73" r="6" fill="#8A6200"/></svg>';
-  const missCard=`<div class="kpi go${AM.length?' bad':''}${vechi?' old':''}" role="button" tabindex="0" data-go="loc">${vechi?tri:''}<span class="k">SKU fără locație</span><b>${AM.length}</b><small>${AM.length?(vechi?`${vechi} de peste o săptămână · `:'')+'din toate listele · apasă ca să le adaugi':'toate produsele au locație'}</small></div>`;
+  let missCard=`<div class="kpi go${AM.length?' bad':''}${vechi?' old':''}" role="button" tabindex="0" data-go="loc">${vechi?tri:''}<span class="k">SKU fără locație</span><b>${AM.length}</b><small>${AM.length?(vechi?`${vechi} de peste o săptămână · `:'')+'din toate listele · apasă ca să le adaugi':'toate produsele au locație'}</small></div>`;
+  // Retururi: la fel în fiecare zi (nu depinde de ziua aleasă)
+  const RA=Object.values(rets),RW=RA.filter(r=>!r.s).length;
+  const retCard=`<div class="kpi go${RW?' todo':''}" role="button" tabindex="0" data-go="ret" title="Deschide Retururi"><span class="k">Retururi</span><b>${RW}</b><small>${RA.length?`în așteptare · din ${RA.length} retururi`:'încă niciun retur'}</small></div>`;
+  missCard+=retCard;
   if(!orders.length){$('dBody').innerHTML=`<div class="kpis">${missCard}</div><div class="empty">Ziua asta nu are comenzi. Alege altă zi din bara de sus sau din calendar.</div>`;$('c-dash').textContent='';return}
   const S={...dayStats(orders),miss:missing().length},pc=x=>S.n?Math.round(x/S.n*100):0;
   $('c-dash').textContent=`${S.am}/${S.n} trimise`;
@@ -957,6 +961,7 @@ async function autoFixRets(){ // o dată la încărcare: repară datele scrise g
   try{await putRets(list);say($('retMsg'),`Am corectat datele scrise greșit la ${list.length} ${list.length===1?'retur':'de retururi'}.`,'ok')}catch(e){}finally{retFixing=false}
 }
 function renderRet(){
+  try{renderDash()}catch(e){}
   const all=Object.entries(rets).map(([id,v])=>({id,...v})),w=all.filter(r=>!r.s).length;
   $('c-ret').textContent=all.length?`${w} în așteptare`:'';
   const ps=[...new Set([...PLAT,...all.map(r=>r.p).filter(Boolean)])];
