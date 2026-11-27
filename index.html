@@ -148,6 +148,12 @@ tr.flash,.pcard.flash{outline:3px solid transparent;outline-offset:-3px;animatio
 .qx.qbox{display:inline-block;min-width:2.2ch;text-align:center;font-weight:800;border-radius:6px;padding:1px 7px;background:#ff5a4f;color:#1A1C21;white-space:nowrap}
 .kpis .kpi.ret b{color:#E5A400}
 .kpis .kpi .k{font-size:17px;font-weight:600}
+.rcards{display:grid;gap:12px}.rcard{background:#ECE6DA;color:#1A1C21;border-radius:14px;padding:16px 14px;text-align:center;font-size:18px;line-height:1.35}
+.rcard.redit{outline:3px solid #00D8F2;outline-offset:-3px}.rc-p{font-size:15px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#5a5a62}
+.rc-nr{font-size:24px;font-weight:800;margin:2px 0;font-variant-numeric:tabular-nums;word-break:break-all}.rc-c{font-size:20px;font-weight:600}
+.rc-d{display:flex;justify-content:center;flex-wrap:wrap;gap:4px 16px;margin:8px 0 4px;font-size:17px;color:#4a4a52}.rc-d b{color:#1A1C21;font-variant-numeric:tabular-nums}
+.rc-m{font-size:18px;margin-top:4px}.rc-s{margin-top:6px;font-size:17px}.rc-s .rwait{font-size:15px;padding:3px 12px}.rc-o{margin-top:6px;font-size:16px;color:#4a4a52;font-style:italic}
+.rc-b{display:flex;justify-content:center;gap:10px;margin-top:12px}.rc-b button{font-size:17px;padding:10px 18px}.rcard b.rbad{color:#c0261c;text-decoration:underline dotted}
 .ptitle{font:800 30px/1.1 "Barlow Condensed",sans-serif;margin:0 0 14px}
 .mbar,.mback{display:none}
 @media(max-width:860px){
@@ -976,6 +982,14 @@ function renderRet(){
   $('retInfo').textContent=all.length?`${all.length} retururi · ${w} în așteptare${L.length!==all.length?` · ${L.length} afișate`:''}`:'';
   if(!L.length){$('rBody').innerHTML=`<div class="empty">${all.length?'Niciun retur nu se potrivește cu filtrul.':'Încă nu e niciun retur. Adaugă unul mai sus sau importă centralizatorul din Excel.'}</div>`;return}
   const S=L.slice(0,400);
+  if(isPhone()){ // pe telefon: câte un card pe retur, text mare, centrat
+    $('rBody').innerHTML=`<div class="rcards">${S.map(r=>{const bd=k=>r[k]&&!isIso(r[k])?' class="rbad"':'';
+      return `<div class="rcard${retEdit===r.id?' redit':''}"><div class="rc-p">${esc(r.p)}</div><div class="rc-nr">${esc(r.nr)}</div>${r.c?`<div class="rc-c">${esc(r.c)}</div>`:''}
+      <div class="rc-d"><span>Comandă <b${bd('dc')}>${esc(fmtD(r.dc))||'—'}</b></span><span>Retur <b${bd('dr')}>${esc(fmtD(r.dr))||'—'}</b></span></div>
+      ${r.m?`<div class="rc-m">${esc(r.m)}</div>`:''}<div class="rc-s">${r.s?`Status: <b>${esc(r.s)}</b>`:'<span class="rwait">în așteptare</span>'}</div>${r.o?`<div class="rc-o">${esc(r.o)}</div>`:''}
+      <div class="rc-b"><button class="ghost" data-red="${r.id}">Modifică</button><button class="ghost" data-rdel="${r.id}">Șterge</button></div></div>`}).join('')}</div>${L.length>S.length?`<p class="msg">Se văd primele ${S.length} din ${L.length}. Folosește căutarea sau filtrele.</p>`:''}`;
+    return;
+  }
   $('rBody').innerHTML=`<div class="scroll"><table class="stack"><thead><tr>${RCOLS.map(h=>`<th>${h}</th>`).join('')}<th></th></tr></thead><tbody>${S.map(r=>`<tr class="${retEdit===r.id?'redit':''}"><td style="white-space:nowrap">${esc(r.p)}</td>${['dc','dr'].map(k=>`<td style="white-space:nowrap"${r[k]&&!isIso(r[k])?' class="rbad" title="Dată scrisă greșit — apasă Modifică și alege data corectă"':''}>${esc(fmtD(r[k]))}</td>`).join('')}<td class="rnr"><b>${esc(r.nr)}</b></td><td>${esc(r.c)}</td><td>${esc(r.m)}</td><td>${r.s?esc(r.s):'<span class="rwait">în așteptare</span>'}</td><td>${esc(r.o)}</td><td style="white-space:nowrap"><button class="ghost sm" data-red="${r.id}">Modifică</button> <button class="ghost sm" data-rdel="${r.id}">Șterge</button></td></tr>`).join('')}</tbody></table></div>${L.length>S.length?`<p class="msg">Se văd primele ${S.length} din ${L.length}. Folosește căutarea sau filtrele.</p>`:''}`;
 }
 function retForm(r){
@@ -1170,7 +1184,7 @@ $('pBody').addEventListener('click',e=>{
   tick('p',k,!prog.p[k]);
 },true);
 $('pBody').addEventListener('keydown',e=>{const c=e.target.closest&&e.target.closest('.pcard[data-tick]');if(c&&(e.key==='Enter'||e.key===' ')){e.preventDefault();tick('p',c.dataset.tick,!prog.p[c.dataset.tick])}});
-{let wasPhone=isPhone();window.addEventListener('resize',()=>{if(isPhone()!==wasPhone){wasPhone=isPhone();renderPick();renderAmb()}})}
+{let wasPhone=isPhone();window.addEventListener('resize',()=>{if(isPhone()!==wasPhone){wasPhone=isPhone();renderPick();renderAmb();renderRet()}})}
 $('aBody').addEventListener('click',e=>{if(e.target.closest('button,a,input'))return;const c=e.target.closest('.pcard[data-amb]');if(c){const n=c.dataset.amb;tick('a',n,!prog.a[n])}});
 $('aBody').addEventListener('keydown',e=>{const c=e.target.closest&&e.target.closest('.pcard[data-amb]');if(c&&(e.key==='Enter'||e.key===' ')){e.preventDefault();tick('a',c.dataset.amb,!prog.a[c.dataset.amb])}});
 $('dlF').onclick=()=>{const L=sentList();if(!L.length)return;const idx=new Map(batches().map(b=>[bkey(b),b.idx]));const aoa=[['Calup','Nr.','Canal','Id comandă','Nume client','SKU','Comandat','Cules','Denumire produs','Facturat']];
