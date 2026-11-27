@@ -792,12 +792,13 @@ function renderDash(){
   if(!orders.length){$('dBody').innerHTML=`<div class="kpis">${missCard}</div><div class="empty">Ziua asta nu are comenzi. Alege altă zi din bara de sus sau din calendar.</div>`;$('c-dash').textContent='';return}
   const S={...dayStats(orders),miss:missing().length},pc=x=>S.n?Math.round(x/S.n*100):0;
   $('c-dash').textContent=`${S.am}/${S.n} trimise`;
-  const K=[['main','Total comenzi',S.n,'în '+tranches().length+' '+(tranches().length>1?'liste':'listă')],['todo','De pickuit',S.dp,pc(S.dp)+'% din total'],['','De facturat',S.pk,pc(S.pk)+'% din total',S.pk],['','Facturate',S.fc,pc(S.fc)+'% din total',S.fc],['todo','De ambalat',S.de,'facturate, încă neambalate'],['','Ambalate și trimise',S.am,pc(S.am)+'% din total',S.am]];
+  const SL=sentList(),FT={n:SL.reduce((s,x)=>s+x.os.length,0),f:SL.reduce((s,x)=>s+x.os.filter(o=>prog.f[o.nr]).length,0)};
+  const K=[['main','Total comenzi',S.n,'în '+tranches().length+' '+(tranches().length>1?'liste':'listă')],['todo','De pickuit',S.dp,pc(S.dp)+'% din total'],['todo go','De facturat',FT.n-FT.f,FT.n?`din ${FT.n} trimise la facturare`:'niciun calup trimis încă',null,'fact'],['','Facturate',S.fc,pc(S.fc)+'% din total',S.fc],['todo','De ambalat',S.de,'facturate, încă neambalate'],['','Ambalate și trimise',S.am,pc(S.am)+'% din total',S.am]];
   // comenzi pickuite cu cantități mai mici (cel puțin o linie cu lipsă)
   const PB=orders.filter(o=>o.lines.some(l=>pq(o.nr,l)<l.qty)).sort((a,b)=>a.nr-b.nr);
   const probCard=`<div class="kpi go${PB.length?' bad':''}" role="button" tabindex="0" data-go="prob" title="Du-mă la comanda cu probleme"><span class="k">Comenzi cu probleme</span><b>${PB.length}</b><small>${PB.length?`${PB.length===1?'comandă pickuită':'comenzi pickuite'} cu cantități mai mici`:'nicio comandă cu cantități lipsă'}</small></div>`;
   K.splice(3,0,null);
-  const kp=missCard+K.map(k=>!k?probCard:`<div class="kpi ${k[0]}"><span class="k">${k[1]}</span><b>${k[2]}</b><small>${k[3]}</small>${k[4]!=null?`<div class="meter"><i style="width:${pc(k[4])}%"></i></div>`:''}</div>`).join('');
+  const kp=missCard+K.map(k=>!k?probCard:`<div class="kpi ${k[0]}"${k[5]?` role="button" tabindex="0" data-go="${k[5]}" title="Deschide Facturare"`:''}><span class="k">${k[1]}</span><b>${k[2]}</b><small>${k[3]}</small>${k[4]!=null?`<div class="meter"><i style="width:${pc(k[4])}%"></i></div>`:''}</div>`).join('');
   const fl=[['Picking',S.pk],['Facturare',S.fc],['Ambalare și trimitere',S.am]].map(x=>`<div><span class="t">${x[0]}</span> <span class="v">${x[1]}/${S.n} · ${pc(x[1])}%</span><div class="meter"><i style="width:${pc(x[1])}%"></i></div></div>`).join('');
   $('dBody').innerHTML=`<div class="kpis">${kp}</div><div class="flow">${fl}</div>
 `;
