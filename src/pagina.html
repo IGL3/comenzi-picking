@@ -142,6 +142,8 @@ td.q.lock{cursor:default}
 #rBody td{vertical-align:top}#rBody th,#rBody td{padding-inline:8px}#rBody td:nth-child(8){min-width:140px}#rBody td.rbad{color:#c0261c;text-decoration:underline dotted;cursor:help}#rBody .rnr{white-space:nowrap;font-variant-numeric:tabular-nums}#rBody tr.redit{outline:2px solid #00D8F2;outline-offset:-2px}
 @media(max-width:860px){.retform{grid-template-columns:1fr 1fr}}
 @media(max-width:520px){.retform{grid-template-columns:1fr}.retform .w2{grid-column:auto}}
+@keyframes flashOrd{0%,50%{outline-color:#00D8F2}100%{outline-color:transparent}}
+tr.flash,.pcard.flash{outline:3px solid transparent;outline-offset:-3px;animation:flashOrd 3s ease-out}
 .ptitle{font:800 30px/1.1 "Barlow Condensed",sans-serif;margin:0 0 14px}
 .mbar,.mback{display:none}
 @media(max-width:860px){
@@ -714,7 +716,7 @@ function pcard(l,sent){
   let qH;
   if(editQ===key&&!sent)qH=`<span class="qed"><button class="ghost qm" aria-label="Mai puțin" ${editV<=0?'disabled':''}>−</button><b>${editV}</b><button class="ghost qp" aria-label="Mai mult" ${editV>=l.qty?'disabled':''}>+</button><button class="sm qok">OK</button><button class="ghost sm qno">Renunță</button></span>`;
   else qH=`<span class="q pc-q${sent?' lock':''}" data-q="${esc(key)}" data-max="${l.qty}">${short?`<span class="qx">${q} <s>${l.qty}</s>${q===0?' · lipsă':''}</span>`:l.qty>=2?`<span class="qb">${l.qty}</span>`:`<b>${l.qty}</b>`}</span>`;
-  return `<div class="pcard${short?' short':done?' done':''}${sent?' lock':''}" ${sent?'':`data-tick="${esc(key)}" role="button" tabindex="0" aria-pressed="${done}"`}>
+  return `<div data-lnr="${l.nr}" class="pcard${short?' short':done?' done':''}${sent?' lock':''}" ${sent?'':`data-tick="${esc(key)}" role="button" tabindex="0" aria-pressed="${done}"`}>
     <div class="pc-row"><span class="pc-nr">${l.nr}</span>${locH}<span class="pc-qs">${qH}<span class="pc-x">×</span><span class="pc-sku">${esc(l.sku)}</span></span></div>
     <div class="pc-name">${esc(l.prod)}</div>${val?`<div class="pc-who">✓ ${esc(val.n||'cineva')} · ${hhmm(val.t)}</div>`:''}</div>`;
 }
@@ -729,7 +731,7 @@ function renderPick(){
     let body='';
     if(open){
       const ls=b.lines.filter(l=>!hide||!isP(l.nr,l.sku));
-      body=(isPhone()?`<div class="pcards">${ls.map(l=>pcard(l,!!sent)).join('')}</div>`:`<div class="scroll"><table class="stack"><thead><tr><th>Cules</th><th class="n">Nr. comandă</th><th>SKU</th><th class="n">Cantitate</th><th>Denumire</th><th>Rând</th><th>Alveolă</th></tr></thead><tbody>${ls.map(l=>{const key=l.nr+'_'+l.sku;return `<tr class="${pq(l.nr,l)<l.qty?'short':isP(l.nr,l.sku)?'done':''}"><td>${sent?(isP(l.nr,l.sku)?'✓':''):ck('p',key,prog.p[key],'Cules')}</td><td class="nr n">${l.nr}</td><td>${esc(l.sku)}</td>${qcell(l,!!sent)}<td class="prod">${esc(l.prod)}</td>${l.loc?`<td><span class="tag">R ${esc(l.loc.c)}</span></td><td><span class="tag">A ${esc(l.loc.a)}</span></td>`:`<td colspan="2"><span class="miss">fără locație</span> <button class="ghost sm addl" data-sku="${esc(l.sku)}">Adaugă</button></td>`}</tr>`}).join('')}</tbody></table></div>`)+`
+      body=(isPhone()?`<div class="pcards">${ls.map(l=>pcard(l,!!sent)).join('')}</div>`:`<div class="scroll"><table class="stack"><thead><tr><th>Cules</th><th class="n">Nr. comandă</th><th>SKU</th><th class="n">Cantitate</th><th>Denumire</th><th>Rând</th><th>Alveolă</th></tr></thead><tbody>${ls.map(l=>{const key=l.nr+'_'+l.sku;return `<tr data-lnr="${l.nr}" class="${pq(l.nr,l)<l.qty?'short':isP(l.nr,l.sku)?'done':''}"><td>${sent?(isP(l.nr,l.sku)?'✓':''):ck('p',key,prog.p[key],'Cules')}</td><td class="nr n">${l.nr}</td><td>${esc(l.sku)}</td>${qcell(l,!!sent)}<td class="prod">${esc(l.prod)}</td>${l.loc?`<td><span class="tag">R ${esc(l.loc.c)}</span></td><td><span class="tag">A ${esc(l.loc.a)}</span></td>`:`<td colspan="2"><span class="miss">fără locație</span> <button class="ghost sm addl" data-sku="${esc(l.sku)}">Adaugă</button></td>`}</tr>`}).join('')}</tbody></table></div>`)+`
       <div class="bfoot"><button class="ghost sm" data-print="${k}">Printează calupul</button>${isAdmin&&!sent?`<button class="ghost sm" data-pall="${k}" data-on="${full?0:1}">${full?'Debifează tot calupul':'Bifează tot calupul'}</button>`:''}${sent?`<span class="grow">Calupul e la facturare. Dacă trebuie corectat ceva, redeschide-l.</span><button class="ghost sm" data-reopen="${k}">Redeschide calupul</button>`:`<span class="grow">${full?`Totul e cules${lips?` · ${lips} ${lips>1?'linii au':'linie are'} cantitate mai mică`:''}. Trimite calupul la facturare.`:`Mai ai ${b.lines.length-dn} ${b.lines.length-dn>1?'linii':'linie'} de bifat.`}</span><button data-send="${k}" data-from="${b.from}" data-to="${b.to}" ${full?'':'disabled'}>Trimite la facturare</button>`}</div>`;
     }
     return `<div class="batch${open?' open':''}${sent?' sent':''}"><button class="bhead" data-open="${k}" aria-expanded="${open}"><span class="arr">›</span><h2>Calup ${b.idx}</h2><span>comenzile ${b.from}–${b.to} · ${b.lines.length} linii · ${buc} bucăți</span><span class="bp">${st}</span></button>${body}</div>`;
@@ -792,7 +794,7 @@ function renderDash(){
   const K=[['main','Total comenzi',S.n,'în '+tranches().length+' '+(tranches().length>1?'liste':'listă')],['todo','De pickuit',S.dp,pc(S.dp)+'% din total'],['','Pickuite',S.pk,pc(S.pk)+'% din total',S.pk],['','Facturate',S.fc,pc(S.fc)+'% din total',S.fc],['todo','De ambalat',S.de,'facturate, încă neambalate'],['','Ambalate și trimise',S.am,pc(S.am)+'% din total',S.am]];
   // comenzi pickuite cu cantități mai mici (cel puțin o linie cu lipsă)
   const PB=orders.filter(o=>o.lines.some(l=>pq(o.nr,l)<l.qty)).sort((a,b)=>a.nr-b.nr);
-  const probCard=`<div class="kpi go${PB.length?' bad':''}" role="button" tabindex="0" data-go="pick" title="Deschide Picking"><span class="k">Comenzi cu probleme</span><b>${PB.length}</b><small>${PB.length?`${PB.length===1?'comandă pickuită':'comenzi pickuite'} cu cantități mai mici · Nr. ${PB.slice(0,12).map(o=>o.nr).join(', ')}${PB.length>12?'…':''}`:'nicio comandă cu cantități lipsă'}</small></div>`;
+  const probCard=`<div class="kpi go${PB.length?' bad':''}" role="button" tabindex="0" data-go="prob" title="Du-mă la comanda cu probleme"><span class="k">Comenzi cu probleme</span><b>${PB.length}</b><small>${PB.length?`${PB.length===1?'comandă pickuită':'comenzi pickuite'} cu cantități mai mici · apasă ca să ${PB.length===1?'mergi la ea':'mergi la ele, pe rând'}`:'nicio comandă cu cantități lipsă'}</small></div>`;
   K.splice(3,0,null);
   const kp=missCard+K.map(k=>!k?probCard:`<div class="kpi ${k[0]}"><span class="k">${k[1]}</span><b>${k[2]}</b><small>${k[3]}</small>${k[4]!=null?`<div class="meter"><i style="width:${pc(k[4])}%"></i></div>`:''}</div>`).join('');
   const fl=[['Picking',S.pk],['Facturare',S.fc],['Ambalare și trimitere',S.am]].map(x=>`<div><span class="t">${x[0]}</span> <span class="v">${x[1]}/${S.n} · ${pc(x[1])}%</span><div class="meter"><i style="width:${pc(x[1])}%"></i></div></div>`).join('');
@@ -829,7 +831,7 @@ function renderFact(){
     const st=full?'<span class="chip green">Facturat complet</span>':`<span class="chip">${fd}/${x.os.length} facturate</span>`;
     let body='';
     if(open){
-      body=`<div class="bfoot mob-only" style="border-top:0;border-bottom:1px solid var(--line)"><label class="ck"><input type="checkbox" data-fall="${esc(x.k)}" ${full?'checked':''}> Toate comenzile din calup facturate</label></div><div class="scroll"><table class="stack"><thead><tr><th><label class="ck" title="Bifează toate comenzile din calup"><input type="checkbox" data-fall="${esc(x.k)}" ${full?'checked':''} aria-label="Toate comenzile din calup facturate"> Toate</label></th><th class="n">Nr.</th><th>Canal</th><th>Id comandă</th><th>Nume client</th><th>SKU</th><th class="n">Comandat</th><th class="n">Cules</th><th>Denumire produs</th></tr></thead><tbody>${os.map(o=>o.lines.map((l,i)=>{const q=pq(o.nr,l);return `<tr class="${i===0?'fo':''}${q<l.qty?' short':prog.f[o.nr]?' done':''}"><td>${i===0?ck('f',o.nr,prog.f[o.nr],'Comanda '+o.nr+' facturată'):''}</td><td class="nr n">${i===0?o.nr:''}</td><td>${i===0?esc(o.canal):''}</td><td style="white-space:nowrap">${i===0?esc(o.id):''}</td><td>${i===0?esc(o.client):''}</td><td>${esc(l.sku)}</td><td class="n">${l.qty>=2?`<span class="qb">${l.qty}</span>`:l.qty}</td><td class="n">${q<l.qty?`<span class="qx">${q}${q===0?' · lipsă':''}</span>`:`<b>${q}</b>`}</td><td class="prod">${esc(l.prod)}</td></tr>`}).join('')).join('')}</tbody></table></div>`;
+      body=`<div class="bfoot mob-only" style="border-top:0;border-bottom:1px solid var(--line)"><label class="ck"><input type="checkbox" data-fall="${esc(x.k)}" ${full?'checked':''}> Toate comenzile din calup facturate</label></div><div class="scroll"><table class="stack"><thead><tr><th><label class="ck" title="Bifează toate comenzile din calup"><input type="checkbox" data-fall="${esc(x.k)}" ${full?'checked':''} aria-label="Toate comenzile din calup facturate"> Toate</label></th><th class="n">Nr.</th><th>Canal</th><th>Id comandă</th><th>Nume client</th><th>SKU</th><th class="n">Comandat</th><th class="n">Cules</th><th>Denumire produs</th></tr></thead><tbody>${os.map(o=>o.lines.map((l,i)=>{const q=pq(o.nr,l);return `<tr data-ford="${o.nr}" class="${i===0?'fo':''}${q<l.qty?' short':prog.f[o.nr]?' done':''}"><td>${i===0?ck('f',o.nr,prog.f[o.nr],'Comanda '+o.nr+' facturată'):''}</td><td class="nr n">${i===0?o.nr:''}</td><td>${i===0?esc(o.canal):''}</td><td style="white-space:nowrap">${i===0?esc(o.id):''}</td><td>${i===0?esc(o.client):''}</td><td>${esc(l.sku)}</td><td class="n">${l.qty>=2?`<span class="qb">${l.qty}</span>`:l.qty}</td><td class="n">${q<l.qty?`<span class="qx">${q}${q===0?' · lipsă':''}</span>`:`<b>${q}</b>`}</td><td class="prod">${esc(l.prod)}</td></tr>`}).join('')).join('')}</tbody></table></div>`;
     }
     return `<div class="batch${open?' open':''}${full?' done':''}"><button class="bhead" data-fopen="${esc(x.k)}" aria-expanded="${open}"><span class="arr">›</span><h2>Calup ${idx.get(x.k)||''}</h2><span>comenzile ${x.from}–${x.to} · trimis${x.n?' de '+esc(x.n):''} la ${hhmm(x.t)}</span><span class="bp">${st}</span></button>${body}</div>`;
   }).join('')||'<div class="empty">Totul e facturat.</div>';
@@ -1105,7 +1107,22 @@ $('fBody').addEventListener('change',e=>{const c=e.target.closest('input[data-fa
   const x=sentList().find(y=>y.k===c.dataset.fall);if(!x)return;const st={n:me(),t:Date.now()},f={};
   for(const o of x.os){if(c.checked){if(!prog.f[o.nr])f[o.nr]=st}else f[o.nr]=null}
   setProg({f})},true);
-const goDash=e=>{const g=e.target.closest('[data-go]');if(g&&canSee(g.dataset.go))show(g.dataset.go)};
+const goDash=e=>{const g=e.target.closest('[data-go]');if(!g)return;if(g.dataset.go==='prob')return goProb();if(canSee(g.dataset.go))show(g.dataset.go)};
+// „Comenzi cu probleme”: fiecare apăsare duce la următoarea comandă cu lipsă — la Facturare, în calupul ei, dacă e trimis; altfel la Picking
+let probI=-1;
+function goProb(){
+  const PB=orders.filter(o=>o.lines.some(l=>pq(o.nr,l)<l.qty)).sort((a,b)=>a.nr-b.nr);if(!PB.length)return;
+  probI=(probI+1)%PB.length;const o=PB[probI],x=sentList().find(x=>o.nr>=x.from&&o.nr<=x.to);
+  let sel,where;
+  if(x&&canSee('fact')){openF=x.k;if($('fHide').checked&&prog.f[o.nr])$('fHide').checked=false;show('fact');renderFact();sel=`#fBody [data-ford="${o.nr}"]`;where='fact'}
+  else if(canSee('pick')){const b=batches().find(b=>b.lines.some(l=>l.nr===o.nr));if(b)openB=bkey(b);if($('pHide')&&$('pHide').checked)$('pHide').checked=false;show('pick');renderPick();sel=`#pBody [data-lnr="${o.nr}"]`;where='pick'}
+  else return;
+  requestAnimationFrame(()=>{const els=[...document.querySelectorAll(sel)];if(!els.length)return;
+    els[0].scrollIntoView({behavior:'smooth',block:'center'});
+    for(const el of els){el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash')}
+    const m=where==='fact'?$('fInfo'):null;if(m&&PB.length>1)m.textContent=m.textContent.replace(/ · comanda cu probleme .*$/,'')+` · comanda cu probleme ${probI+1} din ${PB.length}`;
+  });
+}
 $('dBody').addEventListener('click',goDash);
 $('dBody').addEventListener('keydown',e=>{if(e.key==='Enter')goDash(e)});$('aHide').onchange=renderAmb;
 function ambAll(on,list){const st={n:me(),t:Date.now()},a={};for(const o of list){if(on){if(!isA(o))a[o.nr]=st}else if(isA(o))a[o.nr]=null}if(Object.keys(a).length)setProg({a})}
