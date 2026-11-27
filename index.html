@@ -319,7 +319,6 @@ tr.short td{background:#f4d9d4!important}
   <div class="confirm hidden" id="repl"><span id="replTxt" style="flex-basis:100%"></span><button id="replAdd">Adaugă în continuare</button><button class="ghost" id="replYes">Înlocuiește lista</button><button class="ghost" id="replNo">Anulează</button></div>
     </div>
     <div class="bar"><span class="grow" id="vInfo"></span>
-      <label class="ck"><input type="checkbox" id="vHide"> Doar ce nu e verificat</label>
       <button class="ghost dl" id="dlV">Descarcă Excel</button>
       <button class="ghost dl" id="prV">Printează</button></div>
     <div id="vBody"></div>
@@ -688,7 +687,7 @@ function renderStats(){
   const O=vis();if(!O.length){for(const x of ['verif','pick'])$('c-'+x).textContent='';const mm=allMissing().length;$('c-loc').textContent=mm?`${mm} SKU fără locație`:'';$('c-loc').classList.toggle('warn',!!mm);return}
   const L=O.reduce((s,o)=>s+o.lines.length,0),miss=allMissing().length;
   const vd=O.filter(o=>isV(o.nr)).length,pd=O.reduce((s,o)=>s+o.lines.filter(l=>isP(o.nr,l.sku)).length,0);
-  $('c-verif').textContent=`${vd}/${O.length} verificate`;$('c-pick').textContent=`${pd}/${L} linii culese`;
+  $('c-verif').textContent=`${O.length} comenzi`;$('c-pick').textContent=`${pd}/${L} linii culese`;
   $('c-loc').textContent=miss?`${miss} SKU fără locație`:'toate au locație';$('c-loc').classList.toggle('warn',!!miss);
 }
 const EMPTY='<div class="empty">Încă nu e încărcată nicio listă. Încarcă exportul de comenzi ca să apară pentru toată echipa.</div>';
@@ -697,10 +696,10 @@ const hl=o=>o.lines.length>1||o.lines.some(l=>l.qty>=2);
 const verifRows=()=>vis().flatMap(o=>o.lines.map((l,k)=>({o,l,k})));
 function renderVerif(){
   if(!orders.length){$('vBody').innerHTML=EMPTY;$('vInfo').textContent='';return}
-  const O=vis(),multi=O.filter(o=>o.lines.some(l=>l.qty>=2)).length,hide=$('vHide').checked;
+  const O=vis(),multi=O.filter(o=>o.lines.some(l=>l.qty>=2)).length;
   $('vInfo').textContent=`${O.length} comenzi sortate după canal`+(multi?` · ${multi} cu cantitate 2+ (evidențiată cu turcoaz)`:'');
-  const rows=verifRows().filter(r=>!hide||!isV(r.o.nr));
-  $('vBody').innerHTML=rows.length?`<div class="scroll"><table class="stack"><thead><tr><th>Verificat</th>${VCOLS.map((h,i)=>`<th class="${i===3||i===6?'n':''}">${h}</th>`).join('')}</tr></thead><tbody>${rows.map(({o,l,k})=>`<tr class="${k===0&&o.nr>1?'grp':''}${hl(o)?' mlt':''}${isV(o.nr)?' done':''}"><td>${ck('v',o.nr,prog.v[o.nr],'Comanda '+o.nr+' verificată')}</td><td>${esc(o.canal)}</td><td>${cfCell(o)}</td><td>${esc(o.id)}</td><td class="nr n">${o.nr}</td><td>${esc(o.client)}</td><td>${esc(l.sku)}</td><td class="n">${l.qty>=2?`<span class="qb">${l.qty}</span>`:`<b>${l.qty}</b>`}</td><td class="prod">${esc(l.prod)}</td><td style="white-space:nowrap">${esc(o.tel)}</td><td>${esc(o.firma)}</td><td>${esc(o.deleg)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Toate comenzile sunt verificate.</div>';
+  const rows=verifRows();
+  $('vBody').innerHTML=rows.length?`<div class="scroll"><table class="stack"><thead><tr>${VCOLS.map((h,i)=>`<th class="${i===3||i===6?'n':''}">${h}</th>`).join('')}</tr></thead><tbody>${rows.map(({o,l,k})=>`<tr class="${k===0&&o.nr>1?'grp':''}${hl(o)?' mlt':''}"><td>${esc(o.canal)}</td><td>${cfCell(o)}</td><td>${esc(o.id)}</td><td class="nr n">${o.nr}</td><td>${esc(o.client)}</td><td>${esc(l.sku)}</td><td class="n">${l.qty>=2?`<span class="qb">${l.qty}</span>`:`<b>${l.qty}</b>`}</td><td class="prod">${esc(l.prod)}</td><td style="white-space:nowrap">${esc(o.tel)}</td><td>${esc(o.firma)}</td><td>${esc(o.deleg)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Nu sunt comenzi în lista asta.</div>';
 }
 const bkey=b=>`${b.from}-${b.to}`;
 const pq=(nr,l)=>{const x=prog.q[nr+'_'+l.sku];return x&&x.q!=null?x.q:l.qty};
@@ -1103,7 +1102,7 @@ for(const id of ['brand','brand2'])$(id).addEventListener('click',e=>{if(e.ctrlK
   try{if(location.hash!=='#dashboard')history.replaceState(null,'',location.pathname+location.search+'#dashboard');location.reload()}catch(err){}});
 $('bsize').oninput=()=>{renderStats();renderPick()};
 $('bsize').onchange=()=>{if(store&&meta)merge(store.col('zi').doc('meta'),{bsize:bsize()}).catch(()=>{})};
-$('vHide').onchange=renderVerif;$('pHide').onchange=renderPick;$('fHide').onchange=renderFact;
+$('pHide').onchange=renderPick;$('fHide').onchange=renderFact;
 $('fBody').addEventListener('click',e=>{const b=e.target.closest('button[data-fopen]');if(b){openF=openF===b.dataset.fopen?null:b.dataset.fopen;renderFact()}});
 $('fBody').addEventListener('change',e=>{const c=e.target.closest('input[data-fall]');if(!c)return;e.stopPropagation();
   const x=sentList().find(y=>y.k===c.dataset.fall);if(!x)return;const st={n:me(),t:Date.now()},f={};
