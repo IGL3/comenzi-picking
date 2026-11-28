@@ -1154,7 +1154,8 @@ function ambLoad(x){amb={p:x.p||{},x:x.x||{}};if(document.querySelector('#ambBod
 function renderAmbInv(){
   if(!amb){$('ambBody').innerHTML='<div class="empty">Se încarcă…</div>';return}
   const P=ambProds(),I=ambInvs();
-  const pref=ls.get('amb_sel');if(pref&&I.some(x=>x.k===pref))ambSel=pref;else if(!ambSel||!I.some(x=>x.k===ambSel))ambSel=I.length?I[I.length-1].k:null;
+  // inventarul ales de mână (amb_sel) rămâne la refresh; altfel, mereu ultimul inventar
+  const pref=ls.get('amb_sel');ambSel=pref&&I.some(x=>x.k===pref)?pref:(I.length?I[I.length-1].k:null);
   $('ambInfo').textContent=`${P.length} produse · ${I.length} ${I.length===1?'inventar':'inventare'}${I.length?' · ultimul din '+dshort(I[I.length-1].d):''}`;
   if(!P.length){$('ambBody').innerHTML='<div class="empty">Nu e niciun produs. Apasă „Adaugă produs”.</div>';return}
   const inp=(k,pid,f,v,cls)=>`<input class="ai${cls||''}" inputmode="decimal" autocomplete="off" data-k="${k}" data-p="${pid}" data-f="${f}" value="${ambFmt(v)}" aria-label="${f==='i'?'Inventar':'Intrări'}">`;
@@ -1484,7 +1485,7 @@ if(window.claude){
         else if(mode==='up'){const nume=clean($('aNume').value);if(!nume){aMsg('Scrie-ți numele, ca să-l vadă colegii la bife.','err');$('aGo').disabled=false;return}
           const c=await auth.createUserWithEmailAndPassword(mail,pw);await c.user.updateProfile({displayName:nume});await c.user.sendEmailVerification();onUser(c.user)}
         else await auth.signInWithEmailAndPassword(mail,pw);
-        if(mode!=='reset')rememberLogin(mail,pw);
+        if(mode!=='reset'){rememberLogin(mail,pw);ls.set('amb_sel',null);if(amb)renderAmbInv()} // la fiecare logare: inventarul de ambalaje pornește de la ultimul inventar
       }catch(err){ls.set('login_day',prevDay);aMsg(em(err),'err')}
       $('aGo').disabled=false};
     // logare o dată pe zi: sesiunea e valabilă doar în ziua în care te-ai logat
