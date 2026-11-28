@@ -206,6 +206,9 @@ tr.mp>td:first-child{box-shadow:inset 5px 0 0 #FFC21A}
   .mbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:30;background:#1A1C21;border-bottom:1px solid #2b2e35;padding:8px 12px;color:#ECE6DA}
   .mbar button{background:transparent;border:1px solid #3a3d45;color:#ECE6DA;min-width:48px;min-height:44px;padding:0;display:grid;place-items:center;border-radius:10px}
   .mbar button svg{width:24px;height:24px}
+  /* pe telefon titlul paginii stă în bara de sus (același font și aceeași culoare), nu și în pagină */
+  main .ptitle{display:none}
+  .mbar .mtitle{margin:0;font-size:26px;line-height:1.05;min-width:0;flex:1}
   .mbar b{font:800 20px/1.1 "Barlow Condensed",sans-serif}.mbar small{display:block;font-size:13px;color:#00D8F2}
   .side{position:fixed;top:0;left:0;bottom:0;height:100vh;height:100dvh;width:min(84vw,320px);z-index:45;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;transform:translateX(-105%);transition:transform .2s ease;box-shadow:0 0 40px rgba(0,0,0,.5)}
   .side.open{transform:none}
@@ -300,9 +303,7 @@ tr.done td{background:#dcebdc!important;color:#615d55}
 tr.short td{background:#f4d9d4!important}
 .confirm{background:#ECE6DA;color:#1A1C21;box-shadow:inset 4px 0 0 var(--acc)}
 .confirm button{background:#1A1C21;color:#ECE6DA;border-color:#1A1C21}.confirm button.ghost{background:transparent;color:#1A1C21}
-.dsub{color:#ECE6DA}.pday{color:#9a968d}
-/* numele secțiunii e turcoaz în titlul paginii (bara de sus de pe telefon nu-l mai repetă) */
-.ptitle{color:#00D8F2}.ptitle .dday{color:#ECE6DA}
+.ptitle,.dsub{color:#ECE6DA}.pday{color:#9a968d}
 .msg.ok{color:var(--acc)}
 .bhead{background:#E2DACB}
 .acard h2{color:#1A1C21}
@@ -328,7 +329,7 @@ tr.short td{background:#f4d9d4!important}
   <div id="aWait" class="hidden"><p id="aWaitTxt"></p><div class="alinks"><button id="aCheck">Am confirmat</button><button class="ghost sm" id="aResend">Retrimite emailul</button><button class="ghost sm" id="aOut1">Ieși din cont</button></div></div>
   <div id="aNoAcc" class="hidden"><p id="aNoTxt"></p><div class="alinks"><button id="aRetry">Verifică din nou</button><button class="ghost sm" id="aBoot">Sunt administratorul: creează echipa</button><button class="ghost sm" id="aOut2">Ieși din cont</button></div></div>
 </div></div>
-<div class="mbar" id="mbar"><button id="menuBtn" aria-label="Deschide meniul" aria-expanded="false" aria-controls="side"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><a class="mlogo" id="brand2" href="#dashboard" title="Quasar &amp; Co. · deschide Dashboard"><span class="logo-wrap"><span class="logo" role="img" aria-label="Quasar &amp; Co."></span></span></a><div hidden><small id="mTitle"></small></div></div>
+<div class="mbar" id="mbar"><button id="menuBtn" aria-label="Deschide meniul" aria-expanded="false" aria-controls="side"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><a class="mlogo" id="brand2" href="#dashboard" title="Quasar &amp; Co. · deschide Dashboard"><span class="logo-wrap"><span class="logo" role="img" aria-label="Quasar &amp; Co."></span></span></a><div class="mtitle ptitle" id="mTitle"></div></div>
 <div class="mback" id="mback"></div>
 <div class="shell">
 <aside class="side" id="side" role="tablist" aria-label="Secțiuni">
@@ -898,7 +899,7 @@ function dayStats(O){
   return {n,pk,dp:n-pk,fc,de,am,ver:O.filter(o=>isV(o.nr)).length,lips:O.reduce((s,o)=>s+o.lines.filter(l=>pq(o.nr,l)<l.qty).length,0)};
 }
 function renderDash(){
-  const dt=pdate(curDay);$('dashT').innerHTML=`Dashboard<span class="dday"> · ${dt.getDate()} ${LUNI[dt.getMonth()]} ${dt.getFullYear()}</span>`;
+  const dt=pdate(curDay);$('dashT').textContent=`Dashboard · ${dt.getDate()} ${LUNI[dt.getMonth()]} ${dt.getFullYear()}`;
   const AM=allMissing(),lim=dkey(new Date(Date.now()-7*864e5)),vechi=AM.filter(x=>x.day&&x.day<lim).length;
   const tri='<svg class="warn-tri" viewBox="0 0 100 90" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M50 4 97 86H3z" fill="#FFC21A" stroke="#E0A000" stroke-width="4" stroke-linejoin="round"/><rect x="45" y="30" width="10" height="32" rx="4" fill="#8A6200"/><circle cx="50" cy="73" r="6" fill="#8A6200"/></svg>';
   let missCard=`<div class="kpi go${AM.length?' bad':''}${vechi?' old':''}" role="button" tabindex="0" data-go="loc">${vechi?tri:''}<span class="k">SKU fără locație</span><b>${AM.length}</b><small>${AM.length?(vechi?`${vechi} de peste o săptămână · `:'')+'din toate listele · apasă ca să le adaugi':'toate produsele au locație'}</small></div>`;
@@ -1332,11 +1333,14 @@ $('part').onchange=()=>{renderStats();renderVerif();renderPick()};
 $('replNo').onclick=()=>{pending=null;$('repl').classList.add('hidden')};
 const tabs=['dash','verif','pick','fact','amb','fbe','inv','ret','loc','setari'];
 // cu meniul deschis pe telefon, pagina din spate e blocată (altfel derularea trece în fundal, mai ales pe iPhone)
+/* bara de sus de pe telefon copiază titlul secțiunii deschise (și se actualizează când se schimbă data) */
+function syncTitle(){const pg=tabs.map(x=>$('p-'+x)).find(p=>p&&!p.classList.contains('hidden')),t=pg&&pg.querySelector('.ptitle');$('mTitle').innerHTML=t?t.innerHTML:''}
+{const mo=new MutationObserver(syncTitle);document.querySelectorAll('main .ptitle').forEach(t=>mo.observe(t,{childList:true,subtree:true,characterData:true}))}
 let menuY=0;
 function menu(o){const was=$('side').classList.contains('open');$('side').classList.toggle('open',o);$('mback').classList.toggle('open',o);$('menuBtn').setAttribute('aria-expanded',o);
   if(o&&!was){menuY=window.scrollY;Object.assign(document.body.style,{position:'fixed',top:-menuY+'px',left:'0',right:'0',overflow:'hidden'})}
   else if(!o&&was){Object.assign(document.body.style,{position:'',top:'',left:'',right:'',overflow:''});window.scrollTo(0,menuY)}}
-{const cur=tabs.find(x=>$('t-'+x).getAttribute('aria-selected')==='true');if(cur)$('mTitle').textContent=$('t-'+cur).firstChild.textContent}
+syncTitle();
 $('menuBtn').onclick=()=>menu(!$('side').classList.contains('open'));$('mback').onclick=()=>menu(false);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')menu(false)});
 const ACC=[['verif','Lista comenzi'],['pick','Picking'],['fact','Facturare'],['amb','Ambalare'],['fbe','FBE'],['invp','Inventar produse'],['inva','Inventar ambalaje'],['ret','Retururi'],['loc','Locații produse']];
@@ -1352,7 +1356,7 @@ function applyAccess(list){
   invSub(ls.get('inv_sub')==='amb'?'amb':'prod');
   const cur=tabs.find(x=>$('t-'+x).getAttribute('aria-selected')==='true');if(cur&&!canSee(cur))show('dash');
 }
-function show(t){if(!canSee(t))t='dash';placeDay(t);menu(false);const tb=$('t-'+t);if(tb)$('mTitle').textContent=tb.firstChild.textContent;for(const x of tabs){$('t-'+x).setAttribute('aria-selected',x===t);$('p-'+x).classList.toggle('hidden',x!==t)}ls.set('sectiune',t);const m=document.querySelector('main');if(window.scrollY>m.offsetTop)window.scrollTo({top:m.offsetTop})}
+function show(t){if(!canSee(t))t='dash';placeDay(t);menu(false);for(const x of tabs){$('t-'+x).setAttribute('aria-selected',x===t);$('p-'+x).classList.toggle('hidden',x!==t)}syncTitle();ls.set('sectiune',t);const m=document.querySelector('main');if(window.scrollY>m.offsetTop)window.scrollTo({top:m.offsetTop})}
 for(const x of tabs)$('t-'+x).onclick=()=>{show(x);if(x==='inv')ambScrollEnd()};
 if(ls.get('sectiune')==='echipa')ls.set('sectiune','setari');// #dashboard (din tab nou, cu rotița/Ctrl pe siglă) deschide Dashboard o singură dată; apoi scoatem #dashboard din adresă, ca refresh-ul să rămână în tabul curent
 if(location.hash==='#dashboard'){show('dash');try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}}else if(tabs.includes(ls.get('sectiune')))show(ls.get('sectiune'));
