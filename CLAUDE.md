@@ -67,6 +67,8 @@ Browserul întreabă întâi proxy-ul Apps Script din `src/vies.json` {"proxy":"
 - `src/pagina.html` — sursa; `src/locatii.json` — lista de bază de locații `[[sku, rand, alveola], ...]` (din locatii_aplicatie_comenzi.xlsx).
 - `src/firebase.json` — configurația proiectului Firebase al aplicației (dacă lipsește, pagina de pe GitHub merge doar local).
 - `index.html` — generat cu `python3 build.py`; nu-l edita de mână.
+- `icons/` (apple-touch-icon 180, icon-192, icon-512, icon-maskable-512, favicon 64: logo bej pe #1A1C21, din logo-ul Quasar & Co.) și
+  `manifest.webmanifest` (nume „Quasar&Co.”) — iconița de pe ecranul de pornire al telefonului; se publică și în pagina Claude, alături de index.html.
 
 ## Două publicări, aceeași sursă
 - Pagina Claude: https://claude.ai/artifact/6BER2wjVDKSPE3H1NgV4kk (capabilități `db` + `downloads`; colecțiile de mai sus la rădăcina db).
