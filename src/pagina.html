@@ -300,7 +300,9 @@ tr.done td{background:#dcebdc!important;color:#615d55}
 tr.short td{background:#f4d9d4!important}
 .confirm{background:#ECE6DA;color:#1A1C21;box-shadow:inset 4px 0 0 var(--acc)}
 .confirm button{background:#1A1C21;color:#ECE6DA;border-color:#1A1C21}.confirm button.ghost{background:transparent;color:#1A1C21}
-.ptitle,.dsub{color:#ECE6DA}.pday{color:#9a968d}
+.dsub{color:#ECE6DA}.pday{color:#9a968d}
+/* numele secțiunii e turcoaz în titlul paginii (bara de sus de pe telefon nu-l mai repetă) */
+.ptitle{color:#00D8F2}.ptitle .dday{color:#ECE6DA}
 .msg.ok{color:var(--acc)}
 .bhead{background:#E2DACB}
 .acard h2{color:#1A1C21}
@@ -326,7 +328,7 @@ tr.short td{background:#f4d9d4!important}
   <div id="aWait" class="hidden"><p id="aWaitTxt"></p><div class="alinks"><button id="aCheck">Am confirmat</button><button class="ghost sm" id="aResend">Retrimite emailul</button><button class="ghost sm" id="aOut1">Ieși din cont</button></div></div>
   <div id="aNoAcc" class="hidden"><p id="aNoTxt"></p><div class="alinks"><button id="aRetry">Verifică din nou</button><button class="ghost sm" id="aBoot">Sunt administratorul: creează echipa</button><button class="ghost sm" id="aOut2">Ieși din cont</button></div></div>
 </div></div>
-<div class="mbar" id="mbar"><button id="menuBtn" aria-label="Deschide meniul" aria-expanded="false" aria-controls="side"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><a class="mlogo" id="brand2" href="#dashboard" title="Quasar &amp; Co. · deschide Dashboard"><span class="logo-wrap"><span class="logo" role="img" aria-label="Quasar &amp; Co."></span></span></a><div><small id="mTitle" style="font-size:22px;font-weight:700"></small></div></div>
+<div class="mbar" id="mbar"><button id="menuBtn" aria-label="Deschide meniul" aria-expanded="false" aria-controls="side"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><a class="mlogo" id="brand2" href="#dashboard" title="Quasar &amp; Co. · deschide Dashboard"><span class="logo-wrap"><span class="logo" role="img" aria-label="Quasar &amp; Co."></span></span></a><div hidden><small id="mTitle"></small></div></div>
 <div class="mback" id="mback"></div>
 <div class="shell">
 <aside class="side" id="side" role="tablist" aria-label="Secțiuni">
@@ -896,7 +898,7 @@ function dayStats(O){
   return {n,pk,dp:n-pk,fc,de,am,ver:O.filter(o=>isV(o.nr)).length,lips:O.reduce((s,o)=>s+o.lines.filter(l=>pq(o.nr,l)<l.qty).length,0)};
 }
 function renderDash(){
-  const dt=pdate(curDay);$('dashT').textContent=`Dashboard · ${dt.getDate()} ${LUNI[dt.getMonth()]} ${dt.getFullYear()}`;
+  const dt=pdate(curDay);$('dashT').innerHTML=`Dashboard<span class="dday"> · ${dt.getDate()} ${LUNI[dt.getMonth()]} ${dt.getFullYear()}</span>`;
   const AM=allMissing(),lim=dkey(new Date(Date.now()-7*864e5)),vechi=AM.filter(x=>x.day&&x.day<lim).length;
   const tri='<svg class="warn-tri" viewBox="0 0 100 90" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M50 4 97 86H3z" fill="#FFC21A" stroke="#E0A000" stroke-width="4" stroke-linejoin="round"/><rect x="45" y="30" width="10" height="32" rx="4" fill="#8A6200"/><circle cx="50" cy="73" r="6" fill="#8A6200"/></svg>';
   let missCard=`<div class="kpi go${AM.length?' bad':''}${vechi?' old':''}" role="button" tabindex="0" data-go="loc">${vechi?tri:''}<span class="k">SKU fără locație</span><b>${AM.length}</b><small>${AM.length?(vechi?`${vechi} de peste o săptămână · `:'')+'din toate listele · apasă ca să le adaugi':'toate produsele au locație'}</small></div>`;

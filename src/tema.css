@@ -35,7 +35,8 @@ tr.done td{background:#dcebdc!important;color:#615d55}
 tr.short td{background:#f4d9d4!important}
 .confirm{background:#ECE6DA;color:#1A1C21;box-shadow:inset 4px 0 0 var(--acc)}
 .confirm button{background:#1A1C21;color:#ECE6DA;border-color:#1A1C21}.confirm button.ghost{background:transparent;color:#1A1C21}
-.ptitle,.dsub{color:#ECE6DA}.pday{color:#9a968d}
+.dsub{color:#ECE6DA}.pday{color:#9a968d}
+.ptitle{color:#00D8F2}.ptitle .dday{color:#ECE6DA}
 .msg.ok{color:var(--acc)}
 .bhead{background:#E2DACB}
 .acard h2{color:#1A1C21}
