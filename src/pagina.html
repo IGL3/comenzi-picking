@@ -174,6 +174,10 @@ tr.flash,.pcard.flash{outline:3px solid transparent;outline-offset:-3px;animatio
 .ac-c{margin-top:8px;font-size:19px;display:flex;justify-content:center;flex-wrap:wrap;gap:4px 20px}.ac-b{margin-top:8px}
 .stb,.cpos{display:inline-block;min-width:2.2ch;text-align:center;font-weight:800;border-radius:6px;padding:1px 7px;color:#1A1C21;font-variant-numeric:tabular-nums}
 .stb{background:#00D8F2}.cpos{background:#FFC21A}
+.perm{margin-top:4px;border:1px solid #33363e;border-radius:12px;background:#22252b}
+.perm>summary{cursor:pointer;list-style:none;padding:14px 16px;font-size:20px;font-weight:800;line-height:1.2;color:#ECE6DA;display:flex;align-items:center;gap:10px}.permcnt{font-size:14px;font-weight:600;color:#b9b3a4}
+.perm>summary::-webkit-details-marker{display:none}.perm>summary::before{content:'▸';color:#00D8F2;font-size:18px;transition:transform .15s}.perm[open]>summary::before{transform:rotate(90deg)}
+.perm>summary:focus-visible{outline:2px solid #00D8F2;border-radius:12px}.perm #memBody{padding:0 10px 10px}
 .ptitle{font:800 30px/1.1 "Barlow Condensed",sans-serif;margin:0 0 14px}
 .mbar,.mback{display:none}
 @media(max-width:860px){
@@ -401,7 +405,7 @@ tr.short td{background:#f4d9d4!important}
       <button type="submit">Adaugă</button>
     </form>
     <div class="msg" id="memMsg"></div>
-    <div id="memBody"></div>
+    <details class="perm" id="permBox"><summary>Permisiuni <span id="permCnt" class="permcnt"></span></summary><div id="memBody"></div></details>
     <div id="migBox"></div>
     </div>
   </section>
@@ -1459,7 +1463,11 @@ if(window.claude){
     const app=firebase.apps[0]||firebase.initializeApp(FIREBASE_CONFIG);auth=app.auth();fs=app.firestore();
     auth.languageCode='ro';
     try{await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)}catch(e){}
-    window.__setName=async n=>{const u=auth.currentUser;if(u&&n&&n!==u.displayName){try{await u.updateProfile({displayName:n});team(`Conectat ca ${n}`,true)}catch(e){}}};
+    window.__setName=async n=>{const u=auth.currentUser;if(u&&n&&n!==u.displayName){try{await u.updateProfile({displayName:n});team(`Conectat ca ${n}`,true);saveMyName(u)}catch(e){}}};
+    // numele conturilor (pentru lista de permisiuni): fiecare își scrie singur numele în zi/nume, unde membrii au voie să scrie
+    let names={},namesOff=null;
+    function saveMyName(u){if(!u||!u.displayName)return;const k=u.email.toLowerCase().replace(/\./g,',');if(names[k]&&names[k].n===u.displayName)return;
+      fs.doc(`${ROOT}/zi/nume`).set({tip:'nume',items:{[k]:{n:u.displayName,t:Date.now()}}},{merge:true}).catch(()=>{})}
     $('authForm').onsubmit=async e=>{e.preventDefault();const mail=clean($('aMail').value).toLowerCase(),pw=$('aPass').value;$('aGo').disabled=true;
       try{
         if(mode==='reset'){await auth.sendPasswordResetEmail(mail);aMsg('Ți-am trimis pe email un link pentru parolă nouă.','ok')}
@@ -1487,14 +1495,17 @@ if(window.claude){
         if(!members.emails.includes(mail)){$('aNoTxt').textContent=`Contul ${u.email} nu e încă în echipă. Cere-i administratorului să te adauge.`;panel('aNoAcc');return}
         $('auth').classList.add('hidden');
         const isAdm=members.admini.includes(mail);$('p-echipa').classList.toggle('hidden',!isAdm);renderTeam(isAdm);isAdmin=isAdm;applyAccess(isAdm?null:accOf(mail));renderPick();renderAmb();
+        if(!namesOff)namesOff=fs.doc(`${ROOT}/zi/nume`).onSnapshot(d=>{names=(d.exists&&d.data().items)||{};saveMyName(u);renderTeam(isAdmin)},()=>{});
         if(!started){started=true;connect({kind:'fb',col:n=>fs.collection(`${ROOT}/${n}`)},`Conectat ca ${nume||u.email}: toată echipa vede aceeași listă și aceleași bife.`)}
       },()=>{$('aNoTxt').textContent=`Contul ${u.email} nu are acces încă. Cere-i administratorului să te adauge. Dacă ești primul care intră (administratorul), creează echipa.`;panel('aNoAcc')});
     }
     const akey=m=>m.replace(/\./g,',');
+    $('permBox').open=ls.get('perm_open')==='1';$('permBox').addEventListener('toggle',()=>ls.set('perm_open',$('permBox').open?'1':'0'));
     const accOf=m=>{const a=members&&members.acces&&members.acces[akey(m)];return Array.isArray(a)?a:null};
     function renderTeam(isAdm){
-      if(!members)return;$('c-echipa').textContent=` · ${members.emails.length} ${members.emails.length>1?'persoane':'persoană'}`;
-      $('memBody').innerHTML=`<table class="stack"><thead><tr><th>Email</th><th>Rol</th><th>Poate vedea (Dashboard și Setări le văd toți)</th><th></th></tr></thead><tbody>${members.emails.map(m=>`<tr><td><b>${esc(m)}</b></td><td>${members.admini.includes(m)?'administrator':'membru'}</td><td>${members.admini.includes(m)?'<span style="color:var(--mut)">toate (administrator)</span>':ACC.map(([t,lbl])=>{const a=accOf(m);return `<label class="ck" style="margin:2px 12px 2px 0"><input type="checkbox" data-acc="${esc(m)}" data-tab="${t}" ${!a||a.includes(t)||((t==='invp'||t==='inva')&&a.includes('inv'))?'checked':''}${isAdm?'':' disabled'}> ${lbl}</label>`}).join('')}</td><td style="white-space:nowrap">${isAdm&&m!==auth.currentUser.email.toLowerCase()?`<button class="ghost sm" data-adm="${esc(m)}">${members.admini.includes(m)?'Fă-l membru':'Fă-l administrator'}</button> <button class="ghost sm" data-rm="${esc(m)}">Scoate</button>`:''}</td></tr>`).join('')}</tbody></table>`;
+      if(!members)return;$('c-echipa').textContent=` · ${members.emails.length} ${members.emails.length>1?'persoane':'persoană'}`;$('permCnt').textContent=`· ${members.emails.length} ${members.emails.length>1?'conturi':'cont'}`;
+      const nm=m=>(names[akey(m)]||{}).n;
+      $('memBody').innerHTML=`<table class="stack"><thead><tr><th>Nume</th><th>Adresă de email</th><th>Rol</th><th>Permisiuni (Dashboard și Setări le văd toți)</th><th></th></tr></thead><tbody>${members.emails.map(m=>`<tr><td><b>${nm(m)?esc(nm(m)):'<span style="color:var(--mut);font-weight:400">încă nu s-a conectat</span>'}</b></td><td>${esc(m)}</td><td>${members.admini.includes(m)?'administrator':'membru'}</td><td>${members.admini.includes(m)?'<span style="color:var(--mut)">toate (administrator)</span>':ACC.map(([t,lbl])=>{const a=accOf(m);return `<label class="ck" style="margin:2px 12px 2px 0"><input type="checkbox" data-acc="${esc(m)}" data-tab="${t}" ${!a||a.includes(t)||((t==='invp'||t==='inva')&&a.includes('inv'))?'checked':''}${isAdm?'':' disabled'}> ${lbl}</label>`}).join('')}</td><td style="white-space:nowrap">${isAdm&&m!==auth.currentUser.email.toLowerCase()?`<button class="ghost sm" data-adm="${esc(m)}">${members.admini.includes(m)?'Fă-l membru':'Fă-l administrator'}</button> <button class="ghost sm" data-rm="${esc(m)}">Scoate</button>`:''}</td></tr>`).join('')}</tbody></table>`;
       const code=ls.get('cod_echipa');
       $('migBox').innerHTML=isAdm&&code?`<div class="confirm" style="margin-top:18px"><span style="flex-basis:100%">Pe acest calculator există date salvate cu vechiul cod de echipă. Le muți în contul echipei (liste, bife, locații)?</span><button id="migGo">Mută datele vechi</button><button class="ghost" id="migNo">Nu, ignoră-le</button></div>`:'';
     }
