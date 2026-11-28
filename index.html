@@ -172,6 +172,8 @@ tr.flash,.pcard.flash{outline:3px solid transparent;outline-offset:-3px;animatio
 .ac-n{font-size:22px;font-weight:900;line-height:1.25}.ac-s{font-size:18px;font-weight:800;color:#1A1C21;margin-top:2px}.ac-prev{font-size:17px;margin-top:6px;color:#4a4a52}.ac-prev b{color:#1A1C21}
 .ac-in{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.ambcard .ac-in label{display:grid;gap:4px;font-size:15px;font-weight:700;color:#4a4a52}.ac-in input.ai{font-size:24px;padding:10px;text-align:center;border:1px solid #cfc8b8;border-radius:10px;background:#fff;width:100%;box-sizing:border-box}
 .ac-c{margin-top:8px;font-size:19px}.ac-b{margin-top:8px}
+.stb,.cpos{display:inline-block;min-width:2.2ch;text-align:center;font-weight:800;border-radius:6px;padding:1px 7px;color:#1A1C21;font-variant-numeric:tabular-nums}
+.stb{background:#00D8F2}.cpos{background:#FFC21A}
 .ptitle{font:800 30px/1.1 "Barlow Condensed",sans-serif;margin:0 0 14px}
 .mbar,.mback{display:none}
 @media(max-width:860px){
@@ -1128,6 +1130,8 @@ const ambProds=()=>Object.entries(amb?.p||{}).filter(([,v])=>v).map(([id,v])=>({
 const ambInvs=()=>Object.entries(amb?.x||{}).filter(([,v])=>v&&v.d).map(([k,v])=>({k,...v})).sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:a.k<b.k?-1:1);
 const ambNum=v=>{const t=String(v??'').trim().replace(/\s/g,'').replace(',','.');if(!t)return null;return isFinite(+t)?+t:NaN};
 const ambFmt=v=>v==null?'':String(Math.round(v*1000)/1000);
+const ambCH=(c,blank)=>c==null?blank:c>0?`<span class="cpos">${ambFmt(c)}</span>`:ambFmt(c); // consum > 0 = etichetă galbenă
+const ambSH=v=>v==null?'':`<span class="stb">${ambFmt(v)}</span>`; // stoc acum = etichetă turcoaz
 // consumul față de ultimul inventar în care produsul a fost numărat (sare peste inventarele în care lipsește)
 function ambPrev(I,j,pid){for(let k=j-1;k>=0;k--){const v=I[k].v&&I[k].v[pid];if(v&&v.i!=null)return k}return -1}
 function ambCons(I,j,pid){if(j<1)return null;const b=I[j].v&&I[j].v[pid];if(!b||b.i==null)return null;const k=ambPrev(I,j,pid);if(k<0)return null;let s=I[k].v[pid].i;for(let m=k;m<j;m++){const w=I[m].v&&I[m].v[pid];s+=(w&&w.e)||0}return s-b.i}
@@ -1149,20 +1153,20 @@ function renderAmbInv(){
         return `<div class="ambcard" data-row="${r.id}"><div class="ac-n">${esc(r.d)}</div>${r.sku?`<div class="ac-s">SKU ${esc(r.sku)}</div>`:''}
         ${j>0?`<div class="ac-prev">${pk>=0?`Anterior (${dshort(I[pk].d)}): <b>${ambFmt(pv.i)}</b>${pv.e?` + ${ambFmt(pv.e)} intrări`:''}`:'Nenumărat anterior'}</div>`:''}
         <div class="ac-in"><label>Inventar${inp(cur.k,r.id,'i',v.i)}</label><label>Intrări${inp(cur.k,r.id,'e',v.e)}</label></div>
-        <div class="ac-c">Consum: <b class="acons${c!=null&&c<0?' aneg':''}" data-c="${cur.k}|${r.id}">${c==null?'—':ambFmt(c)}</b></div>
+        <div class="ac-c">Consum: <b class="acons${c!=null&&c<0?' aneg':''}" data-c="${cur.k}|${r.id}">${ambCH(c,'—')}</b></div>
         <div class="ac-b">${pact(r)}</div></div>`}).join('')}</div>`:'');
   }else{
     $('ambBody').innerHTML=`<div class="scroll" id="ambScroll"><table class="ambt"><thead><tr><th rowspan="2" class="ast">Denumire</th><th rowspan="2" class="asku">SKU</th>${I.map(x=>`<th colspan="3" class="ah">${dshort(x.d)} <button class="ghost sm" data-adel="${x.k}" title="Șterge inventarul din ${dshort(x.d)}">✕</button></th>`).join('')}<th rowspan="2">Stoc acum</th><th rowspan="2"></th></tr>
       <tr>${I.map(()=>'<th>Inventar</th><th>Intrări</th><th>Consum</th>').join('')}</tr></thead>
       <tbody>${P.map(r=>`<tr data-row="${r.id}"><td class="ast">${esc(r.d)}</td><td class="asku">${esc(r.sku)}</td>${I.map((x,j)=>{const v=(x.v||{})[r.id]||{},c=ambCons(I,j,r.id);
-        return `<td class="ac">${inp(x.k,r.id,'i',v.i)}</td><td class="ac">${inp(x.k,r.id,'e',v.e)}</td><td class="acons${c!=null&&c<0?' aneg':''}" data-c="${x.k}|${r.id}"${c!=null&&c<0?' title="Consum negativ: probabil intrările sunt trecute la alt inventar"':''}>${c==null?(j?'—':''):ambFmt(c)}</td>`}).join('')}<td class="astock" data-s="${r.id}"><b>${ambFmt(ambStock(I,r.id))}</b></td><td class="aact">${pact(r)}</td></tr>`).join('')}</tbody></table></div>`;
+        return `<td class="ac">${inp(x.k,r.id,'i',v.i)}</td><td class="ac">${inp(x.k,r.id,'e',v.e)}</td><td class="acons${c!=null&&c<0?' aneg':''}" data-c="${x.k}|${r.id}"${c!=null&&c<0?' title="Consum negativ: probabil intrările sunt trecute la alt inventar"':''}>${ambCH(c,j?'—':'')}</td>`}).join('')}<td class="astock" data-s="${r.id}">${ambSH(ambStock(I,r.id))}</td><td class="aact">${pact(r)}</td></tr>`).join('')}</tbody></table></div>`;
     const sc=$('ambScroll');if(sc)sc.scrollLeft=sc.scrollWidth;
   }
 }
 function ambCalc(keepInputs){ // recalculează consumul și stocul fără să refacă tabelul (păstrează cursorul)
   const I=ambInvs(),idx=Object.fromEntries(I.map((x,j)=>[x.k,j]));
-  for(const el of document.querySelectorAll('#ambBody [data-c]')){const [k,pid]=el.dataset.c.split('|'),c=ambCons(I,idx[k],pid);el.textContent=c==null?(idx[k]?'—':''):ambFmt(c);el.classList.toggle('aneg',c!=null&&c<0)}
-  for(const el of document.querySelectorAll('#ambBody [data-s]'))el.innerHTML=`<b>${ambFmt(ambStock(I,el.dataset.s))}</b>`;
+  for(const el of document.querySelectorAll('#ambBody [data-c]')){const [k,pid]=el.dataset.c.split('|'),c=ambCons(I,idx[k],pid);el.innerHTML=ambCH(c,idx[k]?'—':'');el.classList.toggle('aneg',c!=null&&c<0)}
+  for(const el of document.querySelectorAll('#ambBody [data-s]'))el.innerHTML=ambSH(ambStock(I,el.dataset.s));
   if(keepInputs)for(const el of document.querySelectorAll('#ambBody input.ai:not(:focus)')){const v=((amb.x[el.dataset.k]||{}).v||{})[el.dataset.p]||{};el.value=ambFmt(v[el.dataset.f])}
 }
 $('ambBody').addEventListener('focusout',e=>{setTimeout(()=>{if(!document.querySelector('#ambBody input:focus'))ambCalc(true)},0)});
