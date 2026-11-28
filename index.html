@@ -1512,7 +1512,7 @@ if(window.claude){
       if(u&&ls.get('login_day')!==today()){
         // altă zi decât cea a logării: cerem din nou logarea
         auth.signOut().catch(()=>{});ls.set('login_day_msg','1');u=null}
-      if(!u){panel('authForm');prefillLogin();if(ls.get('login_day_msg')==='1'){aMsg('Pentru siguranță, aplicația îți cere logarea o dată pe zi.','');ls.set('login_day_msg',null)}return}
+      if(!u){panel('authForm');prefillLogin();ls.set('login_day_msg',null);return}
       if(!u.emailVerified){$('aWaitTxt').textContent=`Ți-am trimis un email de confirmare la ${u.email}. Apasă linkul din email (verifică și în Spam), apoi „Am confirmat”.`;panel('aWait');return}
       const nume=u.displayName||'';$('me').value=nume;ls.set('nume',nume);
       $('userMail').textContent=u.email;$('userBox').classList.remove('hidden');
