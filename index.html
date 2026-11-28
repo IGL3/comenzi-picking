@@ -188,6 +188,9 @@ tr.flash,.pcard.flash{outline:3px solid transparent;outline-offset:-3px;animatio
 #authForm #lRem{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;margin:2px 0 4px}
 .setbox{display:flex;flex-wrap:wrap;align-items:end;gap:10px 16px;background:#ECE6DA;color:#1A1C21;border-radius:12px;padding:14px 16px}
 .setbox label{display:grid;gap:4px;font-size:14px;font-weight:700;color:#3a3b42}.setbox input{width:120px;font-size:18px}.setbox .note{color:#4a4a52;margin:0 0 8px}
+tr.mp>td:first-child{box-shadow:inset 5px 0 0 #FFC21A}
+.mptag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;background:#FFC21A;color:#1A1C21;font-size:12px;font-weight:800;white-space:nowrap;vertical-align:middle}
+@media(max-width:600px){table.stack tr.mp{box-shadow:inset 5px 0 0 #FFC21A}table.stack tr.mp>td:first-child{box-shadow:none}}
 .ptitle{font:800 30px/1.1 "Barlow Condensed",sans-serif;margin:0 0 14px}
 .mbar,.mback{display:none}
 @media(max-width:860px){
@@ -777,13 +780,16 @@ function renderStats(){
 const EMPTY='<div class="empty">Încă nu e încărcată nicio listă. Încarcă exportul de comenzi ca să apară pentru toată echipa.</div>';
 const VCOLS=['Canal','Cod fiscal','Id comandă','Nr. crt','Nume client','Cod produs','Cantitate','Denumire produs','Telefon livrare','Nume companie','Nume delegat'];
 const hl=o=>o.lines.length>1||o.lines.some(l=>l.qty>=2);
+// comenzi cu 2+ produse diferite (SKU-uri distincte): bară galbenă în stânga rândurilor + etichetă „N produse” lângă număr
+const nProd=o=>new Set(o.lines.map(l=>l.sku)).size;
+const mpTag=o=>nProd(o)>=2?` <span class="mptag" title="Comandă cu ${nProd(o)} produse diferite">${nProd(o)} produse</span>`:'';
 const verifRows=()=>vis().flatMap(o=>o.lines.map((l,k)=>({o,l,k})));
 function renderVerif(){
   if(!orders.length){$('vBody').innerHTML=EMPTY;$('vInfo').textContent='';return}
   const O=vis(),multi=O.filter(o=>o.lines.some(l=>l.qty>=2)).length;
   $('vInfo').textContent=`${O.length} comenzi sortate după canal`+(multi?` · ${multi} cu cantitate 2+ (evidențiată cu turcoaz)`:'');
   const rows=verifRows();
-  $('vBody').innerHTML=rows.length?`<div class="scroll"><table class="stack"><thead><tr>${VCOLS.map((h,i)=>`<th class="${i===3||i===6?'n':''}">${h}</th>`).join('')}</tr></thead><tbody>${rows.map(({o,l,k})=>`<tr class="${k===0&&o.nr>1?'grp':''}${hl(o)?' mlt':''}"><td>${esc(o.canal)}</td><td>${cfCell(o)}</td><td>${esc(o.id)}</td><td class="nr n">${o.nr}</td><td>${esc(o.client)}</td><td>${esc(l.sku)}</td><td class="n">${l.qty>=2?`<span class="qb">${l.qty}</span>`:`<b>${l.qty}</b>`}</td><td class="prod">${esc(l.prod)}</td><td style="white-space:nowrap">${esc(o.tel)}</td><td>${esc(o.firma)}</td><td>${esc(o.deleg)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Nu sunt comenzi în lista asta.</div>';
+  $('vBody').innerHTML=rows.length?`<div class="scroll"><table class="stack"><thead><tr>${VCOLS.map((h,i)=>`<th class="${i===3||i===6?'n':''}">${h}</th>`).join('')}</tr></thead><tbody>${rows.map(({o,l,k})=>`<tr class="${k===0&&o.nr>1?'grp':''}${hl(o)?' mlt':''}${nProd(o)>=2?' mp':''}"><td>${esc(o.canal)}</td><td>${cfCell(o)}</td><td>${esc(o.id)}</td><td class="nr n">${o.nr}${k===0?mpTag(o):''}</td><td>${esc(o.client)}</td><td>${esc(l.sku)}</td><td class="n">${l.qty>=2?`<span class="qb">${l.qty}</span>`:`<b>${l.qty}</b>`}</td><td class="prod">${esc(l.prod)}</td><td style="white-space:nowrap">${esc(o.tel)}</td><td>${esc(o.firma)}</td><td>${esc(o.deleg)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Nu sunt comenzi în lista asta.</div>';
 }
 const bkey=b=>`${b.from}-${b.to}`;
 const pq=(nr,l)=>{const x=prog.q[nr+'_'+l.sku];return x&&x.q!=null?x.q:l.qty};
@@ -919,7 +925,7 @@ function renderFact(){
     const st=full?'<span class="chip green">Facturat complet</span>':`<span class="chip">${fd}/${x.os.length} facturate</span>`;
     let body='';
     if(open){
-      body=`<div class="bfoot mob-only" style="border-top:0;border-bottom:1px solid var(--line)"><label class="ck"><input type="checkbox" data-fall="${esc(x.k)}" ${full?'checked':''}> Toate comenzile din calup facturate</label></div><div class="scroll"><table class="stack"><thead><tr><th><label class="ck" title="Bifează toate comenzile din calup"><input type="checkbox" data-fall="${esc(x.k)}" ${full?'checked':''} aria-label="Toate comenzile din calup facturate"> Toate</label></th><th class="n">Nr.</th><th>Canal</th><th>Id comandă</th><th>Nume client</th><th>SKU</th><th class="n">Comandat</th><th class="n">Cules</th><th>Denumire produs</th></tr></thead><tbody>${os.map(o=>o.lines.map((l,i)=>{const q=pq(o.nr,l);return `<tr data-ford="${o.nr}" class="${i===0?'fo':''}${q<l.qty?' short':prog.f[o.nr]?' done':''}"><td>${i===0?ck('f',o.nr,prog.f[o.nr],'Comanda '+o.nr+' facturată'):''}</td><td class="nr n">${i===0?o.nr:''}</td><td>${i===0?esc(o.canal):''}</td><td style="white-space:nowrap">${i===0?esc(o.id):''}</td><td>${i===0?esc(o.client):''}</td><td>${esc(l.sku)}</td><td class="n">${l.qty>=2?`<span class="qb">${l.qty}</span>`:l.qty}</td><td class="n">${q<l.qty?`<span class="qx qbox" title="Cules ${q} din ${l.qty}">${q}${q===0?' · lipsă':''}</span>`:`<b>${q}</b>`}</td><td class="prod">${esc(l.prod)}</td></tr>`}).join('')).join('')}</tbody></table></div>`;
+      body=`<div class="bfoot mob-only" style="border-top:0;border-bottom:1px solid var(--line)"><label class="ck"><input type="checkbox" data-fall="${esc(x.k)}" ${full?'checked':''}> Toate comenzile din calup facturate</label></div><div class="scroll"><table class="stack"><thead><tr><th><label class="ck" title="Bifează toate comenzile din calup"><input type="checkbox" data-fall="${esc(x.k)}" ${full?'checked':''} aria-label="Toate comenzile din calup facturate"> Toate</label></th><th class="n">Nr.</th><th>Canal</th><th>Id comandă</th><th>Nume client</th><th>SKU</th><th class="n">Comandat</th><th class="n">Cules</th><th>Denumire produs</th></tr></thead><tbody>${os.map(o=>o.lines.map((l,i)=>{const q=pq(o.nr,l);return `<tr data-ford="${o.nr}" class="${i===0?'fo':''}${q<l.qty?' short':prog.f[o.nr]?' done':''}${nProd(o)>=2?' mp':''}"><td>${i===0?ck('f',o.nr,prog.f[o.nr],'Comanda '+o.nr+' facturată'):''}</td><td class="nr n">${i===0?o.nr+mpTag(o):''}</td><td>${i===0?esc(o.canal):''}</td><td style="white-space:nowrap">${i===0?esc(o.id):''}</td><td>${i===0?esc(o.client):''}</td><td>${esc(l.sku)}</td><td class="n">${l.qty>=2?`<span class="qb">${l.qty}</span>`:l.qty}</td><td class="n">${q<l.qty?`<span class="qx qbox" title="Cules ${q} din ${l.qty}">${q}${q===0?' · lipsă':''}</span>`:`<b>${q}</b>`}</td><td class="prod">${esc(l.prod)}</td></tr>`}).join('')).join('')}</tbody></table></div>`;
     }
     return `<div class="batch${open?' open':''}${full?' done':''}"><button class="bhead" data-fopen="${esc(x.k)}" aria-expanded="${open}"><span class="arr">›</span><h2>Calup ${idx.get(x.k)||''}</h2><span>comenzile ${x.from}–${x.to} · trimis${x.n?' de '+esc(x.n):''} la ${hhmm(x.t)}</span><span class="bp">${st}</span></button>${body}</div>`;
   }).join('')||'<div class="empty">Totul e facturat.</div>';
