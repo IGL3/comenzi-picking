@@ -440,6 +440,7 @@ tr.short td{background:#f4d9d4!important}
         <button id="ambNew">Inventar nou</button>
         <button class="ghost" id="ambAddP">Adaugă produs</button>
         <span class="grow" id="ambInfo"></span>
+        <button class="ghost sm dl" id="ambCDl" title="Excel cu Cod și Cantitate consumată la ultimul inventar">Consum ultim inventar</button>
         <button class="ghost sm dl" id="ambDl">Descarcă Excel</button>
       </div>
       <form class="retform hidden" id="ambNewF" novalidate>
@@ -1202,6 +1203,15 @@ $('ambPF').onsubmit=async e=>{e.preventDefault();const d=nbs($('ambPD').value),s
   const id=ambEdit||('n'+rid()),o=ambEdit?amb.p[ambEdit].o:Math.max(0,...ambProds().map(r=>r.o||0))+1;
   try{await ambSave({p:{[id]:{d,sku,o}}});say($('ambMsg'),ambEdit?`Am salvat „${d}”.`:`Am adăugat „${d}”.`,'ok');ambEdit=null;$('ambPF').classList.add('hidden');renderAmbInv()}
   catch(err){say($('ambMsg'),'Nu s-a salvat: '+(err.message||err.code||err),'err')}};
+$('ambCDl').onclick=()=>{ // listă Cod + Cantitate consumată la ultimul inventar
+  const P=ambProds(),I=ambInvs();if(!I.length){say($('ambMsg'),'Nu e niciun inventar.','err');return}
+  const j=I.length-1,rows=[],noSku=[],neg=[];
+  for(const r of P){const c=ambCons(I,j,r.id);if(c==null||c===0)continue;if(c<0){neg.push(r.d);continue}if(!r.sku){noSku.push(r.d);continue}rows.push([/^\d+$/.test(r.sku)?+r.sku:r.sku,c])}
+  if(!rows.length){say($('ambMsg'),`La inventarul din ${dshort(I[j].d)} nu e încă niciun consum calculat (completează coloana „Inventar”).`,'err');return}
+  const sh=XLSX.utils.aoa_to_sheet([['Cod','Cantitate'],...rows]);sh['!cols']=[{wch:14},{wch:11}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sh,'Consum');save(`consum_ambalaje_${I[j].d}.xlsx`,xbuf(wb));
+  say($('ambMsg'),`Am descărcat consumul din ${dshort(I[j].d)}: ${rows.length} coduri.`+(neg.length?` Sărite (consum negativ): ${neg.join(', ')}.`:'')+(noSku.length?` Sărite (fără SKU): ${noSku.join(', ')}.`:''),'ok');
+};
 $('ambDl').onclick=()=>{
   const P=ambProds(),I=ambInvs(),E=XLSX.utils.encode_cell,ser=d=>{const [y,m,dd]=d.split('-').map(Number);return (Date.UTC(y,m-1,dd)-Date.UTC(1899,11,30))/864e5};
   const sh={},merges=[],put=(r,c,cell)=>{sh[E({r,c})]=cell};

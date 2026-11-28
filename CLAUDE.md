@@ -42,7 +42,7 @@ până la următorul; Consum = ultimul inventar în care produsul a fost număra
 „Stoc acum” = ultimul inventar numărat + intrările de după el. Desktop: tabel cu Denumire fixă la stânga, câte 3 coloane pe inventar
 (Inventar, Intrări, Consum), derulat automat la ultimul; telefon: alegi inventarul și completezi pe carduri (denumirea 22px/900 și SKU 18px/800; restul textelor 15–19px; câmpurile „Inventar” și „Intrări”). Câmpurile se salvează la fiecare
 schimbare (Enter = produsul următor). „Inventar nou” (dată, implicit azi), ✕ pe antet șterge un inventar; „Adaugă produs”, ✎/✕ pe rând
-modifică/șterg produsul. „Descarcă Excel”: același format ca vechiul fișier, cu formule corecte pentru consum.
+modifică/șterg produsul. „Descarcă Excel”: același format ca vechiul fișier, cu formule corecte pentru consum. „Consum ultim inventar”: Excel cu două coloane, Cod și Cantitate (consumul calculat la ultimul inventar; fără consum 0/necalculat; consumul negativ și produsele fără SKU sunt sărite și numite în mesaj).
 Date: `zi/invamb` {tip:'invamb', p:{<pid>:{d,sku,o}|null}, x:{<AAAALLZZ_xxx>:{d:'YYYY-MM-DD', v:{<pid>:{i,e}}, t, n}|null}}.
 
 ## Retururi
