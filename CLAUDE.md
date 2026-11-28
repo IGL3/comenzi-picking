@@ -32,7 +32,18 @@ secțiunea Locații arată „Fără locație în toate listele” (cu ziua list
 
 ## Meniu
 Ordinea secțiunilor: Dashboard, Lista comenzi, Picking, Facturare, Ambalare, FBE, Inventar, Retururi, Locații produse, Setări.
-FBE (cheie `fbe`) e deocamdată goală. Inventar (cheie `inv`) are două subsecțiuni comutabile (butoane sus, ultima aleasă ținută în localStorage `inv_sub`): „Inventar produse” și „Inventar ambalaje”, ambele deocamdată goale („Conținutul urmează”).
+FBE (cheie `fbe`) e deocamdată goală. Inventar (cheie `inv`) are două subsecțiuni comutabile (butoane sus, ultima aleasă ținută în localStorage `inv_sub`): „Inventar produse” (deocamdată goală) și „Inventar ambalaje”.
+
+## Inventar ambalaje
+Înlocuiește Excelul „Consumabile_2026.xlsx” (35 de produse și 9 inventare, 30.04–11.11.2026, importate o dată din `src/ambalaje.json`,
+injectat de build ca `__AMBALAJE__` și scris automat în doc când lipsește). Convenția din Excel: „Intrări” la un inventar = ce a intrat DUPĂ el,
+până la următorul; Consum = ultimul inventar în care produsul a fost numărat + intrările de atunci încoace − inventarul de acum
+(formulele vechi greșite din Excel nu se mai folosesc). Consumul negativ e roșu (de obicei intrări trecute la alt inventar).
+„Stoc acum” = ultimul inventar numărat + intrările de după el. Desktop: tabel cu Denumire fixă la stânga, câte 3 coloane pe inventar
+(Inventar, Intrări, Consum), derulat automat la ultimul; telefon: alegi inventarul și completezi pe carduri. Câmpurile se salvează la fiecare
+schimbare (Enter = produsul următor). „Inventar nou” (dată, implicit azi), ✕ pe antet șterge un inventar; „Adaugă produs”, ✎/✕ pe rând
+modifică/șterg produsul. „Descarcă Excel”: același format ca vechiul fișier, cu formule corecte pentru consum.
+Date: `zi/invamb` {tip:'invamb', p:{<pid>:{d,sku,o}|null}, x:{<AAAALLZZ_xxx>:{d:'YYYY-MM-DD', v:{<pid>:{i,e}}, t, n}|null}}.
 
 ## Retururi
 Secțiunea „Retururi” (cheie de acces `ret`) e centralizatorul de retururi, cu capul de tabel din centralizator_retururi.xlsx:

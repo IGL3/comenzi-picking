@@ -158,6 +158,19 @@ tr.flash,.pcard.flash{outline:3px solid transparent;outline-offset:-3px;animatio
 .subtabs button{background:transparent;border:0;color:#ECE6DA;font:600 16px/1.2 inherit;padding:10px 18px;border-radius:9px;cursor:pointer}
 .subtabs button[aria-selected=true]{background:#ECE6DA;color:#1A1C21;box-shadow:inset 0 -3px 0 #00D8F2}
 .subtabs button:focus-visible{outline:2px solid #00D8F2;outline-offset:2px}
+.ambhelp{font-size:13px;color:#b9b3a4;margin:2px 0 10px}.ambhelp b{color:#ECE6DA}
+.ambt{border-collapse:separate;border-spacing:0}.ambt th,.ambt td{padding:3px 5px;white-space:nowrap;text-align:center;vertical-align:middle}.ambt th.ah{border-left:2px solid #c9c2b2}
+.ambt td.ac:nth-child(3n),.ambt th:nth-child(3n){}.ambt .ast{position:sticky;left:0;z-index:2;background:#ECE6DA;text-align:left;min-width:190px;white-space:normal;box-shadow:2px 0 0 #d6cfbf}
+.ambt thead .ast{z-index:3}.ambt td.asku{font-size:13px;color:#5a5a62;font-variant-numeric:tabular-nums}
+.ambt input.ai{width:64px;padding:4px 6px;text-align:right;font:inherit;font-variant-numeric:tabular-nums;border:1px solid #cfc8b8;border-radius:6px;background:#fff}
+.ambt input.ai:focus{outline:2px solid #00D8F2;border-color:#00D8F2}.ambt td.acons{font-weight:700;font-variant-numeric:tabular-nums;min-width:52px;color:#1A1C21}
+.acons.aneg{color:#c0261c}.ambt td.acons.aneg{background:#fde4e0;cursor:help}.ambt td.astock{font-variant-numeric:tabular-nums;font-size:16px}
+.ambt td.aact,.ac-b{white-space:nowrap}.ambt td.aact button,.ac-b button,.ambt th.ah button{margin:0 2px;background:transparent;color:#1A1C21;border:1.5px solid #8d877a;border-radius:7px;padding:2px 8px;font-size:14px;min-height:0}.ambt td.aact button:hover,.ac-b button:hover,.ambt th.ah button:hover{border-color:#c0261c;color:#c0261c}input.ai.bad{outline:2px solid #c0261c}
+.ambsel{display:flex;gap:10px;align-items:end;justify-content:space-between;margin-bottom:10px}.ambsel label{font-size:12px;font-weight:700;display:grid;gap:4px;color:#ECE6DA}.ambsel select{font-size:17px;padding:8px}
+.ambcards{display:grid;gap:10px}.ambcard{background:#ECE6DA;color:#1A1C21;border-radius:14px;padding:14px;text-align:center}
+.ac-n{font-size:19px;font-weight:700}.ac-s{font-size:14px;color:#5a5a62}.ac-prev{font-size:15px;margin-top:6px;color:#4a4a52}.ac-prev b{color:#1A1C21}
+.ac-in{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.ac-in label{display:grid;gap:4px;font-size:13px;font-weight:700}.ac-in input.ai{font-size:22px;padding:10px;text-align:center;border:1px solid #cfc8b8;border-radius:10px;background:#fff;width:100%;box-sizing:border-box}
+.ac-c{margin-top:8px;font-size:17px}.ac-b{margin-top:8px}
 .ptitle{font:800 30px/1.1 "Barlow Condensed",sans-serif;margin:0 0 14px}
 .mbar,.mback{display:none}
 @media(max-width:860px){
@@ -422,7 +435,26 @@ tr.short td{background:#f4d9d4!important}
       <button role="tab" id="st-amb" data-sub="amb" aria-selected="false">Inventar ambalaje</button>
     </div>
     <div id="inv-prod"><div class="empty">Inventar produse e pregătit. Conținutul urmează.</div></div>
-    <div id="inv-amb" class="hidden"><div class="empty">Inventar ambalaje e pregătit. Conținutul urmează.</div></div>
+    <div id="inv-amb" class="hidden">
+      <div class="bar">
+        <button id="ambNew">Inventar nou</button>
+        <button class="ghost" id="ambAddP">Adaugă produs</button>
+        <span class="grow" id="ambInfo"></span>
+        <button class="ghost sm dl" id="ambDl">Descarcă Excel</button>
+      </div>
+      <form class="retform hidden" id="ambNewF" novalidate>
+        <label>DATA INVENTARULUI<input type="date" id="ambNewD" required></label>
+        <div class="rbtn" style="grid-column:span 3;align-self:end"><button type="submit">Creează inventarul</button><button type="button" class="ghost" id="ambNewX">Renunță</button></div>
+      </form>
+      <form class="retform hidden" id="ambPF" novalidate>
+        <label class="w2">DENUMIRE<input id="ambPD" required autocomplete="off"></label>
+        <label>SKU<input id="ambPS" autocomplete="off"></label>
+        <div class="rbtn" style="grid-column:auto;align-self:end"><button type="submit" id="ambPSave">Adaugă produsul</button><button type="button" class="ghost" id="ambPX">Renunță</button></div>
+      </form>
+      <div class="msg" id="ambMsg"></div>
+      <p class="ambhelp">„Intrări” la un inventar = ce a intrat <b>după</b> el, până la următorul. Consum = inventarul anterior + intrările de atunci − inventarul de acum. Se salvează singur la fiecare cifră.</p>
+      <div id="ambBody"></div>
+    </div>
   </section>
 
   <section id="p-ret" class="hidden">
@@ -1083,8 +1115,111 @@ $('rDl').onclick=()=>{
 };
 retForm(null);
 
+/* ---------- inventar ambalaje ---------- */
+// date: zi/invamb {tip:'invamb', p:{<pid>:{d,sku,o}|null}, x:{<cheie>:{d:'YYYY-MM-DD',v:{<pid>:{i,e}},t,n}|null}}
+// ca în centralizatorul Consumabile: „Intrări” la un inventar = ce a intrat după el; Consum(j) = Inv(j-1) + Intrări(j-1) − Inv(j)
+const AMB_SEED={"p":{"a01":{"d":"Cutie troler ABS - Xs","sku":"59000047","o":1},"a02":{"d":"Cutie troler ABS - S","sku":"59000011","o":2},"a03":{"d":"Cutie troler ABS - M","sku":"59000012","o":3},"a04":{"d":"Cutie troler ABS - L","sku":"59000034","o":4},"a05":{"d":"Carton Alpha","sku":"59000053","o":5},"a06":{"d":"Carton Beta","sku":"59000054","o":6},"a07":{"d":"Carton Cleo 1PC","sku":"59000048","o":7},"a08":{"d":"Carton Cleo 2PCS","sku":"59000044","o":8},"a09":{"d":"Carton Delta","sku":"59000055","o":9},"a10":{"d":"Carton Gama","sku":"59000058","o":10},"a11":{"d":"Carton Kappa","sku":"59000056","o":11},"a12":{"d":"Carton Loft/Echo 1PC","sku":"59000050","o":12},"a13":{"d":"Carton Loft/Echo 2PCS","sku":"59000045","o":13},"a14":{"d":"Carton Modo 1PC","sku":"59000051","o":14},"a15":{"d":"Carton Modo 2PCS","sku":"59000042","o":15},"a16":{"d":"Carton Noma 1PC","sku":"59000049","o":16},"a17":{"d":"Carton Noma 2PCS","sku":"59000043","o":17},"a18":{"d":"Carton Sigma","sku":"59000057","o":18},"a19":{"d":"Carton Vivo 1PC","sku":"59000052","o":19},"a20":{"d":"Carton Vivo 2PCS","sku":"59000046","o":20},"a21":{"d":"Plic sameday","sku":"59000001","o":21},"a22":{"d":"Plic sameday","sku":"59000002","o":22},"a23":{"d":"Plicuri transparente autoadezive","sku":"59000004","o":23},"a24":{"d":"Quasar","sku":"59000013","o":24},"a25":{"d":"Ingust","sku":"59000016","o":25},"a26":{"d":"Folie strech transparent","sku":"59000021","o":26},"a27":{"d":"Folie cu bule mica","sku":"59000018","o":27},"a28":{"d":"Folie cu bule normala","sku":"59000019","o":28},"a29":{"d":"Etichete barcode 1500/rola","sku":"59000022","o":29},"a30":{"d":"Etichete raft","sku":"59000023","o":30},"a31":{"d":"Etichete AWB 1000/rola","sku":"59000024","o":31},"a32":{"d":"Etichete AWB 500/rola","sku":"59000025","o":32},"a33":{"d":"HP Laser Jet M203DW (Birou+Dna Cucu)","sku":"","o":33},"a34":{"d":"HP Laser Jet M570DW( Depozit)","sku":"","o":34},"a35":{"d":"Cutie troler ABS - Xs1","sku":"","o":35}},"x":{"20260430":{"d":"2026-04-30","v":{"a01":{"i":2670,"e":null},"a02":{"i":1547,"e":null},"a03":{"i":1924,"e":null},"a04":{"i":60,"e":null},"a05":{"i":20,"e":null},"a06":{"i":20,"e":null},"a07":{"i":55,"e":null},"a08":{"i":60,"e":null},"a09":{"i":22,"e":null},"a10":{"i":20,"e":null},"a11":{"i":20,"e":null},"a12":{"i":160,"e":null},"a13":{"i":70,"e":null},"a14":{"i":70,"e":null},"a15":{"i":42,"e":null},"a16":{"i":21,"e":null},"a17":{"i":65,"e":null},"a18":{"i":20,"e":null},"a19":{"i":70,"e":null},"a20":{"i":35,"e":null},"a21":{"i":0,"e":null},"a22":{"i":300,"e":null},"a23":{"i":500,"e":2000},"a24":{"i":90,"e":null},"a25":{"i":0,"e":null},"a26":{"i":28,"e":48},"a27":{"i":0,"e":null},"a28":{"i":0,"e":null},"a29":{"i":0,"e":null},"a30":{"i":4,"e":null},"a31":{"i":1,"e":null},"a32":{"i":3,"e":null},"a35":{"i":1990,"e":null}}},"20260514":{"d":"2026-05-14","v":{"a01":{"i":2670,"e":null},"a02":{"i":1500,"e":null},"a03":{"i":1690,"e":null},"a04":{"i":48,"e":null},"a05":{"i":18,"e":null},"a06":{"i":14,"e":null},"a07":{"i":55,"e":null},"a08":{"i":40,"e":null},"a09":{"i":18,"e":null},"a10":{"i":12,"e":null},"a11":{"i":19,"e":null},"a12":{"i":130,"e":null},"a13":{"i":55,"e":null},"a14":{"i":70,"e":null},"a15":{"i":42,"e":null},"a16":{"i":19,"e":null},"a17":{"i":65,"e":null},"a18":{"i":16,"e":null},"a19":{"i":69,"e":null},"a20":{"i":34,"e":null},"a21":{"i":0,"e":null},"a22":{"i":0,"e":100},"a23":{"i":0,"e":null},"a24":{"i":90,"e":null},"a25":{"i":0,"e":null},"a26":{"i":76,"e":null},"a27":{"i":0,"e":null},"a28":{"i":0,"e":null},"a29":{"i":0,"e":null},"a30":{"i":4,"e":null},"a31":{"i":1,"e":null},"a32":{"i":3,"e":null},"a35":{"i":1990,"e":null}}},"20260530":{"d":"2026-05-30","v":{"a01":{"i":2670,"e":null},"a02":{"i":1380,"e":null},"a03":{"i":1489,"e":null},"a04":{"i":48,"e":null},"a05":{"i":13,"e":null},"a06":{"i":14,"e":null},"a07":{"i":55,"e":null},"a08":{"i":40,"e":null},"a09":{"i":18,"e":null},"a10":{"i":12,"e":null},"a11":{"i":19,"e":null},"a12":{"i":130,"e":null},"a13":{"i":55,"e":null},"a14":{"i":70,"e":null},"a15":{"i":42,"e":null},"a16":{"i":19,"e":null},"a17":{"i":65,"e":null},"a18":{"i":16,"e":null},"a19":{"i":69,"e":null},"a20":{"i":34,"e":null},"a21":{"i":0,"e":null},"a22":{"i":0,"e":null},"a23":{"i":0,"e":3000},"a24":{"i":30,"e":null},"a25":{"i":0,"e":null},"a26":{"i":36,"e":null},"a27":{"i":0,"e":null},"a28":{"i":0,"e":null},"a29":{"i":0,"e":null},"a30":{"i":4,"e":null},"a31":{"i":1,"e":null},"a32":{"i":3,"e":null},"a35":{"i":1990,"e":null}}},"20260630":{"d":"2026-06-30","v":{"a01":{"i":2400,"e":null},"a02":{"i":300,"e":null},"a03":{"i":1489,"e":null},"a04":{"i":43,"e":null},"a05":{"i":13,"e":null},"a06":{"i":13,"e":null},"a07":{"i":55,"e":null},"a08":{"i":40,"e":null},"a09":{"i":18,"e":null},"a10":{"i":12,"e":null},"a11":{"i":19,"e":null},"a12":{"i":106,"e":null},"a13":{"i":55,"e":null},"a14":{"i":70,"e":null},"a15":{"i":42,"e":null},"a16":{"i":19,"e":null},"a17":{"i":65,"e":null},"a18":{"i":16,"e":null},"a19":{"i":69,"e":null},"a20":{"i":27,"e":null},"a21":{"i":0,"e":null},"a22":{"i":0,"e":null},"a23":{"i":1500,"e":null},"a24":{"i":174,"e":240},"a25":{"i":0,"e":null},"a26":{"i":15,"e":null},"a27":{"i":0,"e":null},"a28":{"i":0,"e":null},"a29":{"i":0,"e":null},"a30":{"i":2,"e":null},"a31":{"i":1,"e":null},"a32":{"i":3,"e":null},"a35":{"i":650,"e":null}}},"20260730":{"d":"2026-07-30","v":{"a01":{"i":2400,"e":null},"a02":{"i":170,"e":3030},"a03":{"i":1040,"e":null},"a04":{"i":37,"e":null},"a05":{"i":13,"e":null},"a06":{"i":13,"e":null},"a07":{"i":46,"e":null},"a08":{"i":38,"e":null},"a09":{"i":18,"e":null},"a10":{"i":11,"e":null},"a11":{"i":18,"e":null},"a12":{"i":80,"e":null},"a13":{"i":55,"e":null},"a14":{"i":70,"e":null},"a15":{"i":42,"e":null},"a16":{"i":3,"e":null},"a17":{"i":65,"e":null},"a18":{"i":9,"e":null},"a19":{"i":69,"e":null},"a20":{"i":24,"e":null},"a21":{"i":0,"e":null},"a22":{"i":0,"e":null},"a23":{"i":2000,"e":3000},"a24":{"i":126,"e":null},"a25":{"i":0,"e":null},"a26":{"i":39,"e":48},"a27":{"i":0,"e":null},"a28":{"i":0,"e":null},"a29":{"i":0,"e":null},"a30":{"i":11,"e":10},"a31":{"i":0,"e":null},"a32":{"i":0,"e":null},"a33":{"i":0,"e":null},"a34":{"i":0,"e":null},"a35":{"i":250,"e":null}}},"20260830":{"d":"2026-08-30","v":{"a01":{"i":1800,"e":null},"a02":{"i":2480,"e":null},"a03":{"i":400,"e":3140},"a04":{"i":37,"e":null},"a05":{"i":13,"e":null},"a06":{"i":13,"e":null},"a07":{"i":33,"e":null},"a08":{"i":38,"e":null},"a09":{"i":17,"e":null},"a10":{"i":11,"e":null},"a11":{"i":18,"e":null},"a12":{"i":58,"e":20},"a13":{"i":55,"e":null},"a14":{"i":65,"e":null},"a15":{"i":42,"e":null},"a16":{"i":1,"e":50},"a17":{"i":65,"e":null},"a18":{"i":9,"e":null},"a19":{"i":68,"e":null},"a20":{"i":23,"e":null},"a21":{"i":0,"e":null},"a22":{"i":0,"e":null},"a23":{"i":1000,"e":null},"a24":{"i":44,"e":240},"a25":{"i":0,"e":null},"a26":{"i":5,"e":48},"a27":{"i":0,"e":null},"a28":{"i":0,"e":2},"a29":{"i":0,"e":null},"a30":{"i":10,"e":null},"a31":{"i":0,"e":null},"a32":{"i":0,"e":null},"a33":{"i":0,"e":null},"a34":{"i":0,"e":null},"a35":{"i":600,"e":null}}},"20260930":{"d":"2026-09-30","v":{"a04":{"i":37,"e":null},"a05":{"i":13,"e":null},"a06":{"i":13,"e":null},"a07":{"i":33,"e":null},"a08":{"i":38,"e":null},"a09":{"i":17,"e":null},"a10":{"i":11,"e":null},"a11":{"i":18,"e":null},"a12":{"i":58,"e":null},"a13":{"i":55,"e":null},"a14":{"i":60,"e":null},"a15":{"i":42,"e":null},"a16":{"i":31,"e":null},"a17":{"i":65,"e":null},"a18":{"i":8,"e":null},"a19":{"i":68,"e":null},"a20":{"i":23,"e":null},"a21":{"i":0,"e":null},"a22":{"i":0,"e":null},"a23":{"i":1000,"e":null},"a24":{"i":180,"e":null},"a25":{"i":0,"e":null},"a26":{"i":19,"e":null},"a27":{"i":0,"e":null},"a28":{"i":2,"e":null},"a29":{"i":0,"e":null},"a30":{"i":8,"e":null},"a31":{"i":0,"e":null},"a32":{"i":0,"e":null},"a33":{"i":0,"e":null},"a34":{"i":0,"e":null}}},"20261027":{"d":"2026-10-27","v":{"a04":{"i":37,"e":null},"a05":{"i":13,"e":null},"a06":{"i":13,"e":null},"a07":{"i":21,"e":null},"a08":{"i":38,"e":null},"a09":{"i":17,"e":null},"a10":{"i":11,"e":null},"a11":{"i":17,"e":null},"a12":{"i":30,"e":null},"a13":{"i":55,"e":null},"a14":{"i":26,"e":null},"a15":{"i":42,"e":null},"a16":{"i":30,"e":null},"a17":{"i":65,"e":null},"a18":{"i":8,"e":null},"a19":{"i":62,"e":null},"a20":{"i":23,"e":null},"a21":{"i":0,"e":null},"a22":{"i":0,"e":1500},"a23":{"i":6000,"e":5000},"a24":{"i":150,"e":null},"a25":{"i":0,"e":null},"a26":{"i":2,"e":null},"a27":{"i":0,"e":null},"a28":{"i":2,"e":null},"a29":{"i":0,"e":null},"a30":{"i":7,"e":null},"a31":{"i":0,"e":null},"a32":{"i":0,"e":null},"a33":{"i":0,"e":null},"a34":{"i":0,"e":null}}},"20261111":{"d":"2026-11-11","v":{"a21":{"i":0,"e":null},"a22":{"i":0,"e":1500},"a23":{"i":6000,"e":5000},"a24":{"i":150,"e":null},"a25":{"i":0,"e":null},"a26":{"i":2,"e":null},"a27":{"i":0,"e":null},"a28":{"i":2,"e":null},"a29":{"i":0,"e":null},"a30":{"i":7,"e":null},"a31":{"i":0,"e":null},"a32":{"i":0,"e":null},"a33":{"i":0,"e":null},"a34":{"i":0,"e":null}}}}};
+let amb=null,ambSel=null,ambSeeded=false,ambEdit=null;
+const ambDoc=()=>store.col('zi').doc('invamb');
+const dmerge=(t,s)=>{for(const [k,v] of Object.entries(s)){if(v&&typeof v==='object'&&!Array.isArray(v)){if(!t[k]||typeof t[k]!=='object')t[k]={};dmerge(t[k],v)}else t[k]=v}return t};
+const ambProds=()=>Object.entries(amb?.p||{}).filter(([,v])=>v).map(([id,v])=>({id,...v})).sort((a,b)=>(a.o||0)-(b.o||0));
+const ambInvs=()=>Object.entries(amb?.x||{}).filter(([,v])=>v&&v.d).map(([k,v])=>({k,...v})).sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:a.k<b.k?-1:1);
+const ambNum=v=>{const t=String(v??'').trim().replace(/\s/g,'').replace(',','.');if(!t)return null;return isFinite(+t)?+t:NaN};
+const ambFmt=v=>v==null?'':String(Math.round(v*1000)/1000);
+// consumul față de ultimul inventar în care produsul a fost numărat (sare peste inventarele în care lipsește)
+function ambPrev(I,j,pid){for(let k=j-1;k>=0;k--){const v=I[k].v&&I[k].v[pid];if(v&&v.i!=null)return k}return -1}
+function ambCons(I,j,pid){if(j<1)return null;const b=I[j].v&&I[j].v[pid];if(!b||b.i==null)return null;const k=ambPrev(I,j,pid);if(k<0)return null;let s=I[k].v[pid].i;for(let m=k;m<j;m++){const w=I[m].v&&I[m].v[pid];s+=(w&&w.e)||0}return s-b.i}
+function ambStock(I,pid){for(let j=I.length-1;j>=0;j--){const v=I[j].v&&I[j].v[pid];if(v&&v.i!=null){let s=v.i;for(let k=j;k<I.length;k++){const w=I[k].v&&I[k].v[pid];s+=(w&&w.e)||0}return s}}return null}
+async function ambSave(obj){dmerge(amb,obj);if(!store){ls.set('invamb',JSON.stringify(amb));return}await merge(ambDoc(),{tip:'invamb',...obj})}
+function ambLoad(x){amb={p:x.p||{},x:x.x||{}};if(document.querySelector('#ambBody input:focus'))ambCalc(true);else renderAmbInv()}
+function renderAmbInv(){
+  if(!amb){$('ambBody').innerHTML='<div class="empty">Se încarcă…</div>';return}
+  const P=ambProds(),I=ambInvs();
+  if(!ambSel||!I.some(x=>x.k===ambSel))ambSel=I.length?I[I.length-1].k:null;
+  $('ambInfo').textContent=`${P.length} produse · ${I.length} ${I.length===1?'inventar':'inventare'}${I.length?' · ultimul din '+dshort(I[I.length-1].d):''}`;
+  if(!P.length){$('ambBody').innerHTML='<div class="empty">Nu e niciun produs. Apasă „Adaugă produs”.</div>';return}
+  const inp=(k,pid,f,v,cls)=>`<input class="ai${cls||''}" inputmode="decimal" autocomplete="off" data-k="${k}" data-p="${pid}" data-f="${f}" value="${ambFmt(v)}" aria-label="${f==='i'?'Inventar':'Intrări'}">`;
+  const pact=r=>`<button class="ghost sm" data-ape="${r.id}" title="Modifică produsul">✎</button><button class="ghost sm" data-apd="${r.id}" title="Șterge produsul">✕</button>`;
+  if(isPhone()){
+    const j=I.findIndex(x=>x.k===ambSel),cur=I[j];
+    $('ambBody').innerHTML=(I.length?`<div class="ambsel"><label>Inventarul<select id="ambSelP">${I.map(x=>`<option value="${x.k}"${x.k===ambSel?' selected':''}>${dshort(x.d)}</option>`).join('')}</select></label><button class="ghost sm" data-adel="${cur.k}">Șterge inventarul</button></div>`:'<div class="empty">Nu e niciun inventar. Apasă „Inventar nou”.</div>')
+      +(cur?`<div class="ambcards">${P.map(r=>{const v=(cur.v||{})[r.id]||{},pk=ambPrev(I,j,r.id),pv=pk>=0?I[pk].v[r.id]:null,c=ambCons(I,j,r.id);
+        return `<div class="ambcard" data-row="${r.id}"><div class="ac-n">${esc(r.d)}</div>${r.sku?`<div class="ac-s">SKU ${esc(r.sku)}</div>`:''}
+        ${j>0?`<div class="ac-prev">${pk>=0?`Anterior (${dshort(I[pk].d)}): <b>${ambFmt(pv.i)}</b>${pv.e?` + ${ambFmt(pv.e)} intrări`:''}`:'Nenumărat anterior'}</div>`:''}
+        <div class="ac-in"><label>Inventar${inp(cur.k,r.id,'i',v.i)}</label><label>Intrări după${inp(cur.k,r.id,'e',v.e)}</label></div>
+        <div class="ac-c">Consum: <b class="acons${c!=null&&c<0?' aneg':''}" data-c="${cur.k}|${r.id}">${c==null?'—':ambFmt(c)}</b></div>
+        <div class="ac-b">${pact(r)}</div></div>`}).join('')}</div>`:'');
+  }else{
+    $('ambBody').innerHTML=`<div class="scroll" id="ambScroll"><table class="ambt"><thead><tr><th rowspan="2" class="ast">Denumire</th><th rowspan="2">SKU</th>${I.map(x=>`<th colspan="3" class="ah">${dshort(x.d)} <button class="ghost sm" data-adel="${x.k}" title="Șterge inventarul din ${dshort(x.d)}">✕</button></th>`).join('')}<th rowspan="2">Stoc acum</th><th rowspan="2"></th></tr>
+      <tr>${I.map(()=>'<th>Inventar</th><th>Intrări</th><th>Consum</th>').join('')}</tr></thead>
+      <tbody>${P.map(r=>`<tr data-row="${r.id}"><td class="ast">${esc(r.d)}</td><td class="asku">${esc(r.sku)}</td>${I.map((x,j)=>{const v=(x.v||{})[r.id]||{},c=ambCons(I,j,r.id);
+        return `<td class="ac">${inp(x.k,r.id,'i',v.i)}</td><td class="ac">${inp(x.k,r.id,'e',v.e)}</td><td class="acons${c!=null&&c<0?' aneg':''}" data-c="${x.k}|${r.id}"${c!=null&&c<0?' title="Consum negativ: probabil intrările sunt trecute la alt inventar"':''}>${c==null?(j?'—':''):ambFmt(c)}</td>`}).join('')}<td class="astock" data-s="${r.id}"><b>${ambFmt(ambStock(I,r.id))}</b></td><td class="aact">${pact(r)}</td></tr>`).join('')}</tbody></table></div>`;
+    const sc=$('ambScroll');if(sc)sc.scrollLeft=sc.scrollWidth;
+  }
+}
+function ambCalc(keepInputs){ // recalculează consumul și stocul fără să refacă tabelul (păstrează cursorul)
+  const I=ambInvs(),idx=Object.fromEntries(I.map((x,j)=>[x.k,j]));
+  for(const el of document.querySelectorAll('#ambBody [data-c]')){const [k,pid]=el.dataset.c.split('|'),c=ambCons(I,idx[k],pid);el.textContent=c==null?(idx[k]?'—':''):ambFmt(c);el.classList.toggle('aneg',c!=null&&c<0)}
+  for(const el of document.querySelectorAll('#ambBody [data-s]'))el.innerHTML=`<b>${ambFmt(ambStock(I,el.dataset.s))}</b>`;
+  if(keepInputs)for(const el of document.querySelectorAll('#ambBody input.ai:not(:focus)')){const v=((amb.x[el.dataset.k]||{}).v||{})[el.dataset.p]||{};el.value=ambFmt(v[el.dataset.f])}
+}
+$('ambBody').addEventListener('focusout',e=>{setTimeout(()=>{if(!document.querySelector('#ambBody input:focus'))ambCalc(true)},0)});
+$('ambBody').addEventListener('change',async e=>{
+  const el=e.target;
+  if(el.id==='ambSelP'){ambSel=el.value;renderAmbInv();return}
+  if(!el.classList.contains('ai'))return;
+  const n=ambNum(el.value);if(Number.isNaN(n)){el.classList.add('bad');say($('ambMsg'),'Scrie doar cifre (ex. 120 sau 2,5).','err');return}
+  el.classList.remove('bad');
+  try{await ambSave({x:{[el.dataset.k]:{v:{[el.dataset.p]:{[el.dataset.f]:n}}}}});ambCalc(false);say($('ambMsg'),'Salvat.','ok')}
+  catch(err){say($('ambMsg'),'Nu s-a salvat: '+(err.message||err.code||err),'err')}
+});
+$('ambBody').addEventListener('keydown',e=>{ // Enter = următorul câmp de pe aceeași coloană
+  if(e.key!=='Enter'||!e.target.classList.contains('ai'))return;e.preventDefault();
+  const all=[...document.querySelectorAll(`#ambBody input.ai[data-k="${e.target.dataset.k}"][data-f="${e.target.dataset.f}"]`)],i=all.indexOf(e.target);
+  e.target.dispatchEvent(new Event('change',{bubbles:true}));if(all[i+1]){all[i+1].focus();all[i+1].select()}else e.target.blur();
+});
+$('ambBody').addEventListener('click',async e=>{
+  const d=e.target.closest('[data-adel]'),pe=e.target.closest('[data-ape]'),pd=e.target.closest('[data-apd]');
+  if(d){const x=amb.x[d.dataset.adel];if(!x||!confirm(`Ștergi inventarul din ${dshort(x.d)}? Se pierd cifrele lui.`))return;
+    try{await ambSave({x:{[d.dataset.adel]:null}});renderAmbInv();say($('ambMsg'),`Am șters inventarul din ${dshort(x.d)}.`,'ok')}catch(err){say($('ambMsg'),'Nu s-a șters: '+(err.message||err.code),'err')}}
+  if(pe){const r=amb.p[pe.dataset.ape];if(!r)return;ambEdit=pe.dataset.ape;$('ambPD').value=r.d;$('ambPS').value=r.sku||'';$('ambPSave').textContent='Salvează produsul';$('ambNewF').classList.add('hidden');$('ambPF').classList.remove('hidden');$('ambPD').focus()}
+  if(pd){const r=amb.p[pd.dataset.apd];if(!r||!confirm(`Ștergi produsul „${r.d}”${r.sku?' ('+r.sku+')':''} din inventarul de ambalaje?`))return;
+    try{await ambSave({p:{[pd.dataset.apd]:null}});renderAmbInv();say($('ambMsg'),`Am șters „${r.d}”.`,'ok')}catch(err){say($('ambMsg'),'Nu s-a șters: '+(err.message||err.code),'err')}}
+});
+$('ambNew').onclick=()=>{$('ambPF').classList.add('hidden');$('ambNewF').classList.remove('hidden');$('ambNewD').value=dkey(new Date());$('ambNewD').focus()};
+$('ambNewX').onclick=()=>$('ambNewF').classList.add('hidden');
+$('ambNewF').onsubmit=async e=>{e.preventDefault();const d=$('ambNewD').value;if(!isIso(d)){$('ambNewD').classList.add('bad');return}$('ambNewD').classList.remove('bad');
+  const ex=ambInvs().find(x=>x.d===d);if(ex){ambSel=ex.k;$('ambNewF').classList.add('hidden');renderAmbInv();say($('ambMsg'),`Există deja un inventar din ${dshort(d)}; l-am deschis.`,'ok');return}
+  const k=d.replace(/-/g,'')+'_'+Math.random().toString(36).slice(2,5);
+  try{await ambSave({x:{[k]:{d,v:{},t:Date.now(),n:me()}}});ambSel=k;$('ambNewF').classList.add('hidden');renderAmbInv();say($('ambMsg'),`Inventar nou din ${dshort(d)}: completează coloana „Inventar” (Enter trece la produsul următor).`,'ok');
+    const f=document.querySelector(`#ambBody input.ai[data-k="${k}"][data-f="i"]`);if(f)f.focus()}
+  catch(err){say($('ambMsg'),'Nu s-a creat: '+(err.message||err.code||err),'err')}};
+$('ambAddP').onclick=()=>{ambEdit=null;$('ambPD').value='';$('ambPS').value='';$('ambPSave').textContent='Adaugă produsul';$('ambNewF').classList.add('hidden');$('ambPF').classList.remove('hidden');$('ambPD').focus()};
+$('ambPX').onclick=()=>{ambEdit=null;$('ambPF').classList.add('hidden')};
+$('ambPF').onsubmit=async e=>{e.preventDefault();const d=nbs($('ambPD').value),sku=nbs($('ambPS').value);
+  if(!d){$('ambPD').classList.add('bad');say($('ambMsg'),'Scrie denumirea produsului.','err');return}$('ambPD').classList.remove('bad');
+  if(!ambEdit&&sku&&ambProds().some(r=>r.sku===sku)&&!confirm(`Există deja un produs cu SKU ${sku}. Îl adaugi totuși?`))return;
+  const id=ambEdit||('n'+rid()),o=ambEdit?amb.p[ambEdit].o:Math.max(0,...ambProds().map(r=>r.o||0))+1;
+  try{await ambSave({p:{[id]:{d,sku,o}}});say($('ambMsg'),ambEdit?`Am salvat „${d}”.`:`Am adăugat „${d}”.`,'ok');ambEdit=null;$('ambPF').classList.add('hidden');renderAmbInv()}
+  catch(err){say($('ambMsg'),'Nu s-a salvat: '+(err.message||err.code||err),'err')}};
+$('ambDl').onclick=()=>{
+  const P=ambProds(),I=ambInvs(),E=XLSX.utils.encode_cell,ser=d=>{const [y,m,dd]=d.split('-').map(Number);return (Date.UTC(y,m-1,dd)-Date.UTC(1899,11,30))/864e5};
+  const sh={},merges=[],put=(r,c,cell)=>{sh[E({r,c})]=cell};
+  put(0,0,{t:'s',v:''});put(1,0,{t:'s',v:'Denumire'});put(1,1,{t:'s',v:'SKU'});
+  I.forEach((x,j)=>{const c=2+j*3;put(0,c,{t:'n',v:ser(x.d),z:'dd\\.mm\\.yyyy'});merges.push({s:{r:0,c},e:{r:0,c:c+2}});put(1,c,{t:'s',v:'Inventar'});put(1,c+1,{t:'s',v:'Intrari'});put(1,c+2,{t:'s',v:'Consum'})});
+  const sc=2+I.length*3;put(1,sc,{t:'s',v:'Stoc acum'});
+  P.forEach((r,i)=>{const R=i+2;put(R,0,{t:'s',v:r.d});if(r.sku)put(R,1,/^\d+$/.test(r.sku)?{t:'n',v:+r.sku}:{t:'s',v:r.sku});
+    I.forEach((x,j)=>{const c=2+j*3,v=(x.v||{})[r.id]||{};if(v.i!=null)put(R,c,{t:'n',v:v.i});if(v.e!=null)put(R,c+1,{t:'n',v:v.e});
+      if(j>0){const k=Math.max(0,ambPrev(I,j,r.id)),pi=E({r:R,c:2+k*3}),ci=E({r:R,c}),es=[];for(let m=k;m<j;m++)es.push(`N(${E({r:R,c:3+m*3})})`);const cv=ambCons(I,j,r.id);
+        put(R,c+2,{t:cv==null?'s':'n',v:cv==null?'':cv,f:`IF(OR(${pi}="",${ci}=""),"",${pi}+${es.join('+')}-${ci})`})}});
+    const st=ambStock(I,r.id);if(st!=null)put(R,sc,{t:'n',v:st})});
+  sh['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:Math.max(1,P.length+1),c:sc}});sh['!merges']=merges;sh['!cols']=[{wch:34},{wch:11},...I.flatMap(()=>[{wch:9},{wch:8},{wch:9}]),{wch:10}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sh,'Ambalaje');save(`inventar_ambalaje_${dkey(new Date())}.xlsx`,xbuf(wb));
+};
+
 /* ---------- inventar: două subsecțiuni ---------- */
-function invSub(k){for(const x of ['prod','amb']){$('st-'+x).setAttribute('aria-selected',x===k);$('inv-'+x).classList.toggle('hidden',x!==k)}ls.set('inv_sub',k)}
+function ambScrollEnd(){requestAnimationFrame(()=>{const sc=$('ambScroll');if(sc)sc.scrollLeft=sc.scrollWidth})}
+function invSub(k){for(const x of ['prod','amb']){$('st-'+x).setAttribute('aria-selected',x===k);$('inv-'+x).classList.toggle('hidden',x!==k)}ls.set('inv_sub',k);if(k==='amb')ambScrollEnd()}
 for(const b of document.querySelectorAll('.subtabs [data-sub]'))b.onclick=()=>invSub(b.dataset.sub);
 invSub(ls.get('inv_sub')==='amb'?'amb':'prod');
 
@@ -1145,7 +1280,7 @@ function applyAccess(list){
   const cur=tabs.find(x=>$('t-'+x).getAttribute('aria-selected')==='true');if(cur&&!canSee(cur))show('dash');
 }
 function show(t){if(!canSee(t))t='dash';placeDay(t);menu(false);const tb=$('t-'+t);if(tb)$('mTitle').textContent=tb.firstChild.textContent;for(const x of tabs){$('t-'+x).setAttribute('aria-selected',x===t);$('p-'+x).classList.toggle('hidden',x!==t)}ls.set('sectiune',t);const m=document.querySelector('main');if(window.scrollY>m.offsetTop)window.scrollTo({top:m.offsetTop})}
-for(const x of tabs)$('t-'+x).onclick=()=>show(x);
+for(const x of tabs)$('t-'+x).onclick=()=>{show(x);if(x==='inv')ambScrollEnd()};
 if(ls.get('sectiune')==='echipa')ls.set('sectiune','setari');if(location.hash==='#dashboard')show('dash');else if(tabs.includes(ls.get('sectiune')))show(ls.get('sectiune'));
 // click pe siglă = Dashboard + reîncărcarea paginii (ca un refresh); Ctrl/rotița deschid în tab nou
 for(const id of ['brand','brand2'])$(id).addEventListener('click',e=>{if(e.ctrlKey||e.metaKey||e.shiftKey||e.button!==0)return;e.preventDefault();show('dash');
@@ -1210,7 +1345,7 @@ $('pBody').addEventListener('click',e=>{
   tick('p',k,!prog.p[k]);
 },true);
 $('pBody').addEventListener('keydown',e=>{const c=e.target.closest&&e.target.closest('.pcard[data-tick]');if(c&&(e.key==='Enter'||e.key===' ')){e.preventDefault();tick('p',c.dataset.tick,!prog.p[c.dataset.tick])}});
-{let wasPhone=isPhone();window.addEventListener('resize',()=>{if(isPhone()!==wasPhone){wasPhone=isPhone();renderPick();renderAmb();renderRet()}})}
+{let wasPhone=isPhone();window.addEventListener('resize',()=>{if(isPhone()!==wasPhone){wasPhone=isPhone();renderPick();renderAmb();renderRet();renderAmbInv()}})}
 $('aBody').addEventListener('click',e=>{if(e.target.closest('button,a,input'))return;const c=e.target.closest('.pcard[data-amb]');if(c){const n=c.dataset.amb;tick('a',n,!prog.a[n])}});
 $('aBody').addEventListener('keydown',e=>{const c=e.target.closest&&e.target.closest('.pcard[data-amb]');if(c&&(e.key==='Enter'||e.key===' ')){e.preventDefault();tick('a',c.dataset.amb,!prog.a[c.dataset.amb])}});
 $('dlF').onclick=()=>{const L=sentList();if(!L.length)return;const idx=new Map(batches().map(b=>[bkey(b),b.idx]));const aoa=[['Calup','Nr.','Canal','Id comandă','Nume client','SKU','Comandat','Cules','Denumire produs','Facturat']];
@@ -1250,7 +1385,7 @@ $('impFile').onchange=async e=>{
 };
 
 /* ---------- sincronizare ---------- */
-function goLocal(t){store=null;try{extra=new Map(JSON.parse(ls.get('locatii_extra')||'[]'))}catch(e){}try{rets=JSON.parse(ls.get('retururi')||'{}')}catch(e){rets={}}renderRet();autoFixRets();team(t,false);renderAll()}
+function goLocal(t){store=null;try{amb=JSON.parse(ls.get('invamb')||'null')}catch(e){amb=null}if(!amb)amb=JSON.parse(JSON.stringify(AMB_SEED));renderAmbInv();try{extra=new Map(JSON.parse(ls.get('locatii_extra')||'[]'))}catch(e){}try{rets=JSON.parse(ls.get('retururi')||'{}')}catch(e){rets={}}renderRet();autoFixRets();team(t,false);renderAll()}
 function connect(st,label){
   store=st;team('Se conectează la lista echipei…',false);
   const timer=setTimeout(()=>team('Lista echipei nu răspunde încă. Verifică internetul.',false),10000);
@@ -1265,6 +1400,8 @@ function connect(st,label){
   },fail);
   store.col('zi').where('tip','==','retururi').onSnapshot(s=>{const r={};for(const d of s.docs){const x=d.data()||{};for(const [id,v] of Object.entries(x.items||{}))if(v)r[id]={...v,_d:d.id}}rets=r;renderRet();if(!s.metadata||!s.metadata.fromCache)autoFixRets()},()=>{});
   let bfDone=false;
+  amb=null;renderAmbInv();
+  ambDoc().onSnapshot(d=>{if(!d.exists){if(!ambSeeded){ambSeeded=true;merge(ambDoc(),{tip:'invamb',...JSON.parse(JSON.stringify(AMB_SEED))}).catch(()=>{})}amb=JSON.parse(JSON.stringify(AMB_SEED));renderAmbInv();return}ambLoad(d.data()||{})},()=>{});
   store.col('zi').doc('faraloc').onSnapshot(d=>{const x=d.exists?d.data():{};farLoc=x.items||{};if(!x.bf&&!bfDone){bfDone=true;backfillMissing()}renderStats();renderMiss()},()=>{});
   store.col('zi').doc('index').onSnapshot(s=>{
     if(!s.metadata.fromCache){clearTimeout(timer);team(label,true)}
