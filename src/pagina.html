@@ -136,6 +136,14 @@ td.q.lock{cursor:default}
 .pc-name{font-size:18.5px;font-weight:600;line-height:1.4;margin-top:8px;color:#1A1C21}
 .pc-line{margin-top:10px;padding-top:10px;border-top:1px dashed #cfc6b5;line-height:1.4}.pc-line .pc-q{font-size:22px}.pc-line .pc-name{display:inline;margin:0}
 .pc-who{font-size:13px;color:#615d55;margin-top:6px}
+/* Lista comenzi și Facturare pe telefon: câte un card pe comandă */
+.pcard.mp{border-left:7px solid #FFC21A}.pcard.mp.done{border-left-color:#FFC21A}.pcard.mp.short{border-left-color:#FFC21A}
+.oc-canal{margin-left:auto;font-size:14px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:#5a5a62}
+.oc-id{display:block;font-size:16px;margin-top:6px;word-break:break-all}
+.oc-meta{font-size:15px;color:#4a4a52;margin-top:3px;line-height:1.35}.oc-meta b{font-weight:700;color:#1A1C21}
+.oc-cf{margin-top:4px;font-size:15px}.oc-cf .vnote{display:inline;margin-left:6px;white-space:normal}
+.oc-cul{font-size:15px;color:#4a4a52;margin-left:4px;white-space:nowrap}
+.oc-all{display:flex;padding:12px 14px;background:#E2DACB;border-bottom:1px solid #cfc6b5}.oc-all .ck{font-size:16px;font-weight:700}
 .logo-wrap{display:inline-grid;place-items:center;border-radius:50%;transition:background .2s}
 .logo{display:block;width:100%;height:100%;background:#ECE6DA;-webkit-mask:url(__LOGO__) center/contain no-repeat;mask:url(__LOGO__) center/contain no-repeat}
 .side a.brand{display:block;width:130px;margin:4px auto 10px;padding:0}.side a.brand .logo-wrap{width:130px;height:130px}
@@ -783,11 +791,26 @@ const hl=o=>o.lines.length>1||o.lines.some(l=>l.qty>=2);
 // comenzi cu 2+ produse diferite (SKU-uri distincte): bară galbenă în stânga rândurilor + etichetă „N produse” lângă număr
 const nProd=o=>new Set(o.lines.map(l=>l.sku)).size;
 const mpTag=o=>nProd(o)>=2?` <span class="mptag" title="Comandă cu ${nProd(o)} produse diferite">${nProd(o)} produse</span>`:'';
+const qH=q=>q>=2?`<span class="qb">${q}</span>`:`<b>${q}</b>`;
+/* card de comandă pe telefon (Lista comenzi: doar de citit; Facturare: apăsarea bifează „Facturat”) */
+function ocard(o,fact){
+  const f=fact&&prog.f[o.nr],sh=o.lines.some(l=>pq(o.nr,l)<l.qty),mp=nProd(o)>=2;
+  const cls=`pcard${mp?' mp':''}${fact?(f?' done':sh?' short':''):' lock'}`;
+  const att=fact?`data-ford="${o.nr}" data-fact="${o.nr}" role="button" tabindex="0" aria-pressed="${!!f}"`:'';
+  const extra=fact?'':[o.firma&&o.firma!==o.client?`<div class="oc-meta">Companie: <b>${esc(o.firma)}</b></div>`:'',o.deleg&&o.deleg!==o.client?`<div class="oc-meta">Delegat: <b>${esc(o.deleg)}</b></div>`:'',clean(o.cf)?`<div class="oc-cf">Cod fiscal: ${cfCell(o)}</div>`:''].join('');
+  const lines=o.lines.map(l=>{const q=pq(o.nr,l);return `<div class="pc-line"><span class="pc-q">${qH(l.qty)}</span><span class="pc-x"> × </span><span class="pc-sku">${esc(l.sku)}</span>${fact?(q<l.qty?` <span class="oc-cul">cules <span class="qx qbox" title="Cules ${q} din ${l.qty}">${q}${q===0?' · lipsă':''}</span></span>`:''):''} <span class="pc-name">${esc(l.prod)}</span></div>`}).join('');
+  return `<div class="${cls}" ${att}>
+    <div class="pc-row"><span class="pc-nr">${o.nr}</span>${mpTag(o)}${f?'<span class="chip green">Facturată</span>':''}<span class="oc-canal">${esc(o.canal)}</span></div>
+    <span class="pc-sku oc-id">${esc(o.id)}</span>
+    <div class="pc-name" style="margin-top:4px">${esc(o.client)}</div>${o.tel?`<div class="pc-tel">☎ ${esc(o.tel)}</div>`:''}${extra}
+    ${lines}${fact&&sh?'<div class="pc-who" style="color:#c0261c">Atenție: are produse culese cu cantitate mai mică</div>':''}${f?`<div class="pc-who">✓ Facturată de ${esc(f.n||'cineva')} · ${hhmm(f.t)}</div>`:''}</div>`;
+}
 const verifRows=()=>vis().flatMap(o=>o.lines.map((l,k)=>({o,l,k})));
 function renderVerif(){
   if(!orders.length){$('vBody').innerHTML=EMPTY;$('vInfo').textContent='';return}
   const O=vis(),multi=O.filter(o=>o.lines.some(l=>l.qty>=2)).length;
   $('vInfo').textContent=`${O.length} comenzi sortate după canal`+(multi?` · ${multi} cu cantitate 2+ (evidențiată cu turcoaz)`:'');
+  if(isPhone()){$('vBody').innerHTML=O.length?`<div class="pcards">${O.map(o=>ocard(o,false)).join('')}</div>`:'<div class="empty">Nu sunt comenzi în lista asta.</div>';return}
   const rows=verifRows();
   $('vBody').innerHTML=rows.length?`<div class="scroll"><table class="stack"><thead><tr>${VCOLS.map((h,i)=>`<th class="${i===3||i===6?'n':''}">${h}</th>`).join('')}</tr></thead><tbody>${rows.map(({o,l,k})=>`<tr class="${k===0&&o.nr>1?'grp':''}${hl(o)?' mlt':''}${nProd(o)>=2?' mp':''}"><td>${esc(o.canal)}</td><td>${cfCell(o)}</td><td>${esc(o.id)}</td><td class="nr n">${o.nr}${k===0?mpTag(o):''}</td><td>${esc(o.client)}</td><td>${esc(l.sku)}</td><td class="n">${l.qty>=2?`<span class="qb">${l.qty}</span>`:`<b>${l.qty}</b>`}</td><td class="prod">${esc(l.prod)}</td><td style="white-space:nowrap">${esc(o.tel)}</td><td>${esc(o.firma)}</td><td>${esc(o.deleg)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Nu sunt comenzi în lista asta.</div>';
 }
@@ -924,7 +947,8 @@ function renderFact(){
     const open=openF===x.k,os=x.os.filter(o=>!hide||!prog.f[o.nr]);
     const st=full?'<span class="chip green">Facturat complet</span>':`<span class="chip">${fd}/${x.os.length} facturate</span>`;
     let body='';
-    if(open){
+    if(open&&isPhone())body=`<div class="oc-all"><label class="ck"><input type="checkbox" data-fall="${esc(x.k)}" ${full?'checked':''}> Toate comenzile din calup facturate</label></div><div class="pcards">${os.map(o=>ocard(o,true)).join('')}</div>`;
+    else if(open){
       body=`<div class="bfoot mob-only" style="border-top:0;border-bottom:1px solid var(--line)"><label class="ck"><input type="checkbox" data-fall="${esc(x.k)}" ${full?'checked':''}> Toate comenzile din calup facturate</label></div><div class="scroll"><table class="stack"><thead><tr><th><label class="ck" title="Bifează toate comenzile din calup"><input type="checkbox" data-fall="${esc(x.k)}" ${full?'checked':''} aria-label="Toate comenzile din calup facturate"> Toate</label></th><th class="n">Nr.</th><th>Canal</th><th>Id comandă</th><th>Nume client</th><th>SKU</th><th class="n">Comandat</th><th class="n">Cules</th><th>Denumire produs</th></tr></thead><tbody>${os.map(o=>o.lines.map((l,i)=>{const q=pq(o.nr,l);return `<tr data-ford="${o.nr}" class="${i===0?'fo':''}${q<l.qty?' short':prog.f[o.nr]?' done':''}${nProd(o)>=2?' mp':''}"><td>${i===0?ck('f',o.nr,prog.f[o.nr],'Comanda '+o.nr+' facturată'):''}</td><td class="nr n">${i===0?o.nr+mpTag(o):''}</td><td>${i===0?esc(o.canal):''}</td><td style="white-space:nowrap">${i===0?esc(o.id):''}</td><td>${i===0?esc(o.client):''}</td><td>${esc(l.sku)}</td><td class="n">${l.qty>=2?`<span class="qb">${l.qty}</span>`:l.qty}</td><td class="n">${q<l.qty?`<span class="qx qbox" title="Cules ${q} din ${l.qty}">${q}${q===0?' · lipsă':''}</span>`:`<b>${q}</b>`}</td><td class="prod">${esc(l.prod)}</td></tr>`}).join('')).join('')}</tbody></table></div>`;
     }
     return `<div class="batch${open?' open':''}${full?' done':''}"><button class="bhead" data-fopen="${esc(x.k)}" aria-expanded="${open}"><span class="arr">›</span><h2>Calup ${idx.get(x.k)||''}</h2><span>comenzile ${x.from}–${x.to} · trimis${x.n?' de '+esc(x.n):''} la ${hhmm(x.t)}</span><span class="bp">${st}</span></button>${body}</div>`;
@@ -1336,7 +1360,9 @@ for(const id of ['brand','brand2'])$(id).addEventListener('click',e=>{if(e.ctrlK
 $('bsize').oninput=()=>{renderStats();renderPick()};
 $('bsize').onchange=()=>{if(store&&meta)merge(store.col('zi').doc('meta'),{bsize:bsize()}).catch(()=>{})};
 $('pHide').onchange=renderPick;$('fHide').onchange=renderFact;
-$('fBody').addEventListener('click',e=>{const b=e.target.closest('button[data-fopen]');if(b){openF=openF===b.dataset.fopen?null:b.dataset.fopen;renderFact()}});
+$('fBody').addEventListener('click',e=>{const b=e.target.closest('button[data-fopen]');if(b){openF=openF===b.dataset.fopen?null:b.dataset.fopen;renderFact();return}
+  if(e.target.closest('button,a,input,label'))return;const c=e.target.closest('.pcard[data-fact]');if(c){const n=c.dataset.fact;tick('f',n,!prog.f[n])}});
+$('fBody').addEventListener('keydown',e=>{const c=e.target.closest&&e.target.closest('.pcard[data-fact]');if(c&&(e.key==='Enter'||e.key===' ')){e.preventDefault();tick('f',c.dataset.fact,!prog.f[c.dataset.fact])}});
 $('fBody').addEventListener('change',e=>{const c=e.target.closest('input[data-fall]');if(!c)return;e.stopPropagation();
   const x=sentList().find(y=>y.k===c.dataset.fall);if(!x)return;const st={n:me(),t:Date.now()},f={};
   for(const o of x.os){if(c.checked){if(!prog.f[o.nr])f[o.nr]=st}else f[o.nr]=null}
@@ -1393,7 +1419,7 @@ $('pBody').addEventListener('click',e=>{
   tick('p',k,!prog.p[k]);
 },true);
 $('pBody').addEventListener('keydown',e=>{const c=e.target.closest&&e.target.closest('.pcard[data-tick]');if(c&&(e.key==='Enter'||e.key===' ')){e.preventDefault();tick('p',c.dataset.tick,!prog.p[c.dataset.tick])}});
-{let wasPhone=isPhone();window.addEventListener('resize',()=>{if(isPhone()!==wasPhone){wasPhone=isPhone();renderPick();renderAmb();renderRet();renderAmbInv()}})}
+{let wasPhone=isPhone();window.addEventListener('resize',()=>{if(isPhone()!==wasPhone){wasPhone=isPhone();renderVerif();renderFact();renderPick();renderAmb();renderRet();renderAmbInv()}})}
 $('aBody').addEventListener('click',e=>{if(e.target.closest('button,a,input'))return;const c=e.target.closest('.pcard[data-amb]');if(c){const n=c.dataset.amb;tick('a',n,!prog.a[n])}});
 $('aBody').addEventListener('keydown',e=>{const c=e.target.closest&&e.target.closest('.pcard[data-amb]');if(c&&(e.key==='Enter'||e.key===' ')){e.preventDefault();tick('a',c.dataset.amb,!prog.a[c.dataset.amb])}});
 $('dlF').onclick=()=>{const L=sentList();if(!L.length)return;const idx=new Map(batches().map(b=>[bkey(b),b.idx]));const aoa=[['Calup','Nr.','Canal','Id comandă','Nume client','SKU','Comandat','Cules','Denumire produs','Facturat']];
