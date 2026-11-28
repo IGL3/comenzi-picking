@@ -899,7 +899,7 @@ function dayStats(O){
   return {n,pk,dp:n-pk,fc,de,am,ver:O.filter(o=>isV(o.nr)).length,lips:O.reduce((s,o)=>s+o.lines.filter(l=>pq(o.nr,l)<l.qty).length,0)};
 }
 function renderDash(){
-  const dt=pdate(curDay);$('dashT').textContent=`Dashboard · ${dt.getDate()} ${LUNI[dt.getMonth()]} ${dt.getFullYear()}`;
+  $('dashT').textContent='Dashboard';
   const AM=allMissing(),lim=dkey(new Date(Date.now()-7*864e5)),vechi=AM.filter(x=>x.day&&x.day<lim).length;
   const tri='<svg class="warn-tri" viewBox="0 0 100 90" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M50 4 97 86H3z" fill="#FFC21A" stroke="#E0A000" stroke-width="4" stroke-linejoin="round"/><rect x="45" y="30" width="10" height="32" rx="4" fill="#8A6200"/><circle cx="50" cy="73" r="6" fill="#8A6200"/></svg>';
   let missCard=`<div class="kpi go${AM.length?' bad':''}${vechi?' old':''}" role="button" tabindex="0" data-go="loc">${vechi?tri:''}<span class="k">SKU fără locație</span><b>${AM.length}</b><small>${AM.length?(vechi?`${vechi} de peste o săptămână · `:'')+'din toate listele · apasă ca să le adaugi':'toate produsele au locație'}</small></div>`;
