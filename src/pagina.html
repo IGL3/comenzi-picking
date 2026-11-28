@@ -291,8 +291,10 @@ tr.short td{background:#f4d9d4!important}
   <button role="tab" id="t-pick" aria-selected="false">Picking<span class="cnt" id="c-pick"></span></button>
   <button role="tab" id="t-fact" aria-selected="false">Facturare<span class="cnt" id="c-fact"></span></button>
   <button role="tab" id="t-amb" aria-selected="false">Ambalare<span class="cnt" id="c-amb"></span></button>
-  <button role="tab" id="t-loc" aria-selected="false">Locații produse<span class="cnt" id="c-loc"></span></button>
+  <button role="tab" id="t-fbe" aria-selected="false">FBE<span class="cnt" id="c-fbe"></span></button>
+  <button role="tab" id="t-inv" aria-selected="false">Inventar<span class="cnt" id="c-inv"></span></button>
   <button role="tab" id="t-ret" aria-selected="false">Retururi<span class="cnt" id="c-ret"></span></button>
+  <button role="tab" id="t-loc" aria-selected="false">Locații produse<span class="cnt" id="c-loc"></span></button>
   <button role="tab" id="t-setari" aria-selected="false">Setări<span class="cnt" id="c-setari"></span></button>
   <div class="foot" id="sideFoot"></div>
 </aside>
@@ -402,6 +404,16 @@ tr.short td{background:#f4d9d4!important}
       <button class="ghost sm dl" id="dlL">Descarcă toate locațiile</button>
     </div>
     <div id="locBody"></div>
+  </section>
+
+  <section id="p-fbe" class="hidden">
+    <h2 class="ptitle">FBE</h2>
+    <div class="empty">Secțiunea FBE e pregătită. Conținutul urmează.</div>
+  </section>
+
+  <section id="p-inv" class="hidden">
+    <h2 class="ptitle">Inventar</h2>
+    <div class="empty">Secțiunea Inventar e pregătită. Conținutul urmează.</div>
   </section>
 
   <section id="p-ret" class="hidden">
@@ -1104,12 +1116,12 @@ $('delBox').onclick=e=>{const b=e.target.closest('button[data-del]');if(b)doDel(
 $('replAdd').onclick=()=>{if(pending)append(pending.list,pending.name)};
 $('part').onchange=()=>{renderStats();renderVerif();renderPick()};
 $('replNo').onclick=()=>{pending=null;$('repl').classList.add('hidden')};
-const tabs=['dash','verif','pick','fact','amb','loc','ret','setari'];
+const tabs=['dash','verif','pick','fact','amb','fbe','inv','ret','loc','setari'];
 function menu(o){$('side').classList.toggle('open',o);$('mback').classList.toggle('open',o);$('menuBtn').setAttribute('aria-expanded',o)}
 {const cur=tabs.find(x=>$('t-'+x).getAttribute('aria-selected')==='true');if(cur)$('mTitle').textContent=$('t-'+cur).firstChild.textContent}
 $('menuBtn').onclick=()=>menu(!$('side').classList.contains('open'));$('mback').onclick=()=>menu(false);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')menu(false)});
-const ACC=[['verif','Lista comenzi'],['pick','Picking'],['fact','Facturare'],['amb','Ambalare'],['loc','Locații produse'],['ret','Retururi']];
+const ACC=[['verif','Lista comenzi'],['pick','Picking'],['fact','Facturare'],['amb','Ambalare'],['fbe','FBE'],['inv','Inventar'],['ret','Retururi'],['loc','Locații produse']];
 let isAdmin=true;
 let allowed=null; // null = toate; altfel Set cu secțiunile permise (Dashboard și Setări sunt mereu permise)
 const canSee=t=>t==='dash'||t==='setari'||!allowed||allowed.has(t);

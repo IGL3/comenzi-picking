@@ -30,6 +30,10 @@ vechiul doc `meta`/`p0..` e mutat automat pe ziua lui), `bife/<listId>` {v:{nr:{
 `zi/faraloc` {items:{<sku>:{p,d}|null}, bf} = SKU-urile fără locație văzute în toate listele (completat la încărcare; `bf` = căutarea o singură dată prin zilele vechi);
 secțiunea Locații arată „Fără locație în toate listele” (cu ziua listei), iar meniul arată totalul; cardul din Dashboard rămâne pe ziua aleasă.
 
+## Meniu
+Ordinea secțiunilor: Dashboard, Lista comenzi, Picking, Facturare, Ambalare, FBE, Inventar, Retururi, Locații produse, Setări.
+FBE (cheie `fbe`) și Inventar (cheie `inv`) sunt deocamdată goale (doar titlu + „Conținutul urmează”).
+
 ## Retururi
 Secțiunea „Retururi” (cheie de acces `ret`) e centralizatorul de retururi, cu capul de tabel din centralizator_retururi.xlsx:
 PLATFORMA, DATA COM, DATA RETUR, NR DE COMANDA, CLIENT, MOTIVUL, STATUSUL COM, OBSERVATII (+ Modifică/Șterge). Formular de adăugare/modificare
@@ -57,7 +61,7 @@ Browserul întreabă întâi proxy-ul Apps Script din `src/vies.json` {"proxy":"
 - Pagina Claude: https://claude.ai/artifact/6BER2wjVDKSPE3H1NgV4kk (capabilități `db` + `downloads`; colecțiile de mai sus la rădăcina db).
 - GitHub Pages: https://igl3.github.io/comenzi-picking/ — fără `window.claude`; logare Firebase Auth cu email și parolă (cont nou cere numele,
   care devine displayName și apare la bife; emailul trebuie confirmat; sesiunea rămâne salvată în browser, iar fereastra de logare apare doar dacă nu ești conectat). Acces doar pentru emailurile din doc `echipa/membri` {emails:[], admini:[]};
-  primul cont confirmat poate crea echipa („Sunt administratorul: creează echipa”). Administratorii văd în „Setări” partea „Echipă” (bife de acces pe secțiuni pentru fiecare cont: Lista comenzi, Picking, Facturare, Ambalare, Locații, Retururi; salvate în `echipa/membri.acces[<email cu „.” înlocuit de „,”>]` = listă de chei verif/pick/fact/amb/loc/ret; fără listă = acces la toate; Dashboard și Setări le văd toți, administratorii văd tot; e o restricție de interfață, nu de bază de date; adaugă/scot emailuri,
+  primul cont confirmat poate crea echipa („Sunt administratorul: creează echipa”). Administratorii văd în „Setări” partea „Echipă” (bife de acces pe secțiuni pentru fiecare cont: Lista comenzi, Picking, Facturare, Ambalare, FBE, Inventar, Retururi, Locații; salvate în `echipa/membri.acces[<email cu „.” înlocuit de „,”>]` = listă de chei verif/pick/fact/amb/fbe/inv/ret/loc; fără listă = acces la toate; Dashboard și Setări le văd toți, administratorii văd tot; e o restricție de interfață, nu de bază de date; adaugă/scot emailuri,
   rol de administrator, mutarea datelor vechi de pe `teams/<cod>` din localStorage). Datele: `firma/quasar/<zi|bife|locatii>/<doc>`.
   Regulile Firestore sunt în `firebase/firestore.rules` (se copiază în consola Firebase → Firestore → Rules).
 
