@@ -1234,7 +1234,7 @@ $('ambDl').onclick=()=>{
 
 /* ---------- inventar: două subsecțiuni ---------- */
 function ambScrollEnd(){requestAnimationFrame(()=>{const sc=$('ambScroll');if(sc)sc.scrollLeft=sc.scrollWidth})}
-function invSub(k){for(const x of ['prod','amb']){$('st-'+x).setAttribute('aria-selected',x===k);$('inv-'+x).classList.toggle('hidden',x!==k)}ls.set('inv_sub',k);if(k==='amb')ambScrollEnd()}
+function invSub(k){if(k==='amb'&&!canSee('inva'))k='prod';if(k==='prod'&&!canSee('invp')&&canSee('inva'))k='amb';for(const x of ['prod','amb']){$('st-'+x).setAttribute('aria-selected',x===k);$('inv-'+x).classList.toggle('hidden',x!==k)}ls.set('inv_sub',k);if(k==='amb')ambScrollEnd()}
 for(const b of document.querySelectorAll('.subtabs [data-sub]'))b.onclick=()=>invSub(b.dataset.sub);
 invSub(ls.get('inv_sub')==='amb'?'amb':'prod');
 
@@ -1285,13 +1285,17 @@ function menu(o){$('side').classList.toggle('open',o);$('mback').classList.toggl
 {const cur=tabs.find(x=>$('t-'+x).getAttribute('aria-selected')==='true');if(cur)$('mTitle').textContent=$('t-'+cur).firstChild.textContent}
 $('menuBtn').onclick=()=>menu(!$('side').classList.contains('open'));$('mback').onclick=()=>menu(false);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')menu(false)});
-const ACC=[['verif','Lista comenzi'],['pick','Picking'],['fact','Facturare'],['amb','Ambalare'],['fbe','FBE'],['inv','Inventar'],['ret','Retururi'],['loc','Locații produse']];
+const ACC=[['verif','Lista comenzi'],['pick','Picking'],['fact','Facturare'],['amb','Ambalare'],['fbe','FBE'],['invp','Inventar produse'],['inva','Inventar ambalaje'],['ret','Retururi'],['loc','Locații produse']];
 let isAdmin=true;
-let allowed=null; // null = toate; altfel Set cu secțiunile permise (Dashboard și Setări sunt mereu permise)
-const canSee=t=>t==='dash'||t==='setari'||!allowed||allowed.has(t);
+var allowed=null; // (var + function: folosite și de invSub, care rulează mai sus în fișier) null = toate; altfel Set cu secțiunile permise (Dashboard și Setări sunt mereu permise)
+// Inventar are acces separat pe subsecțiuni (invp = produse, inva = ambalaje); vechea cheie „inv” = amândouă
+function canSee(t){return t==='dash'||t==='setari'||!allowed||allowed.has(t)||((t==='invp'||t==='inva')&&allowed.has('inv'))||(t==='inv'&&(allowed.has('invp')||allowed.has('inva')))}
 function applyAccess(list){
   allowed=list?new Set(list):null;
-  for(const [t] of ACC)$('t-'+t).classList.toggle('hidden',!canSee(t));
+  for(const t of tabs)$('t-'+t).classList.toggle('hidden',!canSee(t));
+  $('st-prod').classList.toggle('hidden',!canSee('invp'));$('st-amb').classList.toggle('hidden',!canSee('inva'));
+  $('st-prod').parentElement.classList.toggle('hidden',!(canSee('invp')&&canSee('inva'))); // cu o singură subsecțiune, butoanele nu mai au rost
+  invSub(ls.get('inv_sub')==='amb'?'amb':'prod');
   const cur=tabs.find(x=>$('t-'+x).getAttribute('aria-selected')==='true');if(cur&&!canSee(cur))show('dash');
 }
 function show(t){if(!canSee(t))t='dash';placeDay(t);menu(false);const tb=$('t-'+t);if(tb)$('mTitle').textContent=tb.firstChild.textContent;for(const x of tabs){$('t-'+x).setAttribute('aria-selected',x===t);$('p-'+x).classList.toggle('hidden',x!==t)}ls.set('sectiune',t);const m=document.querySelector('main');if(window.scrollY>m.offsetTop)window.scrollTo({top:m.offsetTop})}
@@ -1486,7 +1490,7 @@ if(window.claude){
     const accOf=m=>{const a=members&&members.acces&&members.acces[akey(m)];return Array.isArray(a)?a:null};
     function renderTeam(isAdm){
       if(!members)return;$('c-echipa').textContent=` · ${members.emails.length} ${members.emails.length>1?'persoane':'persoană'}`;
-      $('memBody').innerHTML=`<table class="stack"><thead><tr><th>Email</th><th>Rol</th><th>Poate vedea (Dashboard și Setări le văd toți)</th><th></th></tr></thead><tbody>${members.emails.map(m=>`<tr><td><b>${esc(m)}</b></td><td>${members.admini.includes(m)?'administrator':'membru'}</td><td>${members.admini.includes(m)?'<span style="color:var(--mut)">toate (administrator)</span>':ACC.map(([t,lbl])=>{const a=accOf(m);return `<label class="ck" style="margin:2px 12px 2px 0"><input type="checkbox" data-acc="${esc(m)}" data-tab="${t}" ${!a||a.includes(t)?'checked':''}${isAdm?'':' disabled'}> ${lbl}</label>`}).join('')}</td><td style="white-space:nowrap">${isAdm&&m!==auth.currentUser.email.toLowerCase()?`<button class="ghost sm" data-adm="${esc(m)}">${members.admini.includes(m)?'Fă-l membru':'Fă-l administrator'}</button> <button class="ghost sm" data-rm="${esc(m)}">Scoate</button>`:''}</td></tr>`).join('')}</tbody></table>`;
+      $('memBody').innerHTML=`<table class="stack"><thead><tr><th>Email</th><th>Rol</th><th>Poate vedea (Dashboard și Setări le văd toți)</th><th></th></tr></thead><tbody>${members.emails.map(m=>`<tr><td><b>${esc(m)}</b></td><td>${members.admini.includes(m)?'administrator':'membru'}</td><td>${members.admini.includes(m)?'<span style="color:var(--mut)">toate (administrator)</span>':ACC.map(([t,lbl])=>{const a=accOf(m);return `<label class="ck" style="margin:2px 12px 2px 0"><input type="checkbox" data-acc="${esc(m)}" data-tab="${t}" ${!a||a.includes(t)||((t==='invp'||t==='inva')&&a.includes('inv'))?'checked':''}${isAdm?'':' disabled'}> ${lbl}</label>`}).join('')}</td><td style="white-space:nowrap">${isAdm&&m!==auth.currentUser.email.toLowerCase()?`<button class="ghost sm" data-adm="${esc(m)}">${members.admini.includes(m)?'Fă-l membru':'Fă-l administrator'}</button> <button class="ghost sm" data-rm="${esc(m)}">Scoate</button>`:''}</td></tr>`).join('')}</tbody></table>`;
       const code=ls.get('cod_echipa');
       $('migBox').innerHTML=isAdm&&code?`<div class="confirm" style="margin-top:18px"><span style="flex-basis:100%">Pe acest calculator există date salvate cu vechiul cod de echipă. Le muți în contul echipei (liste, bife, locații)?</span><button id="migGo">Mută datele vechi</button><button class="ghost" id="migNo">Nu, ignoră-le</button></div>`:'';
     }
