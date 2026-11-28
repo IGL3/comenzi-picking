@@ -185,6 +185,7 @@ tr.flash,.pcard.flash{outline:3px solid transparent;outline-offset:-3px;animatio
 .perm>summary{cursor:pointer;list-style:none;padding:14px 16px;font-size:20px;font-weight:800;line-height:1.2;color:#ECE6DA;display:flex;align-items:center;gap:10px}.permcnt{font-size:14px;font-weight:600;color:#b9b3a4}
 .perm>summary::-webkit-details-marker{display:none}.perm>summary::before{content:'▸';color:#00D8F2;font-size:18px;transition:transform .15s}.perm[open]>summary::before{transform:rotate(90deg)}
 .perm>summary:focus-visible{outline:2px solid #00D8F2;border-radius:12px}.perm #memBody{padding:0 10px 10px}
+#authForm #lRem{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;margin:2px 0 4px}
 .ptitle{font:800 30px/1.1 "Barlow Condensed",sans-serif;margin:0 0 14px}
 .mbar,.mback{display:none}
 @media(max-width:860px){
@@ -304,6 +305,7 @@ tr.short td{background:#f4d9d4!important}
     <label id="lNume" class="hidden">Numele tău (îl văd colegii la bife)<input id="aNume" autocomplete="name" placeholder="ex. Ionuț Găină"></label>
     <label>Email<input id="aMail" type="email" autocomplete="username" required></label>
     <label id="lPass">Parolă<input id="aPass" type="password" autocomplete="current-password" minlength="6" required></label>
+    <label class="ck" id="lRem"><input type="checkbox" id="aRem" checked> Ține minte datele de logare pe acest dispozitiv</label>
     <button type="submit" id="aGo">Intră</button>
   </form>
   <div class="amsg msg" id="aMsg"></div>
@@ -1459,7 +1461,7 @@ if(window.claude){
   const ER={'auth/invalid-credential':'Email sau parolă greșită.','auth/wrong-password':'Parolă greșită.','auth/user-not-found':'Nu există cont cu emailul ăsta.','auth/email-already-in-use':'Există deja un cont cu emailul ăsta. Intră în cont.','auth/weak-password':'Parola trebuie să aibă cel puțin 6 caractere.','auth/invalid-email':'Emailul nu e corect.','auth/too-many-requests':'Prea multe încercări. Mai încearcă peste câteva minute.','auth/network-request-failed':'Nu e internet.','auth/operation-not-allowed':'Logarea cu email nu e pornită în Firebase (Authentication → Sign-in method → Email/Password).','auth/unauthorized-domain':'Domeniul nu e autorizat în Firebase (Authentication → Settings → Authorized domains).'};
   const em=e=>ER[e?.code]||('Eroare: '+(e?.code||e?.message||e));
   const panel=w=>{$('auth').classList.remove('hidden');for(const x of ['authForm','aWait','aNoAcc'])$(x).classList.toggle('hidden',x!==w);document.querySelector('.alinks').classList.toggle('hidden',w!=='authForm')};
-  function setMode(m){mode=m;$('lNume').classList.toggle('hidden',m!=='up');$('lPass').classList.toggle('hidden',m==='reset');$('aPass').required=m!=='reset';
+  function setMode(m){mode=m;$('lNume').classList.toggle('hidden',m!=='up');$('lPass').classList.toggle('hidden',m==='reset');$('lRem').classList.toggle('hidden',m==='reset');$('aPass').required=m!=='reset';
     $('authT').textContent={in:'Intră în cont',up:'Creează cont',reset:'Resetează parola'}[m];$('aGo').textContent={in:'Intră',up:'Creează contul',reset:'Trimite emailul de resetare'}[m];
     $('aSwitch').textContent=m==='in'?'Nu ai cont? Creează unul':'Ai deja cont? Intră';$('aPass').autocomplete=m==='up'?'new-password':'current-password';aMsg('')}
   $('aSwitch').onclick=()=>setMode(mode==='in'?'up':'in');$('aForgot').onclick=()=>setMode('reset');
@@ -1476,14 +1478,29 @@ if(window.claude){
     function saveMyName(u){if(!u||!u.displayName)return;const k=u.email.toLowerCase().replace(/\./g,',');if(names[k]&&names[k].n===u.displayName)return;
       fs.doc(`${ROOT}/zi/nume`).set({tip:'nume',items:{[k]:{n:u.displayName,t:Date.now()}}},{merge:true}).catch(()=>{})}
     $('authForm').onsubmit=async e=>{e.preventDefault();const mail=clean($('aMail').value).toLowerCase(),pw=$('aPass').value;$('aGo').disabled=true;
+      const prevDay=ls.get('login_day');if(mode!=='reset')ls.set('login_day',today()); // înainte de logare, ca onUser să n-o considere expirată
       try{
         if(mode==='reset'){await auth.sendPasswordResetEmail(mail);aMsg('Ți-am trimis pe email un link pentru parolă nouă.','ok')}
         else if(mode==='up'){const nume=clean($('aNume').value);if(!nume){aMsg('Scrie-ți numele, ca să-l vadă colegii la bife.','err');$('aGo').disabled=false;return}
           const c=await auth.createUserWithEmailAndPassword(mail,pw);await c.user.updateProfile({displayName:nume});await c.user.sendEmailVerification();onUser(c.user)}
         else await auth.signInWithEmailAndPassword(mail,pw);
-      }catch(err){aMsg(em(err),'err')}
+        if(mode!=='reset')rememberLogin(mail,pw);
+      }catch(err){ls.set('login_day',prevDay);aMsg(em(err),'err')}
       $('aGo').disabled=false};
-    const out=()=>{auth.signOut();location.reload()};
+    // logare o dată pe zi: sesiunea e valabilă doar în ziua în care te-ai logat
+    const today=()=>dkey(new Date());
+    function rememberLogin(mail,pw){ls.set('login_day',today());
+      if($('aRem').checked){ls.set('login_mail',mail);ls.set('login_rem','1');
+        // parola o păstrează managerul de parole al browserului / telefonului (Chrome, Safari + iCloud Keychain), nu aplicația
+        try{if(window.PasswordCredential&&navigator.credentials)navigator.credentials.store(new PasswordCredential({id:mail,password:pw,name:mail}))}catch(e){}}
+      else{ls.set('login_mail',null);ls.set('login_rem','0')}}
+    function prefillLogin(){const m=ls.get('login_mail');$('aRem').checked=ls.get('login_rem')!=='0';if(m&&!$('aMail').value)$('aMail').value=m;
+      try{if(m&&window.PasswordCredential&&navigator.credentials)navigator.credentials.get({password:true,mediation:'optional'}).then(c=>{if(c&&c.password&&(!c.id||c.id===m||!$('aMail').value)){$('aMail').value=c.id||m;$('aPass').value=c.password;$('aGo').focus()}}).catch(()=>{})}catch(e){}
+      if(m&&!$('aPass').value)setTimeout(()=>$('aPass').focus(),50)}
+    function dayExpired(){return !!auth.currentUser&&ls.get('login_day')!==today()}
+    async function dailyOut(){if(!dayExpired())return;try{await auth.signOut()}catch(e){}ls.set('login_day_msg','1');location.reload()}
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)dailyOut()});setInterval(dailyOut,5*60*1000);
+    const out=()=>{ls.set('login_day',null);auth.signOut();location.reload()};
     $('logout').onclick=out;$('aOut1').onclick=out;$('aOut2').onclick=out;
     $('aResend').onclick=async()=>{try{await auth.currentUser.sendEmailVerification();$('aWaitTxt').textContent='Am retrimis emailul de confirmare. Verifică și în Spam.'}catch(e){$('aWaitTxt').textContent=em(e)}};
     $('aCheck').onclick=async()=>{await auth.currentUser.reload();await auth.currentUser.getIdToken(true);onUser(auth.currentUser)};
@@ -1492,7 +1509,10 @@ if(window.claude){
       try{await fs.doc('echipa/membri').set({emails:[m],admini:[m]});onUser(auth.currentUser)}
       catch(e){$('aNoTxt').textContent='Echipa e deja creată. Cere-i administratorului să te adauge cu emailul '+m+'.'}};
     function onUser(u){
-      if(!u){panel('authForm');return}
+      if(u&&ls.get('login_day')!==today()){
+        // altă zi decât cea a logării: cerem din nou logarea
+        auth.signOut().catch(()=>{});ls.set('login_day_msg','1');u=null}
+      if(!u){panel('authForm');prefillLogin();if(ls.get('login_day_msg')==='1'){aMsg('Pentru siguranță, aplicația îți cere logarea o dată pe zi.','');ls.set('login_day_msg',null)}return}
       if(!u.emailVerified){$('aWaitTxt').textContent=`Ți-am trimis un email de confirmare la ${u.email}. Apasă linkul din email (verifică și în Spam), apoi „Am confirmat”.`;panel('aWait');return}
       const nume=u.displayName||'';$('me').value=nume;ls.set('nume',nume);
       $('userMail').textContent=u.email;$('userBox').classList.remove('hidden');
