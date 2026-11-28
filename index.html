@@ -160,8 +160,9 @@ tr.flash,.pcard.flash{outline:3px solid transparent;outline-offset:-3px;animatio
 .subtabs button:focus-visible{outline:2px solid #00D8F2;outline-offset:2px}
 .ambhelp{font-size:13px;color:#b9b3a4;margin:2px 0 10px}.ambhelp b{color:#ECE6DA}
 .ambt{border-collapse:separate;border-spacing:0}.ambt th,.ambt td{padding:3px 5px;white-space:nowrap;text-align:center;vertical-align:middle}.ambt th.ah{border-left:2px solid #c9c2b2}
-.ambt td.ac:nth-child(3n),.ambt th:nth-child(3n){}.ambt .ast{position:sticky;left:0;z-index:2;background:#ECE6DA;text-align:left;min-width:190px;white-space:normal;box-shadow:2px 0 0 #d6cfbf}
-.ambt thead .ast{z-index:3}.ambt td.asku{font-size:13px;color:#5a5a62;font-variant-numeric:tabular-nums}
+.ambt td.ac:nth-child(3n),.ambt th:nth-child(3n){}.ambt .ast{position:sticky;left:0;z-index:2;background:#ECE6DA;text-align:left;width:200px;min-width:200px;max-width:200px;box-sizing:border-box;white-space:normal}
+.ambt .asku{position:sticky;left:200px;z-index:2;background:#ECE6DA;width:92px;min-width:92px;box-sizing:border-box;box-shadow:2px 0 0 #d6cfbf}
+.ambt thead .ast,.ambt thead .asku{z-index:3}.ambt td.asku{font-size:13px;color:#5a5a62;font-variant-numeric:tabular-nums}
 .ambt input.ai{width:64px;padding:4px 6px;text-align:right;font:inherit;font-variant-numeric:tabular-nums;border:1px solid #cfc8b8;border-radius:6px;background:#fff}
 .ambt input.ai:focus{outline:2px solid #00D8F2;border-color:#00D8F2}.ambt td.acons{font-weight:700;font-variant-numeric:tabular-nums;min-width:52px;color:#1A1C21}
 .acons.aneg{color:#c0261c}.ambt td.acons.aneg{background:#fde4e0;cursor:help}.ambt td.astock{font-variant-numeric:tabular-nums;font-size:16px}
@@ -1151,7 +1152,7 @@ function renderAmbInv(){
         <div class="ac-c">Consum: <b class="acons${c!=null&&c<0?' aneg':''}" data-c="${cur.k}|${r.id}">${c==null?'—':ambFmt(c)}</b></div>
         <div class="ac-b">${pact(r)}</div></div>`}).join('')}</div>`:'');
   }else{
-    $('ambBody').innerHTML=`<div class="scroll" id="ambScroll"><table class="ambt"><thead><tr><th rowspan="2" class="ast">Denumire</th><th rowspan="2">SKU</th>${I.map(x=>`<th colspan="3" class="ah">${dshort(x.d)} <button class="ghost sm" data-adel="${x.k}" title="Șterge inventarul din ${dshort(x.d)}">✕</button></th>`).join('')}<th rowspan="2">Stoc acum</th><th rowspan="2"></th></tr>
+    $('ambBody').innerHTML=`<div class="scroll" id="ambScroll"><table class="ambt"><thead><tr><th rowspan="2" class="ast">Denumire</th><th rowspan="2" class="asku">SKU</th>${I.map(x=>`<th colspan="3" class="ah">${dshort(x.d)} <button class="ghost sm" data-adel="${x.k}" title="Șterge inventarul din ${dshort(x.d)}">✕</button></th>`).join('')}<th rowspan="2">Stoc acum</th><th rowspan="2"></th></tr>
       <tr>${I.map(()=>'<th>Inventar</th><th>Intrări</th><th>Consum</th>').join('')}</tr></thead>
       <tbody>${P.map(r=>`<tr data-row="${r.id}"><td class="ast">${esc(r.d)}</td><td class="asku">${esc(r.sku)}</td>${I.map((x,j)=>{const v=(x.v||{})[r.id]||{},c=ambCons(I,j,r.id);
         return `<td class="ac">${inp(x.k,r.id,'i',v.i)}</td><td class="ac">${inp(x.k,r.id,'e',v.e)}</td><td class="acons${c!=null&&c<0?' aneg':''}" data-c="${x.k}|${r.id}"${c!=null&&c<0?' title="Consum negativ: probabil intrările sunt trecute la alt inventar"':''}>${c==null?(j?'—':''):ambFmt(c)}</td>`}).join('')}<td class="astock" data-s="${r.id}"><b>${ambFmt(ambStock(I,r.id))}</b></td><td class="aact">${pact(r)}</td></tr>`).join('')}</tbody></table></div>`;
