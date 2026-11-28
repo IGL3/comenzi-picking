@@ -186,6 +186,8 @@ tr.flash,.pcard.flash{outline:3px solid transparent;outline-offset:-3px;animatio
 .perm>summary::-webkit-details-marker{display:none}.perm>summary::before{content:'▸';color:#00D8F2;font-size:18px;transition:transform .15s}.perm[open]>summary::before{transform:rotate(90deg)}
 .perm>summary:focus-visible{outline:2px solid #00D8F2;border-radius:12px}.perm #memBody{padding:0 10px 10px}
 #authForm #lRem{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;margin:2px 0 4px}
+.setbox{display:flex;flex-wrap:wrap;align-items:end;gap:10px 16px;background:#ECE6DA;color:#1A1C21;border-radius:12px;padding:14px 16px}
+.setbox label{display:grid;gap:4px;font-size:14px;font-weight:700;color:#3a3b42}.setbox input{width:120px;font-size:18px}.setbox .note{color:#4a4a52;margin:0 0 8px}
 .ptitle{font:800 30px/1.1 "Barlow Condensed",sans-serif;margin:0 0 14px}
 .mbar,.mback{display:none}
 @media(max-width:860px){
@@ -372,7 +374,6 @@ tr.short td{background:#f4d9d4!important}
   <section id="p-pick" class="hidden">
     <h2 class="ptitle">Picking<span class="pday"></span></h2>
     <div class="bar">
-      <label>Comenzi pe calup<input type="number" id="bsize" min="1" value="20" style="width:110px"></label>
       <label class="ck"><input type="checkbox" id="pHide"> Doar ce nu e cules</label>
       <span class="grow"></span>
       <button class="ghost dl" id="dlP">Descarcă Excel</button>
@@ -405,6 +406,9 @@ tr.short td{background:#f4d9d4!important}
   <div class="team" id="team"><span class="dot"></span><span id="teamTxt" class="grow">Se pornește…</span>
     <label style="display:flex;gap:6px;align-items:center">Numele tău <input id="me" placeholder="ex. Ionuț" style="width:150px;min-height:38px"></label>
     <span id="userBox" class="hidden" style="display:flex;gap:8px;align-items:center"><span id="userMail" style="color:var(--mut)"></span><button class="ghost sm" id="logout">Ieși din cont</button></span></div>
+    <h3 class="dsub" style="margin-top:26px">Picking</h3>
+    <div class="setbox"><label>Comenzi pe calup<input type="number" id="bsize" min="1" value="20" inputmode="numeric"></label>
+      <span class="note">Câte comenzi intră într-un calup la Picking (implicit 20).</span></div>
     <div id="p-echipa" class="hidden">
     <h3 class="dsub" style="margin-top:26px">Echipă <span id="c-echipa" class="pday"></span></h3>
     <p class="note" style="margin:0 0 12px">Doar emailurile de aici pot intra în aplicație, după ce își creează cont și își confirmă emailul. Administratorii pot adăuga și scoate oameni.</p>
