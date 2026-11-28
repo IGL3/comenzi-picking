@@ -1281,10 +1281,11 @@ function applyAccess(list){
 }
 function show(t){if(!canSee(t))t='dash';placeDay(t);menu(false);const tb=$('t-'+t);if(tb)$('mTitle').textContent=tb.firstChild.textContent;for(const x of tabs){$('t-'+x).setAttribute('aria-selected',x===t);$('p-'+x).classList.toggle('hidden',x!==t)}ls.set('sectiune',t);const m=document.querySelector('main');if(window.scrollY>m.offsetTop)window.scrollTo({top:m.offsetTop})}
 for(const x of tabs)$('t-'+x).onclick=()=>{show(x);if(x==='inv')ambScrollEnd()};
-if(ls.get('sectiune')==='echipa')ls.set('sectiune','setari');if(location.hash==='#dashboard')show('dash');else if(tabs.includes(ls.get('sectiune')))show(ls.get('sectiune'));
+if(ls.get('sectiune')==='echipa')ls.set('sectiune','setari');// #dashboard (din tab nou, cu rotița/Ctrl pe siglă) deschide Dashboard o singură dată; apoi scoatem #dashboard din adresă, ca refresh-ul să rămână în tabul curent
+if(location.hash==='#dashboard'){show('dash');try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}}else if(tabs.includes(ls.get('sectiune')))show(ls.get('sectiune'));
 // click pe siglă = Dashboard + reîncărcarea paginii (ca un refresh); Ctrl/rotița deschid în tab nou
 for(const id of ['brand','brand2'])$(id).addEventListener('click',e=>{if(e.ctrlKey||e.metaKey||e.shiftKey||e.button!==0)return;e.preventDefault();show('dash');
-  try{if(location.hash!=='#dashboard')history.replaceState(null,'',location.pathname+location.search+'#dashboard');location.reload()}catch(err){}});
+  try{ls.set('sectiune','dash');if(location.hash)history.replaceState(null,'',location.pathname+location.search);location.reload()}catch(err){}});
 $('bsize').oninput=()=>{renderStats();renderPick()};
 $('bsize').onchange=()=>{if(store&&meta)merge(store.col('zi').doc('meta'),{bsize:bsize()}).catch(()=>{})};
 $('pHide').onchange=renderPick;$('fHide').onchange=renderFact;
