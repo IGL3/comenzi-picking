@@ -32,7 +32,7 @@ secțiunea Locații arată „Fără locație în toate listele” (cu ziua list
 
 ## Meniu
 Ordinea secțiunilor: Dashboard, Lista comenzi, Picking, Facturare, Ambalare, FBE, Inventar, Retururi, Locații produse, Setări.
-FBE (cheie `fbe`) și Inventar (cheie `inv`) sunt deocamdată goale (doar titlu + „Conținutul urmează”).
+FBE (cheie `fbe`) e deocamdată goală. Inventar (cheie `inv`) are două subsecțiuni comutabile (butoane sus, ultima aleasă ținută în localStorage `inv_sub`): „Inventar produse” și „Inventar ambalaje”, ambele deocamdată goale („Conținutul urmează”).
 
 ## Retururi
 Secțiunea „Retururi” (cheie de acces `ret`) e centralizatorul de retururi, cu capul de tabel din centralizator_retururi.xlsx:

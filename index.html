@@ -154,6 +154,10 @@ tr.flash,.pcard.flash{outline:3px solid transparent;outline-offset:-3px;animatio
 .rc-d{display:flex;justify-content:center;flex-wrap:wrap;gap:4px 16px;margin:8px 0 4px;font-size:17px;color:#4a4a52}.rc-d b{color:#1A1C21;font-variant-numeric:tabular-nums}
 .rc-m{font-size:18px;margin-top:4px}.rc-s{margin-top:6px;font-size:17px}.rc-s .rwait{font-size:15px;padding:3px 12px}.rc-o{margin-top:6px;font-size:16px;color:#4a4a52;font-style:italic}
 .rc-b{display:flex;justify-content:center;gap:10px;margin-top:12px}.rc-b button{font-size:17px;padding:10px 18px}.rcard b.rbad{color:#c0261c;text-decoration:underline dotted}
+.subtabs{display:inline-flex;gap:4px;padding:4px;margin:0 0 14px;background:#24272e;border:1px solid #33363e;border-radius:12px;flex-wrap:wrap}
+.subtabs button{background:transparent;border:0;color:#ECE6DA;font:600 16px/1.2 inherit;padding:10px 18px;border-radius:9px;cursor:pointer}
+.subtabs button[aria-selected=true]{background:#ECE6DA;color:#1A1C21;box-shadow:inset 0 -3px 0 #00D8F2}
+.subtabs button:focus-visible{outline:2px solid #00D8F2;outline-offset:2px}
 .ptitle{font:800 30px/1.1 "Barlow Condensed",sans-serif;margin:0 0 14px}
 .mbar,.mback{display:none}
 @media(max-width:860px){
@@ -413,7 +417,12 @@ tr.short td{background:#f4d9d4!important}
 
   <section id="p-inv" class="hidden">
     <h2 class="ptitle">Inventar</h2>
-    <div class="empty">Secțiunea Inventar e pregătită. Conținutul urmează.</div>
+    <div class="subtabs" role="tablist" aria-label="Inventar">
+      <button role="tab" id="st-prod" data-sub="prod" aria-selected="true">Inventar produse</button>
+      <button role="tab" id="st-amb" data-sub="amb" aria-selected="false">Inventar ambalaje</button>
+    </div>
+    <div id="inv-prod"><div class="empty">Inventar produse e pregătit. Conținutul urmează.</div></div>
+    <div id="inv-amb" class="hidden"><div class="empty">Inventar ambalaje e pregătit. Conținutul urmează.</div></div>
   </section>
 
   <section id="p-ret" class="hidden">
@@ -1073,6 +1082,11 @@ $('rDl').onclick=()=>{
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sh,'Retururi');save(`centralizator_retururi_${dkey(new Date())}.xlsx`,xbuf(wb));
 };
 retForm(null);
+
+/* ---------- inventar: două subsecțiuni ---------- */
+function invSub(k){for(const x of ['prod','amb']){$('st-'+x).setAttribute('aria-selected',x===k);$('inv-'+x).classList.toggle('hidden',x!==k)}ls.set('inv_sub',k)}
+for(const b of document.querySelectorAll('.subtabs [data-sub]'))b.onclick=()=>invSub(b.dataset.sub);
+invSub(ls.get('inv_sub')==='amb'?'amb':'prod');
 
 /* ---------- exporturi ---------- */
 function sheet(aoa,w){const s=XLSX.utils.aoa_to_sheet(aoa);s['!cols']=w.map(x=>({wch:x}));return s}
