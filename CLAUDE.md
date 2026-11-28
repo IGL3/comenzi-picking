@@ -40,7 +40,7 @@ injectat de build ca `__AMBALAJE__` și scris automat în doc când lipsește). 
 până la următorul; Consum = ultimul inventar în care produsul a fost numărat + intrările de atunci încoace − inventarul de acum
 (formulele vechi greșite din Excel nu se mai folosesc). Consumul negativ e roșu (de obicei intrări trecute la alt inventar).
 „Stoc acum” = ultimul inventar numărat + intrările de după el (etichetă turcoaz); consumul > 0 are etichetă galbenă (#FFC21A), cel negativ e roșu. Desktop: tabel cu Denumire și SKU fixe la stânga, câte 3 coloane pe inventar
-(Inventar, Intrări, Consum), derulat automat la ultimul; telefon: alegi inventarul și completezi pe carduri (denumirea 22px/900 și SKU 18px/800; restul textelor 15–19px; câmpurile „Inventar” și „Intrări”, apoi „Consum” și „Stoc acum” cu etichetele lor). Câmpurile se salvează la fiecare
+(Inventar, Intrări, Consum), derulat automat la ultimul; telefon: alegi inventarul (ținut în localStorage `amb_sel`, rămâne ales după refresh) și completezi pe carduri (denumirea 22px/900 și SKU 18px/800; restul textelor 15–19px; câmpurile „Inventar” și „Intrări”, apoi „Consum” și „Stoc acum” cu etichetele lor). Câmpurile se salvează la fiecare
 schimbare (Enter = produsul următor). „Inventar nou” (dată, implicit azi), ✕ pe antet șterge un inventar; „Adaugă produs”, ✎/✕ pe rând
 modifică/șterg produsul. „Descarcă Excel”: același format ca vechiul fișier, cu formule corecte pentru consum. „Consum ultim inventar”: Excel cu două coloane, Cod și Cantitate (consumul calculat la ultimul inventar; fără consum 0/necalculat; consumul negativ și produsele fără SKU sunt sărite și numite în mesaj).
 Date: `zi/invamb` {tip:'invamb', p:{<pid>:{d,sku,o}|null}, x:{<AAAALLZZ_xxx>:{d:'YYYY-MM-DD', v:{<pid>:{i,e}}, t, n}|null}}.

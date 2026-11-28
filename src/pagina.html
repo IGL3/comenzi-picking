@@ -1123,7 +1123,7 @@ retForm(null);
 // date: zi/invamb {tip:'invamb', p:{<pid>:{d,sku,o}|null}, x:{<cheie>:{d:'YYYY-MM-DD',v:{<pid>:{i,e}},t,n}|null}}
 // ca în centralizatorul Consumabile: „Intrări” la un inventar = ce a intrat după el; Consum(j) = Inv(j-1) + Intrări(j-1) − Inv(j)
 const AMB_SEED=__AMBALAJE__;
-let amb=null,ambSel=null,ambSeeded=false,ambEdit=null;
+let amb=null,ambSel=null,ambSeeded=false,ambEdit=null; // inventarul ales pe telefon e ținut în localStorage amb_sel
 const ambDoc=()=>store.col('zi').doc('invamb');
 const dmerge=(t,s)=>{for(const [k,v] of Object.entries(s)){if(v&&typeof v==='object'&&!Array.isArray(v)){if(!t[k]||typeof t[k]!=='object')t[k]={};dmerge(t[k],v)}else t[k]=v}return t};
 const ambProds=()=>Object.entries(amb?.p||{}).filter(([,v])=>v).map(([id,v])=>({id,...v})).sort((a,b)=>(a.o||0)-(b.o||0));
@@ -1141,7 +1141,7 @@ function ambLoad(x){amb={p:x.p||{},x:x.x||{}};if(document.querySelector('#ambBod
 function renderAmbInv(){
   if(!amb){$('ambBody').innerHTML='<div class="empty">Se încarcă…</div>';return}
   const P=ambProds(),I=ambInvs();
-  if(!ambSel||!I.some(x=>x.k===ambSel))ambSel=I.length?I[I.length-1].k:null;
+  const pref=ls.get('amb_sel');if(pref&&I.some(x=>x.k===pref))ambSel=pref;else if(!ambSel||!I.some(x=>x.k===ambSel))ambSel=I.length?I[I.length-1].k:null;
   $('ambInfo').textContent=`${P.length} produse · ${I.length} ${I.length===1?'inventar':'inventare'}${I.length?' · ultimul din '+dshort(I[I.length-1].d):''}`;
   if(!P.length){$('ambBody').innerHTML='<div class="empty">Nu e niciun produs. Apasă „Adaugă produs”.</div>';return}
   const inp=(k,pid,f,v,cls)=>`<input class="ai${cls||''}" inputmode="decimal" autocomplete="off" data-k="${k}" data-p="${pid}" data-f="${f}" value="${ambFmt(v)}" aria-label="${f==='i'?'Inventar':'Intrări'}">`;
@@ -1172,7 +1172,7 @@ function ambCalc(keepInputs){ // recalculează consumul și stocul fără să re
 $('ambBody').addEventListener('focusout',e=>{setTimeout(()=>{if(!document.querySelector('#ambBody input:focus'))ambCalc(true)},0)});
 $('ambBody').addEventListener('change',async e=>{
   const el=e.target;
-  if(el.id==='ambSelP'){ambSel=el.value;renderAmbInv();return}
+  if(el.id==='ambSelP'){ambSel=el.value;ls.set('amb_sel',ambSel);renderAmbInv();return}
   if(!el.classList.contains('ai'))return;
   const n=ambNum(el.value);if(Number.isNaN(n)){el.classList.add('bad');say($('ambMsg'),'Scrie doar cifre (ex. 120 sau 2,5).','err');return}
   el.classList.remove('bad');
@@ -1195,9 +1195,9 @@ $('ambBody').addEventListener('click',async e=>{
 $('ambNew').onclick=()=>{$('ambPF').classList.add('hidden');$('ambNewF').classList.remove('hidden');$('ambNewD').value=dkey(new Date());$('ambNewD').focus()};
 $('ambNewX').onclick=()=>$('ambNewF').classList.add('hidden');
 $('ambNewF').onsubmit=async e=>{e.preventDefault();const d=$('ambNewD').value;if(!isIso(d)){$('ambNewD').classList.add('bad');return}$('ambNewD').classList.remove('bad');
-  const ex=ambInvs().find(x=>x.d===d);if(ex){ambSel=ex.k;$('ambNewF').classList.add('hidden');renderAmbInv();say($('ambMsg'),`Există deja un inventar din ${dshort(d)}; l-am deschis.`,'ok');return}
+  const ex=ambInvs().find(x=>x.d===d);if(ex){ambSel=ex.k;ls.set('amb_sel',ambSel);$('ambNewF').classList.add('hidden');renderAmbInv();say($('ambMsg'),`Există deja un inventar din ${dshort(d)}; l-am deschis.`,'ok');return}
   const k=d.replace(/-/g,'')+'_'+Math.random().toString(36).slice(2,5);
-  try{await ambSave({x:{[k]:{d,v:{},t:Date.now(),n:me()}}});ambSel=k;$('ambNewF').classList.add('hidden');renderAmbInv();say($('ambMsg'),`Inventar nou din ${dshort(d)}: completează coloana „Inventar” (Enter trece la produsul următor).`,'ok');
+  try{await ambSave({x:{[k]:{d,v:{},t:Date.now(),n:me()}}});ambSel=k;ls.set('amb_sel',k);$('ambNewF').classList.add('hidden');renderAmbInv();say($('ambMsg'),`Inventar nou din ${dshort(d)}: completează coloana „Inventar” (Enter trece la produsul următor).`,'ok');
     const f=document.querySelector(`#ambBody input.ai[data-k="${k}"][data-f="i"]`);if(f)f.focus()}
   catch(err){say($('ambMsg'),'Nu s-a creat: '+(err.message||err.code||err),'err')}};
 $('ambAddP').onclick=()=>{ambEdit=null;$('ambPD').value='';$('ambPS').value='';$('ambPSave').textContent='Adaugă produsul';$('ambNewF').classList.add('hidden');$('ambPF').classList.remove('hidden');$('ambPD').focus()};
