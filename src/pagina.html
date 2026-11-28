@@ -182,9 +182,9 @@ tr.flash,.pcard.flash{outline:3px solid transparent;outline-offset:-3px;animatio
   .mbar button{background:transparent;border:1px solid #3a3d45;color:#ECE6DA;min-width:48px;min-height:44px;padding:0;display:grid;place-items:center;border-radius:10px}
   .mbar button svg{width:24px;height:24px}
   .mbar b{font:800 20px/1.1 "Barlow Condensed",sans-serif}.mbar small{display:block;font-size:13px;color:#00D8F2}
-  .side{position:fixed;top:0;left:0;bottom:0;height:100vh;width:min(84vw,320px);z-index:45;transform:translateX(-105%);transition:transform .2s ease;box-shadow:0 0 40px rgba(0,0,0,.5)}
+  .side{position:fixed;top:0;left:0;bottom:0;height:100vh;height:100dvh;width:min(84vw,320px);z-index:45;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;transform:translateX(-105%);transition:transform .2s ease;box-shadow:0 0 40px rgba(0,0,0,.5)}
   .side.open{transform:none}
-  .mback{position:fixed;inset:0;z-index:44;background:rgba(0,0,0,.55)}.mback.open{display:block}
+  .mback{position:fixed;inset:0;z-index:44;background:rgba(0,0,0,.55);touch-action:none}.mback.open{display:block}
   .side button{min-height:56px}
   .bar>span.grow{flex:1 1 100%}
 }
@@ -1281,7 +1281,11 @@ $('replAdd').onclick=()=>{if(pending)append(pending.list,pending.name)};
 $('part').onchange=()=>{renderStats();renderVerif();renderPick()};
 $('replNo').onclick=()=>{pending=null;$('repl').classList.add('hidden')};
 const tabs=['dash','verif','pick','fact','amb','fbe','inv','ret','loc','setari'];
-function menu(o){$('side').classList.toggle('open',o);$('mback').classList.toggle('open',o);$('menuBtn').setAttribute('aria-expanded',o)}
+// cu meniul deschis pe telefon, pagina din spate e blocată (altfel derularea trece în fundal, mai ales pe iPhone)
+let menuY=0;
+function menu(o){const was=$('side').classList.contains('open');$('side').classList.toggle('open',o);$('mback').classList.toggle('open',o);$('menuBtn').setAttribute('aria-expanded',o);
+  if(o&&!was){menuY=window.scrollY;Object.assign(document.body.style,{position:'fixed',top:-menuY+'px',left:'0',right:'0',overflow:'hidden'})}
+  else if(!o&&was){Object.assign(document.body.style,{position:'',top:'',left:'',right:'',overflow:''});window.scrollTo(0,menuY)}}
 {const cur=tabs.find(x=>$('t-'+x).getAttribute('aria-selected')==='true');if(cur)$('mTitle').textContent=$('t-'+cur).firstChild.textContent}
 $('menuBtn').onclick=()=>menu(!$('side').classList.contains('open'));$('mback').onclick=()=>menu(false);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')menu(false)});
